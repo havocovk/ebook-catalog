@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ebook Kataloğu</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Login ──────────────────────────────────────────────────── -->
+  <div id="login-screen">
+    <div class="login-box">
+      <h1 class="login-title">Ebook Kataloğu</h1>
+      <p class="login-sub">Kişisel kitaplığın</p>
+
+      <div class="field">
+        <label for="login-email">E-posta</label>
+        <input type="email" id="login-email" placeholder="orhan@example.com" autocomplete="email" />
+      </div>
+      <div class="field">
+        <label for="login-password">Şifre</label>
+        <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <p id="login-error" class="login-error"></p>
+      <button id="login-btn" class="btn btn-primary btn-full">Giriş yap</button>
+    </div>
+  </div>
+
+  <!-- ── App ────────────────────────────────────────────────────── -->
+  <div id="app-screen" class="hidden">
+
+    <!-- Header -->
+    <header class="header">
+      <span class="header-title">📚 Ebook Kataloğu</span>
+      <div class="header-actions">
+        <button id="backup-btn" class="btn btn-sm" title="Yedekle">⬇ Yedekle</button>
+        <button id="restore-btn" class="btn btn-sm" title="Yedekten yükle">⬆ Yükle</button>
+        <input type="file" id="restore-input" accept=".json" style="display:none" />
+        <button id="logout-btn" class="btn btn-sm">Çıkış</button>
+      </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Başlık, yazar, seri..." class="search-input" />
+      </div>
+
+      <div class="filters">
+        <select id="filter-format" class="select">
+          <option value="">Format</option>
+          <option value="epub">EPUB</option>
+          <option value="pdf">PDF</option>
+        </select>
+
+        <select id="filter-status" class="select">
+          <option value="">Durum</option>
+          <option value="okunmadi">Okunmadı</option>
+          <option value="sirada">Sırada</option>
+          <option value="okunuyor">Okunuyor</option>
+          <option value="okundu">Okundu</option>
+        </select>
+
+        <select id="filter-author" class="select">
+          <option value="">Yazar</option>
+        </select>
+
+        <select id="filter-series" class="select">
+          <option value="">Seri</option>
+        </select>
+
+        <select id="sort-select" class="select">
+          <option value="added_at_desc">Yeni eklenen</option>
+          <option value="title_asc">Başlık A–Z</option>
+          <option value="author_asc">Yazar A–Z</option>
+          <option value="series_asc">Seri</option>
+        </select>
+      </div>
+
+      <span id="result-count" class="result-count"></span>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <span>Kitaplar yükleniyor...</span>
+    </div>
+
+    <!-- Grid -->
+    <main class="grid-container">
+      <div id="books-grid" class="books-grid"></div>
+    </main>
+
+  </div>
+
+  <!-- ── Modal ──────────────────────────────────────────────────── -->
+  <div id="book-modal" class="modal hidden">
+    <div class="modal-box">
+
+      <div class="modal-header">
+        <h2 class="modal-heading">Kitap Detayı</h2>
+        <button id="modal-close" class="modal-close" title="Kapat">✕</button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Sol: kapak -->
+        <div class="modal-cover" id="modal-cover"></div>
+
+        <!-- Sağ: form -->
+        <div class="modal-fields">
+
+          <div class="field">
+            <label>Başlık</label>
+            <input type="text" id="modal-title" />
+          </div>
+          <div class="field">
+            <label>Yazar</label>
+            <input type="text" id="modal-author" />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Seri</label>
+              <input type="text" id="modal-series" />
+            </div>
+            <div class="field field-narrow">
+              <label>#</label>
+              <input type="number" id="modal-series-order" min="1" />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label>Durum</label>
+              <select id="modal-status" class="select">
+                <option value="okunmadi">Okunmadı</option>
+                <option value="sirada">Sırada</option>
+                <option value="okunuyor">Okunuyor</option>
+                <option value="okundu">Okundu</option>
+              </select>
+            </div>
+            <div class="field field-narrow">
+              <label>Yıl</label>
+              <input type="number" id="modal-year" min="1000" max="2099" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Puan</label>
+            <div id="modal-rating" class="star-row"></div>
+          </div>
+
+          <div class="field">
+            <label>Bitirildi</label>
+            <input type="date" id="modal-finished-at" />
+          </div>
+
+          <div class="field">
+            <label>Notlar</label>
+            <textarea id="modal-notes" rows="3" placeholder="Kısa not..."></textarea>
+          </div>
+
+          <div class="field">
+            <label>Etiketler <span class="hint">(virgülle ayır)</span></label>
+            <input type="text" id="modal-tags" placeholder="fantastik, klasik, okunacak" />
+          </div>
+
+          <div class="file-meta">
+            <span id="modal-format" class="badge"></span>
+            <span id="modal-file-size" class="meta-text"></span>
+            <span id="modal-file-path" class="meta-path"></span>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="modal-delete" class="btn btn-danger">Sil</button>
+        <button id="modal-save" class="btn btn-primary">Kaydet</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Toasts ─────────────────────────────────────────────────── -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
