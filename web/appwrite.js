@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, Query, ID } from "https://cdn.jsdelivr.net/npm/appwrite@17/src/index.js";
+import { Client, Account, Databases, Storage, Query, ID } from "https://esm.sh/appwrite@17";
 
 const APPWRITE_ENDPOINT = "https://fra.cloud.appwrite.io/v1";
 const APPWRITE_PROJECT_ID = "6a2f3ae5000560f23d0c";
