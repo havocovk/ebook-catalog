@@ -3,9 +3,9 @@ import { Client, Account, Databases, Storage, Query, ID } from "https://esm.sh/a
 const APPWRITE_ENDPOINT = "https://fra.cloud.appwrite.io/v1";
 const APPWRITE_PROJECT_ID = "6a2f3ae5000560f23d0c";
 
-const DATABASE_ID = "ebook_catalog";
+const DATABASE_ID = "6a2f3b38001d67193c7b";
 const TABLE_ID = "books";
-const BUCKET_ID = "covers";
+const BUCKET_ID = "6a2f3f66001896fe7d78";
 
 const client = new Client()
     .setEndpoint(APPWRITE_ENDPOINT)
