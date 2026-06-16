@@ -16,7 +16,7 @@ import { initModal } from "./ui/modal.js";
 import { initCatalog, renderCatalog } from "./pages/catalog.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderAuthors, initAuthors } from "./pages/authors.js";
-import { renderPublishers } from "./pages/publishers.js";
+import { renderPublishers, initPublishers } from "./pages/publishers.js";
 import { renderSeries } from "./pages/series.js";
 import {
   fetchAllBooks,
@@ -126,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 2) Olayları bir kez bağla.
   initCatalog();
   initAuthors();
+  initPublishers();
   initModal();
   bindBackupRestore();
 
