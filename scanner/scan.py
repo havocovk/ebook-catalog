@@ -10,7 +10,6 @@ from metadata import extract_metadata
 from cover import extract_cover
 from api import enrich_metadata
 from uploader import (
-    is_already_indexed,
     upload_cover,
     upload_cover_from_url,
     save_book,
@@ -21,8 +20,6 @@ SUPPORTED_FORMATS = {".epub", ".pdf"}
 
 
 def check_env():
-    """Tarama başlamadan önce .env'deki kritik değerler dolu mu kontrol et.
-    Eksikse en baştan uyar ki yanlış ayarla saatlerce uğraşılmasın."""
     required = {
         "APPWRITE_PROJECT_ID": "YOUR_PROJECT_ID",
         "APPWRITE_API_KEY": "YOUR_API_KEY",
@@ -43,8 +40,6 @@ def check_env():
 
 
 def scan_folder(folder_path: str, recursive: bool = True):
-    """Scan a folder and index all new ebook files."""
-
     if not os.path.isdir(folder_path):
         print(f"Hata: '{folder_path}' klasörü bulunamadı.")
         sys.exit(1)
@@ -60,12 +55,6 @@ def scan_folder(folder_path: str, recursive: bool = True):
     for i, file_path in enumerate(files, 1):
         filename = os.path.basename(file_path)
         print(f"[{i}/{len(files)}] {filename}")
-
-        # Skip if already indexed
-        if is_already_indexed(file_path):
-            print("  → Zaten kayıtlı, atlanıyor.")
-            stats["skipped"] += 1
-            continue
 
         try:
             result = process_file(file_path)
@@ -102,31 +91,43 @@ def collect_files(folder_path: str, recursive: bool) -> list:
 
 
 def process_file(file_path: str) -> bool:
-    # Step 1: Extract local metadata
     print("  → Metadata çekiliyor...")
     metadata = extract_metadata(file_path)
 
-    # Step 2: Enrich via Google Books API
     print("  → Google Books sorgulanıyor...")
     api_data = enrich_metadata(
         title=metadata.get("title", ""),
         author=metadata.get("author"),
     )
 
-    # Merge API data — don't overwrite existing local values
+    # Yıl: dosya içinden bulunamazsa API'dan al
     if api_data.get("year") and not metadata.get("year"):
         metadata["year"] = api_data["year"]
+
+    # Seri: dosya içinden bulunamazsa API'dan al
     if api_data.get("series") and not metadata.get("series"):
         metadata["series"] = api_data["series"]
+
+    # Seri sırası: dosya içinden bulunamazsa API'dan al
     if api_data.get("series_order") and not metadata.get("series_order"):
         metadata["series_order"] = api_data["series_order"]
+
+    # Açıklama: her zaman API'dan al (dosya içinde genellikle bulunmaz)
     if api_data.get("description"):
         metadata["description"] = api_data["description"]
-    # If local author was missing and API found one
+
+    # Yazar: dosya içinden bulunamazsa API'dan al
     if api_data.get("author_api") and not metadata.get("author"):
         metadata["author"] = api_data["author_api"]
 
-    # Step 3: Extract cover
+    # YENİ: Yayınevi — önce dosya içi, yoksa API'dan al
+    if api_data.get("publisher") and not metadata.get("publisher"):
+        metadata["publisher"] = api_data["publisher"]
+
+    # YENİ: Dil — önce dosya içi, yoksa API'dan al
+    if api_data.get("language") and not metadata.get("language"):
+        metadata["language"] = api_data["language"]
+
     print("  → Kapak çekiliyor...")
     cover_url = None
     with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
@@ -145,21 +146,14 @@ def process_file(file_path: str) -> bool:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-    # Step 4: Save to database
     print("  → Veritabanına kaydediliyor...")
     return save_book(metadata, cover_url)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Ebook klasörünü tara ve kataloğa ekle."
-    )
+    parser = argparse.ArgumentParser(description="Ebook klasörünü tara ve kataloğa ekle.")
     parser.add_argument("folder", help="Taranacak klasör yolu")
-    parser.add_argument(
-        "--no-recursive",
-        action="store_true",
-        help="Alt klasörleri tarama",
-    )
+    parser.add_argument("--no-recursive", action="store_true", help="Alt klasörleri tarama")
     args = parser.parse_args()
 
     check_env()

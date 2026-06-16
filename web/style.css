@@ -35,6 +35,14 @@ input, select, textarea, button {
   font-size: inherit;
 }
 
+/* Lucide ikonları (Iconify web bileşeni) — metinle hizalı dursun */
+iconify-icon {
+  display: inline-block;
+  font-size: 1.15em;
+  vertical-align: -0.14em;
+  line-height: 1;
+}
+
 /* ── Login ────────────────────────────────────────────────────── */
 #login-screen {
   min-height: 100vh;
@@ -83,7 +91,7 @@ input, select, textarea, button {
   padding: 0.75rem 1.25rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.75rem;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -92,13 +100,64 @@ input, select, textarea, button {
 .header-title {
   font-weight: 600;
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
 }
+
+.header-title iconify-icon { color: var(--accent); font-size: 1.3em; }
 
 .header-actions {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  margin-left: auto;          /* aksiyonları en sağa it */
 }
+
+/* ── Navigation ───────────────────────────────────────────────── */
+/* Hamburger butonu — mobilde görünür, masaüstünde gizli */
+.nav-toggle {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  padding: 0.2rem;
+  border-radius: var(--radius);
+}
+.nav-toggle:hover { color: var(--accent); }
+
+/* Mobil: navigasyon, üst bardan aşağı açılan menü */
+.main-nav {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  flex-direction: column;
+  display: none;              /* kapalı; .open ile açılır */
+  z-index: 49;
+}
+.main-nav.open { display: flex; }
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.25rem;
+  color: var(--text-2);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s, color 0.15s;
+}
+.nav-link:last-child { border-bottom: none; }
+.nav-link:hover { background: var(--bg-3); color: var(--text); }
+.nav-link.active { color: var(--accent); background: var(--bg-3); }
+.nav-link iconify-icon { font-size: 1.2em; }
 
 /* ── Toolbar ──────────────────────────────────────────────────── */
 .toolbar {
@@ -122,7 +181,8 @@ input, select, textarea, button {
   left: 0.65rem;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 0.85rem;
+  font-size: 1rem;
+  color: var(--text-3);
   pointer-events: none;
 }
 
@@ -232,6 +292,9 @@ textarea { resize: vertical; }
   font-size: 0.875rem;
   transition: background 0.15s, border-color 0.15s;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .btn:hover { background: var(--bg-2); border-color: var(--accent); }
@@ -254,8 +317,11 @@ textarea { resize: vertical; }
 
 .btn-danger:hover { background: rgba(224, 92, 92, 0.1); }
 
-.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
-.btn-full { width: 100%; }
+.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* Buton metni mobilde gizli (sadece ikon), masaüstünde görünür */
+.btn-label { display: none; }
 
 /* ── Loading ──────────────────────────────────────────────────── */
 .loading {
@@ -277,6 +343,22 @@ textarea { resize: vertical; }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Pages ────────────────────────────────────────────────────── */
+.page-container { min-height: 60vh; }
+
+.page-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 5rem 1rem;
+  color: var(--text-3);
+  text-align: center;
+}
+.page-placeholder iconify-icon { font-size: 3rem; color: var(--text-3); }
+.page-placeholder p { font-size: 1.1rem; }
 
 /* ── Books Grid ───────────────────────────────────────────────── */
 .grid-container { padding: 1.25rem; }
@@ -588,7 +670,7 @@ textarea { resize: vertical; }
 /* ── Utility ──────────────────────────────────────────────────── */
 .hidden { display: none !important; }
 
-/* ── Responsive ───────────────────────────────────────────────── */
+/* ── Responsive: Tablet ───────────────────────────────────────── */
 @media (max-width: 600px) {
   :root { --card-w: 140px; --cover-h: 190px; }
 
@@ -600,10 +682,37 @@ textarea { resize: vertical; }
   .modal-cover { width: 100%; }
   .modal-cover img { max-height: 200px; object-fit: contain; }
   .modal-cover .cover-placeholder { width: 100%; }
-
-  .header-actions .btn-sm:nth-child(-n+2) { display: none; }
 }
 
 @media (min-width: 601px) and (max-width: 900px) {
   :root { --card-w: 150px; }
+}
+
+/* ── Responsive: Masaüstü (navigasyon yatay bar olur) ─────────── */
+@media (min-width: 901px) {
+  /* Hamburger gizlenir; menü yatay bara döner */
+  .nav-toggle { display: none; }
+
+  .main-nav {
+    position: static;
+    display: flex;
+    flex-direction: row;
+    background: none;
+    border: none;
+    gap: 0.2rem;
+    margin-left: 0.5rem;
+  }
+
+  .nav-link {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    color: var(--text-2);
+  }
+  .nav-link:hover { background: var(--bg-3); }
+  .nav-link.active { background: var(--bg-3); color: var(--accent); }
+
+  /* Aksiyon butonlarındaki metinler masaüstünde görünür */
+  .btn-label { display: inline; }
 }

@@ -8,7 +8,7 @@ import fitz  # PyMuPDF
 def extract_metadata(file_path: str) -> dict:
     """
     Extract metadata from an ebook file.
-    Returns a dict with title, author, year, format.
+    Returns a dict with title, author, year, publisher, language, format.
     Falls back to filename parsing if embedded metadata is missing.
     """
     ext = os.path.splitext(file_path)[1].lower()
@@ -16,6 +16,8 @@ def extract_metadata(file_path: str) -> dict:
         "title": None,
         "author": None,
         "year": None,
+        "publisher": None,   # YENİ
+        "language": None,    # YENİ
         "format": ext.lstrip("."),
         "file_path": file_path,
         "file_size": os.path.getsize(file_path),
@@ -57,6 +59,18 @@ def _extract_epub_metadata(file_path: str) -> dict:
             if match:
                 result["year"] = int(match.group())
 
+        # YENİ: Yayınevi — EPUB'da DC "publisher" alanı
+        publisher = book.get_metadata("DC", "publisher")
+        if publisher and publisher[0][0].strip():
+            result["publisher"] = publisher[0][0].strip()
+
+        # YENİ: Dil — EPUB'da DC "language" alanı ("tr", "en-US" gibi değerler gelir)
+        language = book.get_metadata("DC", "language")
+        if language and language[0][0].strip():
+            # "en-US" → "en" olarak kısalt, küçük harfe çevir
+            lang_raw = language[0][0].strip().lower()
+            result["language"] = lang_raw.split("-")[0]
+
     except Exception as e:
         print(f"  [EPUB metadata hatası] {file_path}: {e}")
 
@@ -80,11 +94,33 @@ def _extract_pdf_metadata(file_path: str) -> dict:
             if match:
                 result["year"] = int(match.group())
 
+        # YENİ: Yayınevi — PDF metadata'da "producer" veya "creator" alanında olabilir.
+        # PDF standardında doğrudan "publisher" alanı yoktur; "producer" en yakın karşılıktır.
+        # Boş veya sadece yazılım adı içeriyorsa (Adobe, Acrobat vb.) kaydetmiyoruz.
+        producer = meta.get("producer", "").strip()
+        if producer and not _is_software_name(producer):
+            result["publisher"] = producer
+
         doc.close()
     except Exception as e:
         print(f"  [PDF metadata hatası] {file_path}: {e}")
 
     return result
+
+
+def _is_software_name(text: str) -> bool:
+    """
+    PDF "producer" alanı çoğunlukla yazılım adı içerir (Adobe, Word vb.).
+    Bunları yayınevi olarak kaydetmemek için filtre uygular.
+    """
+    software_keywords = [
+        "adobe", "acrobat", "word", "office", "libreoffice", "openoffice",
+        "ghostscript", "pdfmaker", "pdftk", "itext", "fpdf", "reportlab",
+        "calibre", "kindlegen", "latex", "tex", "quark", "indesign",
+        "scribus", "wkhtmltopdf", "chrome", "webkit", "prince",
+    ]
+    lower = text.lower()
+    return any(kw in lower for kw in software_keywords)
 
 
 def _parse_filename(file_path: str) -> dict:

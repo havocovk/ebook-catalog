@@ -75,8 +75,8 @@ def is_already_indexed(file_path: str) -> bool:
             database_id=DATABASE_ID,
             collection_id=TABLE_ID,
             queries=[
-                Query.equal("file_path", file_path),
-                Query.limit(1),
+                str(Query.equal("file_path", [file_path])),
+                str(Query.limit(1)),
             ],
         )
         return result.get("total", 0) > 0
@@ -179,6 +179,8 @@ def save_book(metadata: dict, cover_url: str = None) -> bool:
         "user_id": OWNER_USER_ID,
         "title": metadata.get("title"),
         "author": metadata.get("author"),
+        "publisher": metadata.get("publisher"),   # YENİ
+        "language": metadata.get("language"),     # YENİ
         "series": metadata.get("series"),
         "series_order": metadata.get("series_order"),
         "format": metadata.get("format"),

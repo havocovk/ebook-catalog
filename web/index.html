@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ebook Kataloğu</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Iconify web bileşeni — Lucide ikonlarını siteye taşır (lucide:* adları) -->
+  <script src="https://code.iconify.design/iconify-icon/3.0.2/iconify-icon.min.js"></script>
 </head>
 <body>
 
-  <!-- ── Login ──────────────────────────────────────────────────── -->
+  <!-- ── Giriş Ekranı ────────────────────────────────────────────── -->
   <div id="login-screen">
     <div class="login-box">
       <h1 class="login-title">Ebook Kataloğu</h1>
@@ -27,75 +29,145 @@
     </div>
   </div>
 
-  <!-- ── App ────────────────────────────────────────────────────── -->
+  <!-- ── Uygulama ────────────────────────────────────────────────── -->
   <div id="app-screen" class="hidden">
 
-    <!-- Header -->
+    <!-- Üst Bar -->
     <header class="header">
-      <span class="header-title">📚 Ebook Kataloğu</span>
+      <button id="nav-toggle" class="nav-toggle" aria-label="Menü">
+        <iconify-icon icon="lucide:menu"></iconify-icon>
+      </button>
+
+      <span class="header-title">
+        <iconify-icon icon="lucide:library"></iconify-icon>
+        <span>Ebook Kataloğu</span>
+      </span>
+
+      <!-- Navigasyon: masaüstünde yatay bar, mobilde açılır menü -->
+      <nav id="main-nav" class="main-nav">
+        <a href="#catalog" data-nav="catalog" class="nav-link">
+          <iconify-icon icon="lucide:book-open"></iconify-icon><span>Katalog</span>
+        </a>
+        <a href="#dashboard" data-nav="dashboard" class="nav-link">
+          <iconify-icon icon="lucide:layout-dashboard"></iconify-icon><span>Panel</span>
+        </a>
+        <a href="#authors" data-nav="authors" class="nav-link">
+          <iconify-icon icon="lucide:users"></iconify-icon><span>Yazarlar</span>
+        </a>
+        <a href="#publishers" data-nav="publishers" class="nav-link">
+          <iconify-icon icon="lucide:building-2"></iconify-icon><span>Yayınevleri</span>
+        </a>
+        <a href="#series" data-nav="series" class="nav-link">
+          <iconify-icon icon="lucide:layers"></iconify-icon><span>Seriler</span>
+        </a>
+      </nav>
+
       <div class="header-actions">
-        <button id="backup-btn" class="btn btn-sm" title="Yedekle">⬇ Yedekle</button>
-        <button id="restore-btn" class="btn btn-sm" title="Yedekten yükle">⬆ Yükle</button>
-        <input type="file" id="restore-input" accept=".json" style="display:none" />
-        <button id="logout-btn" class="btn btn-sm">Çıkış</button>
+        <button id="backup-btn" class="btn btn-sm" title="Yedekle">
+          <iconify-icon icon="lucide:download"></iconify-icon><span class="btn-label">Yedekle</span>
+        </button>
+        <button id="restore-btn" class="btn btn-sm" title="Yedekten yükle">
+          <iconify-icon icon="lucide:upload"></iconify-icon><span class="btn-label">Yükle</span>
+        </button>
+        <input type="file" id="restore-input" accept=".json" hidden />
+        <button id="logout-btn" class="btn btn-sm" title="Çıkış">
+          <iconify-icon icon="lucide:log-out"></iconify-icon><span class="btn-label">Çıkış</span>
+        </button>
       </div>
     </header>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="search-input" placeholder="Başlık, yazar, seri..." class="search-input" />
-      </div>
-
-      <div class="filters">
-        <select id="filter-format" class="select">
-          <option value="">Format</option>
-          <option value="epub">EPUB</option>
-          <option value="pdf">PDF</option>
-        </select>
-
-        <select id="filter-status" class="select">
-          <option value="">Durum</option>
-          <option value="okunmadi">Okunmadı</option>
-          <option value="sirada">Sırada</option>
-          <option value="okunuyor">Okunuyor</option>
-          <option value="okundu">Okundu</option>
-        </select>
-
-        <select id="filter-author" class="select">
-          <option value="">Yazar</option>
-        </select>
-
-        <select id="filter-series" class="select">
-          <option value="">Seri</option>
-        </select>
-
-        <select id="sort-select" class="select">
-          <option value="added_at_desc">Yeni eklenen</option>
-          <option value="title_asc">Başlık A–Z</option>
-          <option value="author_asc">Yazar A–Z</option>
-          <option value="series_asc">Seri</option>
-        </select>
-      </div>
-
-      <span id="result-count" class="result-count"></span>
-    </div>
-
-    <!-- Loading -->
+    <!-- Yükleniyor (sayfadan bağımsız, her zaman erişilebilir) -->
     <div id="loading" class="loading hidden">
       <div class="spinner"></div>
       <span>Kitaplar yükleniyor...</span>
     </div>
 
-    <!-- Grid -->
-    <main class="grid-container">
-      <div id="books-grid" class="books-grid"></div>
-    </main>
+    <!-- Sayfalar -->
+    <main class="page-container">
 
+      <!-- ── Katalog (varsayılan açık sayfa) ─────────────────────── -->
+      <section id="catalog-page" class="page">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <iconify-icon icon="lucide:search" class="search-icon"></iconify-icon>
+            <input type="text" id="search-input" placeholder="Başlık, yazar, seri..." class="search-input" />
+          </div>
+
+          <div class="filters">
+            <select id="filter-format" class="select">
+              <option value="">Format</option>
+              <option value="epub">EPUB</option>
+              <option value="pdf">PDF</option>
+            </select>
+
+            <select id="filter-status" class="select">
+              <option value="">Durum</option>
+              <option value="okunmadi">Okunmadı</option>
+              <option value="sirada">Sırada</option>
+              <option value="okunuyor">Okunuyor</option>
+              <option value="okundu">Okundu</option>
+            </select>
+
+            <select id="filter-author" class="select">
+              <option value="">Yazar</option>
+            </select>
+
+            <select id="filter-series" class="select">
+              <option value="">Seri</option>
+            </select>
+
+            <select id="sort-select" class="select">
+              <option value="added_at_desc">Yeni eklenen</option>
+              <option value="title_asc">Başlık A–Z</option>
+              <option value="author_asc">Yazar A–Z</option>
+              <option value="series_asc">Seri</option>
+            </select>
+          </div>
+
+          <span id="result-count" class="result-count"></span>
+        </div>
+
+        <div class="grid-container">
+          <div id="books-grid" class="books-grid"></div>
+        </div>
+      </section>
+
+      <!-- ── Panel (iskelet — Aşama 4'te doldurulacak) ───────────── -->
+      <section id="dashboard-page" class="page hidden">
+        <div class="page-placeholder">
+          <iconify-icon icon="lucide:layout-dashboard"></iconify-icon>
+          <p>Panel — yakında</p>
+        </div>
+      </section>
+
+      <!-- ── Yazarlar (iskelet — Aşama 5'te doldurulacak) ────────── -->
+      <section id="authors-page" class="page hidden">
+        <div class="page-placeholder">
+          <iconify-icon icon="lucide:users"></iconify-icon>
+          <p>Yazarlar — yakında</p>
+        </div>
+      </section>
+
+      <!-- ── Yayınevleri (iskelet — Aşama 6'da doldurulacak) ─────── -->
+      <section id="publishers-page" class="page hidden">
+        <div class="page-placeholder">
+          <iconify-icon icon="lucide:building-2"></iconify-icon>
+          <p>Yayınevleri — yakında</p>
+        </div>
+      </section>
+
+      <!-- ── Seriler (iskelet — Aşama 7'de doldurulacak) ─────────── -->
+      <section id="series-page" class="page hidden">
+        <div class="page-placeholder">
+          <iconify-icon icon="lucide:layers"></iconify-icon>
+          <p>Seriler — yakında</p>
+        </div>
+      </section>
+
+    </main>
   </div>
 
-  <!-- ── Modal ──────────────────────────────────────────────────── -->
+  <!-- ── Kitap Detay Pop-up'ı (tüm sayfalarda ortak) ─────────────── -->
   <div id="book-modal" class="modal hidden">
     <div class="modal-box">
 
@@ -185,7 +257,7 @@
     </div>
   </div>
 
-  <!-- ── Toasts ─────────────────────────────────────────────────── -->
+  <!-- ── Bildirimler ─────────────────────────────────────────────── -->
   <div id="toast-container" class="toast-container"></div>
 
   <script type="module" src="app.js"></script>
