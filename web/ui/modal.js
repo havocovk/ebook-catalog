@@ -19,6 +19,9 @@ import {
   createPublisher,
   renamePublisherEverywhere,
   deletePublisherEverywhere,
+  createSeries,
+  renameSeriesEverywhere,
+  deleteSeriesEverywhere,
 } from "../core/api.js";
 import { refreshCurrentPage } from "../core/router.js";
 import { showToast, escapeHtml, formatFileSize } from "./common.js";
@@ -31,6 +34,42 @@ let editingId = null;
 // Açılır menüler (initModal'da bir kez kurulur).
 let authorPicker = null;
 let publisherPicker = null;
+let seriesPicker = null;
+
+// ─── Yardımcı: o an modalda seçili yayınevinin $id'si (yoksa null) ──────────
+// Seri alanı buna göre filtrelenir/etkinleşir.
+function currentPublisherId() {
+  const pubName = document.getElementById("modal-publisher").value.trim();
+  const pub = state.publishers.find((p) => p.name === pubName);
+  return pub ? pub.$id : null;
+}
+
+// ─── Yardımcı: seri alanının durumunu yayıneviye göre ayarla ────────────────
+// resetIfInvalid=true ise, seçili seri yeni yayıneviye ait değilse temizlenir.
+function updateSeriesAvailability(resetIfInvalid) {
+  if (!seriesPicker) return;
+  const pubId = currentPublisherId();
+  const hint = document.getElementById("series-hint");
+
+  if (pubId) {
+    if (resetIfInvalid) {
+      // Seçili seri bu yayıneviye ait mi? Değilse temizle.
+      const cur = document.getElementById("modal-series").value.trim();
+      const belongs = state.series.some(
+        (s) => s.publisher_id === pubId && s.name === cur
+      );
+      if (!belongs) seriesPicker.setByName("");
+    }
+    seriesPicker.setEnabled(true);
+    seriesPicker.refresh();
+    if (hint) hint.classList.add("hidden");
+  } else {
+    // Yayınevi yok → seri seçilemez.
+    seriesPicker.setByName("");
+    seriesPicker.setEnabled(false);
+    if (hint) hint.classList.remove("hidden");
+  }
+}
 
 // ─── Modal'ı aç ─────────────────────────────────────────────────────────────
 export function openModal(bookId) {
@@ -49,7 +88,11 @@ export function openModal(bookId) {
   document.getElementById("modal-title").value        = book.title || "";
   if (authorPicker) authorPicker.setByName(book.author || "");        // Yazar
   if (publisherPicker) publisherPicker.setByName(book.publisher || ""); // Yayınevi
-  document.getElementById("modal-series").value       = book.series || "";
+  // Seri yayıneviye bağlı: yayınevi ayarlandıktan SONRA seriyi ayarla.
+  if (seriesPicker) {
+    seriesPicker.setByName(book.series || "");
+    updateSeriesAvailability(false);   // kayıtlı veri tutarlı; temizleme yok
+  }
   document.getElementById("modal-series-order").value = book.series_order ?? "";
   document.getElementById("modal-year").value         = book.year ?? "";
   document.getElementById("modal-status").value       = book.status || "okunmadi";
@@ -171,6 +214,36 @@ export function initModal() {
     onAdd: (name) => createPublisher(name),
     onRename: (id, oldName, newName) => renamePublisherEverywhere(id, oldName, newName),
     onDelete: (id, name) => deletePublisherEverywhere(id, name),
+    onChange: () => {
+      refreshCurrentPage();
+      // Yayınevi değişti → seri listesini ve etkinliğini güncelle,
+      // mevcut seri yeni yayıneviye ait değilse temizle.
+      updateSeriesAvailability(true);
+    },
+  });
+
+  // Seri açılır menüsü — YAYINEVİNE bağlı.
+  // Liste yalnızca o an seçili yayınevine ait serileri gösterir; yeni seri o
+  // yayıneviye bağlanır. Yayınevi seçili değilse alan pasiftir.
+  seriesPicker = mountEntityPicker({
+    prefix: "series",
+    placeholder: "Seri seç...",
+    addPromptLabel: "Yeni seri adı:",
+    editPromptLabel: "Seri adını düzenle:",
+    deleteConfirm: (name) =>
+      `"${name}" serisini sil?\nBu seriye ait kitapların seri bilgisi boşalacak.`,
+    // Yalnızca seçili yayınevine ait serileri döndür.
+    getItems: () => {
+      const pubId = currentPublisherId();
+      if (!pubId) return [];
+      return state.series.filter((s) => s.publisher_id === pubId);
+    },
+    // Yeni seri, o an seçili yayıneviye bağlanır.
+    onAdd: (name) => createSeries(name, currentPublisherId()),
+    onRename: (id, oldName, newName) =>
+      renameSeriesEverywhere(id, oldName, newName, currentPublisherId()),
+    onDelete: (id, name) =>
+      deleteSeriesEverywhere(id, name, currentPublisherId()),
     onChange: () => { refreshCurrentPage(); },
   });
 

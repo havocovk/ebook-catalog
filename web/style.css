@@ -2014,3 +2014,15 @@ textarea { resize: vertical; }
 
 /* ── Pasif alan (örn. yayınevi seçilmeden seri) ──────────────── */
 .entity-field.entity-disabled { opacity: 0.6; }
+
+/* ── Seri ipucu metni (yayınevi seçilmeden) ──────────────────── */
+.entity-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+
+.entity-hint iconify-icon { font-size: 0.85rem; }

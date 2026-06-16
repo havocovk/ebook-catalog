@@ -292,16 +292,45 @@
             </div>
           </div>
 
-          <!-- Seri + Sıra No -->
-          <div class="field-row">
-            <div class="field">
-              <label>
-                <iconify-icon icon="lucide:layers"></iconify-icon> Seri
-              </label>
-              <input type="text" id="modal-series" />
+          <!-- Seri (yayınevine bağlı) -->
+          <div class="field">
+            <label>
+              <iconify-icon icon="lucide:layers"></iconify-icon> Seri
+            </label>
+            <div class="entity-field" id="series-field">
+              <button type="button" class="entity-trigger" id="series-trigger">
+                <span class="entity-trigger-text placeholder">Seç...</span>
+                <iconify-icon icon="lucide:chevron-down" class="entity-chevron"></iconify-icon>
+              </button>
+              <div class="entity-actions">
+                <button type="button" class="entity-act" id="series-add" title="Yeni seri ekle">
+                  <iconify-icon icon="lucide:plus"></iconify-icon>
+                </button>
+                <button type="button" class="entity-act" id="series-edit" title="Seçili seriyi düzenle">
+                  <iconify-icon icon="lucide:pencil"></iconify-icon>
+                </button>
+                <button type="button" class="entity-act entity-act-danger" id="series-delete" title="Seçili seriyi sil">
+                  <iconify-icon icon="lucide:trash-2"></iconify-icon>
+                </button>
+              </div>
+              <div class="entity-dropdown hidden" id="series-dropdown">
+                <input type="text" class="entity-search" id="series-search" placeholder="Ara..." />
+                <div class="entity-options" id="series-options"></div>
+              </div>
+              <input type="hidden" id="modal-series" />
             </div>
+            <p class="entity-hint hidden" id="series-hint">
+              <iconify-icon icon="lucide:info"></iconify-icon>
+              Seri seçmek için önce bir yayınevi seçin.
+            </p>
+          </div>
+
+          <!-- Seri Sırası -->
+          <div class="field-row">
             <div class="field field-narrow">
-              <label>#</label>
+              <label>
+                <iconify-icon icon="lucide:hash"></iconify-icon> Sıra
+              </label>
               <input type="number" id="modal-series-order" min="1" />
             </div>
           </div>
