@@ -2,26 +2,38 @@
 // AUTHORS — Yazarlar sayfası.
 //
 // 5A: Alfabetik yazar listesi + A–Z harf çubuğu.
+// 5B: Yazar detay görünümü — bir yazara tıklayınca o yazarın kitapları açılır.
+//     Geri butonu ile yazar listesine dönülür.
 //
-// Yapı:
-//   • Üstte tıklanabilir harf çubuğu (A–Z). Koleksiyonda olmayan harfler
-//     soluk/pasif gösterilir.
-//   • Her harf için bir grup: büyük harf başlığı + çizgi, altında o harfle
-//     başlayan yazarlar (ad + kitap sayısı).
-//   • Bir harfe tıklayınca sayfa o gruba smooth-scroll yapar.
-//
-// 5B'de eklenecek: yazar adına tıklayınca o yazarın kitapları açılır.
+// Görünüm durumu (liste / detay) bu dosyada yerel tutulur; router'a ekstra
+// rota eklenmez çünkü bu bir alt-görünümdür.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../core/state.js";
+import { createBookCard } from "../ui/components.js";
+import { openModal } from "../ui/modal.js";
 
 const ALPHABET = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
 
+// Şu an detayda gösterilen yazar adı. Liste görünümünde null.
+let activeAuthor = null;
+
 // ─── Dışa açık: router her ziyarette çağırır ────────────────────────────────
 export function renderAuthors() {
+  if (activeAuthor) {
+    renderAuthorDetail(activeAuthor);
+  } else {
+    renderAuthorList();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// YAZAR LİSTESİ
+// ═══════════════════════════════════════════════════════════════
+
+function renderAuthorList() {
   const grouped = groupByLetter();
   const activeLetters = new Set(Object.keys(grouped));
-
   const container = document.getElementById("authors-content");
   if (!container) return;
 
@@ -34,10 +46,8 @@ export function renderAuthors() {
 }
 
 // ─── Yazarları ilk harfe göre grupla ────────────────────────────────────────
-// Dönüş: { "A": [{name, count}, ...], "B": [...], ... }
 function groupByLetter() {
   const countMap = {};
-
   for (const book of state.books) {
     const name = (book.author || "").trim();
     if (!name) continue;
@@ -46,21 +56,15 @@ function groupByLetter() {
 
   const grouped = {};
   for (const [name, count] of Object.entries(countMap)) {
-    // İlk harfi Türkçe büyük harfe çevir.
     const firstChar = name.charAt(0).toLocaleUpperCase("tr-TR");
-
-    // Alfabemizde yoksa (rakam, özel karakter vs.) "#" grubuna koy.
     const letter = ALPHABET.includes(firstChar) ? firstChar : "#";
-
     if (!grouped[letter]) grouped[letter] = [];
     grouped[letter].push({ name, count });
   }
 
-  // Her grup içinde yazarları alfabetik sırala.
   for (const letter of Object.keys(grouped)) {
     grouped[letter].sort((a, b) => a.name.localeCompare(b.name, "tr"));
   }
-
   return grouped;
 }
 
@@ -74,15 +78,13 @@ function renderAlphaBar(activeLetters) {
       title="${letter}"
     >${letter}</button>`;
   }).join("");
-
   return `<div class="alpha-bar" id="alpha-bar">${buttons}</div>`;
 }
 
 // ─── Harf grupları ────────────────────────────────────────────────────────────
 function renderGroups(grouped) {
-  // Grupları Türk alfabesi sırasına göre diziyoruz.
   const sortedLetters = ALPHABET.filter((l) => grouped[l]);
-  if (grouped["#"]) sortedLetters.push("#"); // Özel karakterler en sona
+  if (grouped["#"]) sortedLetters.push("#");
 
   if (sortedLetters.length === 0) {
     return `<div class="empty-state">Henüz yazar bilgisi olan kitap yok.</div>`;
@@ -94,6 +96,7 @@ function renderGroups(grouped) {
       <div class="author-row" data-author="${escAttr(a.name)}">
         <span class="author-name">${esc(a.name)}</span>
         <span class="author-count">${a.count} kitap</span>
+        <iconify-icon icon="lucide:chevron-right" class="author-row-arrow"></iconify-icon>
       </div>
     `).join("");
 
@@ -109,36 +112,94 @@ function renderGroups(grouped) {
   }).join("");
 }
 
-// ─── Olayları bağla ─────────────────────────────────────────────────────────
-// authors-content'e tek delegated listener — harf çubuğu + yazar satırları.
+// ─── Harf grubuna smooth-scroll ──────────────────────────────────────────────
+function scrollToGroup(letter) {
+  const target = document.getElementById(`author-group-${letter}`);
+  if (!target) return;
+  const offset = 56 + 52 + 8;
+  const top = target.getBoundingClientRect().top + window.scrollY - offset;
+  window.scrollTo({ top, behavior: "smooth" });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// YAZAR DETAY GÖRÜNÜMÜ
+// ═══════════════════════════════════════════════════════════════
+
+function renderAuthorDetail(authorName) {
+  const container = document.getElementById("authors-content");
+  if (!container) return;
+
+  const books = state.books
+    .filter((b) => b.author === authorName)
+    .sort((a, b) => (a.title || "").localeCompare(b.title || "", "tr"));
+
+  // Başlık bölümü
+  container.innerHTML = `
+    <div class="detail-header">
+      <button class="detail-back-btn" id="author-back-btn">
+        <iconify-icon icon="lucide:arrow-left"></iconify-icon>
+        <span>Yazarlara Dön</span>
+      </button>
+      <div class="detail-title-wrap">
+        <h2 class="detail-title">${esc(authorName)}</h2>
+        <span class="detail-subtitle">${books.length} kitap</span>
+      </div>
+    </div>
+    <div class="books-grid author-books-grid" id="author-books-grid"></div>
+  `;
+
+  // Kitap kartlarını ekle
+  const grid = document.getElementById("author-books-grid");
+  if (grid && books.length > 0) {
+    const fragment = document.createDocumentFragment();
+    books.forEach((b) => fragment.appendChild(createBookCard(b)));
+    grid.appendChild(fragment);
+  } else if (grid) {
+    grid.innerHTML = `<div class="empty-state">Bu yazara ait kitap bulunamadı.</div>`;
+  }
+
+  // Geri butonu
+  document.getElementById("author-back-btn")?.addEventListener("click", () => {
+    activeAuthor = null;
+    renderAuthorList();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// OLAYLARI BAĞLA (yalnızca bir kez)
+// ═══════════════════════════════════════════════════════════════
+
 export function initAuthors() {
   document.getElementById("authors-content")?.addEventListener("click", (e) => {
-    // Harf çubuğu tıklaması → o gruba kaydır
+
+    // Harf çubuğu → o gruba kaydır
     const alphaBtn = e.target.closest(".alpha-btn");
     if (alphaBtn && alphaBtn.dataset.letter) {
       scrollToGroup(alphaBtn.dataset.letter);
       return;
     }
 
-    // Yazar satırı tıklaması → 5B'de doldurulacak
+    // Yazar satırı → detay görünümüne geç
     const authorRow = e.target.closest(".author-row");
     if (authorRow && authorRow.dataset.author) {
-      // 5B: navigateToAuthor(authorRow.dataset.author);
+      activeAuthor = authorRow.dataset.author;
+      renderAuthorDetail(activeAuthor);
+      return;
+    }
+
+    // Detaydaki kitap kartı → pop-up aç
+    const bookCard = e.target.closest(".book-card");
+    if (bookCard && bookCard.dataset.id) {
+      openModal(bookCard.dataset.id);
+      return;
     }
   });
 }
 
-// ─── Harf grubuna smooth-scroll ──────────────────────────────────────────────
-function scrollToGroup(letter) {
-  const target = document.getElementById(`author-group-${letter}`);
-  if (!target) return;
-  // Yapışık header yüksekliğini (56px) ve harf çubuğunu (52px) say.
-  const offset = 56 + 52 + 8;
-  const top = target.getBoundingClientRect().top + window.scrollY - offset;
-  window.scrollTo({ top, behavior: "smooth" });
-}
-
-// ─── Küçük yardımcılar ───────────────────────────────────────────────────────
+// ─── Yardımcılar ─────────────────────────────────────────────────────────────
 function esc(str) {
   return String(str)
     .replace(/&/g, "&amp;").replace(/</g, "&lt;")
