@@ -15,7 +15,7 @@ import { registerRoute, refreshCurrentPage } from "./core/router.js";
 import { initModal } from "./ui/modal.js";
 import { initCatalog, renderCatalog } from "./pages/catalog.js";
 import { renderDashboard } from "./pages/dashboard.js";
-import { renderAuthors } from "./pages/authors.js";
+import { renderAuthors, initAuthors } from "./pages/authors.js";
 import { renderPublishers } from "./pages/publishers.js";
 import { renderSeries } from "./pages/series.js";
 import {
@@ -125,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 2) Olayları bir kez bağla.
   initCatalog();
+  initAuthors();
   initModal();
   bindBackupRestore();
 
