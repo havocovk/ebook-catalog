@@ -239,7 +239,28 @@
             <label>
               <iconify-icon icon="lucide:user"></iconify-icon> Yazar
             </label>
-            <input type="text" id="modal-author" />
+            <div class="entity-field" id="author-field">
+              <button type="button" class="entity-trigger" id="author-trigger">
+                <span class="entity-trigger-text placeholder">Seç...</span>
+                <iconify-icon icon="lucide:chevron-down" class="entity-chevron"></iconify-icon>
+              </button>
+              <div class="entity-actions">
+                <button type="button" class="entity-act" id="author-add" title="Yeni yazar ekle">
+                  <iconify-icon icon="lucide:plus"></iconify-icon>
+                </button>
+                <button type="button" class="entity-act" id="author-edit" title="Seçili yazarı düzenle">
+                  <iconify-icon icon="lucide:pencil"></iconify-icon>
+                </button>
+                <button type="button" class="entity-act entity-act-danger" id="author-delete" title="Seçili yazarı sil">
+                  <iconify-icon icon="lucide:trash-2"></iconify-icon>
+                </button>
+              </div>
+              <div class="entity-dropdown hidden" id="author-dropdown">
+                <input type="text" class="entity-search" id="author-search" placeholder="Ara..." />
+                <div class="entity-options" id="author-options"></div>
+              </div>
+              <input type="hidden" id="modal-author" />
+            </div>
           </div>
 
           <!-- Yayınevi (YENİ) -->

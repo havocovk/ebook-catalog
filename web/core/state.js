@@ -14,6 +14,13 @@ export const state = {
   // Appwrite'tan yüklenen tüm kitaplar (tek sefer doldurulur, herkes kullanır).
   books: [],
 
+  // Yazar / yayınevi / seri listeleri (ayrı koleksiyonlardan yüklenir).
+  // Her eleman bir Appwrite belgesidir: { $id, name, ... }.
+  // Modal'daki açılır menüler bu listelerden beslenir.
+  authors: [],
+  publishers: [],
+  series: [],
+
   // Giriş yapan kullanıcı (Appwrite account objesi). Oturum yoksa null.
   user: null,
 

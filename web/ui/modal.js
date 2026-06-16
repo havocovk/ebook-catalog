@@ -10,13 +10,23 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../core/state.js";
-import { updateBookRecord, deleteBookRecord } from "../core/api.js";
+import {
+  updateBookRecord,
+  deleteBookRecord,
+  createAuthor,
+  renameAuthorEverywhere,
+  deleteAuthorEverywhere,
+} from "../core/api.js";
 import { refreshCurrentPage } from "../core/router.js";
 import { showToast, escapeHtml, formatFileSize } from "./common.js";
 import { renderStars } from "./components.js";
+import { mountEntityPicker } from "./entity-picker.js";
 
 // Şu an düzenlenen kitabın ID'si. Modal kapalıyken null.
 let editingId = null;
+
+// Yazar açılır menüsü (initModal'da bir kez kurulur).
+let authorPicker = null;
 
 // ─── Modal'ı aç ─────────────────────────────────────────────────────────────
 export function openModal(bookId) {
@@ -33,8 +43,8 @@ export function openModal(bookId) {
 
   // Alan sırası: Kitap Adı → Yazar → Yayınevi → Seri → Durum/Yıl → Puan → ...
   document.getElementById("modal-title").value        = book.title || "";
-  document.getElementById("modal-author").value       = book.author || "";
-  document.getElementById("modal-publisher").value    = book.publisher || "";   // YENİ
+  if (authorPicker) authorPicker.setByName(book.author || "");   // Yazar: açılır menü
+  document.getElementById("modal-publisher").value    = book.publisher || "";
   document.getElementById("modal-series").value       = book.series || "";
   document.getElementById("modal-series-order").value = book.series_order ?? "";
   document.getElementById("modal-year").value         = book.year ?? "";
@@ -126,6 +136,25 @@ async function deleteCurrentBook() {
 
 // ─── Olayları bağla (yalnızca bir kez) ──────────────────────────────────────
 export function initModal() {
+  // Yazar açılır menüsünü kur. Liste state.authors'tan beslenir; ekle/düzenle/sil
+  // işlemleri api katmanına gider ve oradan tüm kitaplara yansır.
+  authorPicker = mountEntityPicker({
+    prefix: "author",
+    placeholder: "Yazar seç...",
+    addPromptLabel: "Yeni yazar adı:",
+    editPromptLabel: "Yazar adını düzenle:",
+    deleteConfirm: (name) =>
+      `"${name}" yazarını sil?\nBu yazara bağlı kitapların yazar bilgisi boşalacak.`,
+    getItems: () => state.authors,
+    onAdd: (name) => createAuthor(name),
+    onRename: (id, oldName, newName) => renameAuthorEverywhere(id, oldName, newName),
+    onDelete: (id, name) => deleteAuthorEverywhere(id, name),
+    onChange: () => {
+      // Ekle/düzenle/sil tüm kitapları etkileyebilir; açık sayfayı tazele.
+      refreshCurrentPage();
+    },
+  });
+
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("modal-save").addEventListener("click", saveModal);
   document.getElementById("modal-delete").addEventListener("click", deleteCurrentBook);
