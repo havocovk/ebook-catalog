@@ -263,12 +263,33 @@
             </div>
           </div>
 
-          <!-- Yayınevi (YENİ) -->
+          <!-- Yayınevi -->
           <div class="field">
             <label>
               <iconify-icon icon="lucide:building-2"></iconify-icon> Yayınevi
             </label>
-            <input type="text" id="modal-publisher" placeholder="Yayınevi adı" />
+            <div class="entity-field" id="publisher-field">
+              <button type="button" class="entity-trigger" id="publisher-trigger">
+                <span class="entity-trigger-text placeholder">Seç...</span>
+                <iconify-icon icon="lucide:chevron-down" class="entity-chevron"></iconify-icon>
+              </button>
+              <div class="entity-actions">
+                <button type="button" class="entity-act" id="publisher-add" title="Yeni yayınevi ekle">
+                  <iconify-icon icon="lucide:plus"></iconify-icon>
+                </button>
+                <button type="button" class="entity-act" id="publisher-edit" title="Seçili yayınevini düzenle">
+                  <iconify-icon icon="lucide:pencil"></iconify-icon>
+                </button>
+                <button type="button" class="entity-act entity-act-danger" id="publisher-delete" title="Seçili yayınevini sil">
+                  <iconify-icon icon="lucide:trash-2"></iconify-icon>
+                </button>
+              </div>
+              <div class="entity-dropdown hidden" id="publisher-dropdown">
+                <input type="text" class="entity-search" id="publisher-search" placeholder="Ara..." />
+                <div class="entity-options" id="publisher-options"></div>
+              </div>
+              <input type="hidden" id="modal-publisher" />
+            </div>
           </div>
 
           <!-- Seri + Sıra No -->

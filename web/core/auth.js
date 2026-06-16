@@ -8,7 +8,7 @@
 
 import { account } from "../appwrite.js";
 import { state } from "./state.js";
-import { loadBooks, bootstrapAuthors } from "./api.js";
+import { loadBooks, bootstrapAuthors, bootstrapPublishers } from "./api.js";
 import { initRouter } from "./router.js";
 
 // Açılışta çağrılır: butonları bağlar, ardından mevcut oturumu kontrol eder.
@@ -18,7 +18,8 @@ export async function initAuth() {
     state.user = await account.get();
     showApp();
     await loadBooks();         // önce kitaplar gelsin
-    await bootstrapAuthors();  // yazar listesini yükle + kitaplarla senkronize et
+    await bootstrapAuthors();  // yazar listesini yükle + senkronize et
+    await bootstrapPublishers(); // yayınevi listesini yükle + senkronize et
     initRouter();              // sonra ilgili sayfa çizilsin
   } catch {
     // Oturum yok — giriş ekranını göster.
@@ -71,6 +72,7 @@ async function login() {
     showApp();
     await loadBooks();
     await bootstrapAuthors();
+    await bootstrapPublishers();
     initRouter();
   } catch (err) {
     errorEl.textContent = "Giriş başarısız: " + (err?.message || "bilinmeyen hata");

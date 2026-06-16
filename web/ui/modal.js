@@ -16,6 +16,9 @@ import {
   createAuthor,
   renameAuthorEverywhere,
   deleteAuthorEverywhere,
+  createPublisher,
+  renamePublisherEverywhere,
+  deletePublisherEverywhere,
 } from "../core/api.js";
 import { refreshCurrentPage } from "../core/router.js";
 import { showToast, escapeHtml, formatFileSize } from "./common.js";
@@ -25,8 +28,9 @@ import { mountEntityPicker } from "./entity-picker.js";
 // Şu an düzenlenen kitabın ID'si. Modal kapalıyken null.
 let editingId = null;
 
-// Yazar açılır menüsü (initModal'da bir kez kurulur).
+// Açılır menüler (initModal'da bir kez kurulur).
 let authorPicker = null;
+let publisherPicker = null;
 
 // ─── Modal'ı aç ─────────────────────────────────────────────────────────────
 export function openModal(bookId) {
@@ -43,8 +47,8 @@ export function openModal(bookId) {
 
   // Alan sırası: Kitap Adı → Yazar → Yayınevi → Seri → Durum/Yıl → Puan → ...
   document.getElementById("modal-title").value        = book.title || "";
-  if (authorPicker) authorPicker.setByName(book.author || "");   // Yazar: açılır menü
-  document.getElementById("modal-publisher").value    = book.publisher || "";
+  if (authorPicker) authorPicker.setByName(book.author || "");        // Yazar
+  if (publisherPicker) publisherPicker.setByName(book.publisher || ""); // Yayınevi
   document.getElementById("modal-series").value       = book.series || "";
   document.getElementById("modal-series-order").value = book.series_order ?? "";
   document.getElementById("modal-year").value         = book.year ?? "";
@@ -153,6 +157,21 @@ export function initModal() {
       // Ekle/düzenle/sil tüm kitapları etkileyebilir; açık sayfayı tazele.
       refreshCurrentPage();
     },
+  });
+
+  // Yayınevi açılır menüsü — yazarla aynı mantık.
+  publisherPicker = mountEntityPicker({
+    prefix: "publisher",
+    placeholder: "Yayınevi seç...",
+    addPromptLabel: "Yeni yayınevi adı:",
+    editPromptLabel: "Yayınevi adını düzenle:",
+    deleteConfirm: (name) =>
+      `"${name}" yayınevini sil?\nBu yayınevine bağlı kitapların yayınevi bilgisi boşalacak.`,
+    getItems: () => state.publishers,
+    onAdd: (name) => createPublisher(name),
+    onRename: (id, oldName, newName) => renamePublisherEverywhere(id, oldName, newName),
+    onDelete: (id, name) => deletePublisherEverywhere(id, name),
+    onChange: () => { refreshCurrentPage(); },
   });
 
   document.getElementById("modal-close").addEventListener("click", closeModal);
