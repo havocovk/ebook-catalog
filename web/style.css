@@ -2089,3 +2089,13 @@ textarea { resize: vertical; }
   justify-content: flex-end;
   gap: 0.5rem;
 }
+
+/* ── Popüler seri kartı: yayınevi satırı ─────────────────────── */
+.series-popular-publisher {
+  font-size: 0.72rem;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: -0.15rem;
+}

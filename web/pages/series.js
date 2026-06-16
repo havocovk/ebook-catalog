@@ -1,28 +1,25 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // SERIES — Seriler sayfası.
 //
-// 7A: Seri listesi — Popüler Seriler öne çıkarılmış + alfabetik tam liste.
-//     Her seride: ad, yazar, toplam kitap sayısı, okunan sayısı, ilerleme çubuğu.
+// Her seri (yayınevi + ad) çiftiyle tanımlanır. Aynı adlı iki seri farklı
+// yayınevlerine aitse ayrı ayrı listelenir.
 //
-// 7B: Seri detay — kitaplar series_order'a göre sıralı, okuma durumu renk kodlu.
-//     Geri butonu ile seri listesine dönülür.
-//
-// Liste / detay alt-görünüm; router'a ekstra rota eklenmez.
+// activeSeries: { name, publisher } — hangi seri detayda gösteriliyor.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../core/state.js";
 import { openModal } from "../ui/modal.js";
 
-// Popüler Seriler bölümünde gösterilecek maksimum seri sayısı.
 const POPULAR_COUNT = 6;
 
-// Şu an detayda gösterilen seri adı. Liste görünümünde null.
+// Şu an detayda gösterilen seri. Liste görünümünde null.
+// { name: string, publisher: string } formatında.
 let activeSeries = null;
 
-// ─── Dışa açık: router her ziyarette çağırır ────────────────────────────────
+// ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderSeries() {
   if (activeSeries) {
-    renderSeriesDetail(activeSeries);
+    renderSeriesDetail(activeSeries.name, activeSeries.publisher);
   } else {
     renderSeriesList();
   }
@@ -44,23 +41,23 @@ function renderSeriesList() {
         <iconify-icon icon="lucide:layers"></iconify-icon>
         <p>Henüz seri bilgisi olan kitap yok.</p>
         <p class="empty-page-hint">Kitaplarda seri bilgisi varsa Google Books'tan çekilecektir.</p>
-      </div>
-    `;
+      </div>`;
     return;
   }
 
-  // Popüler Seriler: kitap sayısına göre azalan, en fazla POPULAR_COUNT tane.
+  // Popüler Seriler: kitap sayısına göre azalan.
   const popular = [...seriesData]
     .sort((a, b) => b.total - a.total)
     .slice(0, POPULAR_COUNT);
 
-  // Tam liste: alfabetik.
-  const allSorted = [...seriesData]
-    .sort((a, b) => a.name.localeCompare(b.name, "tr"));
+  // Tam liste: önce seri adına, sonra yayınevine göre alfabetik.
+  const allSorted = [...seriesData].sort((a, b) => {
+    const nameComp = a.name.localeCompare(b.name, "tr");
+    if (nameComp !== 0) return nameComp;
+    return (a.publisher || "").localeCompare(b.publisher || "", "tr");
+  });
 
   container.innerHTML = `
-
-    <!-- ── Popüler Seriler ── -->
     <div class="series-section">
       <h2 class="dash-section-title">
         <iconify-icon icon="lucide:flame"></iconify-icon> Popüler Seriler
@@ -70,7 +67,6 @@ function renderSeriesList() {
       </div>
     </div>
 
-    <!-- ── Tüm Seriler ── -->
     <div class="series-section">
       <h2 class="dash-section-title">
         <iconify-icon icon="lucide:layers"></iconify-icon>
@@ -81,42 +77,55 @@ function renderSeriesList() {
         ${allSorted.map((s) => seriesRowHtml(s)).join("")}
       </div>
     </div>
-
   `;
 }
 
-// ─── Seri verilerini state.books'tan hesapla ─────────────────────────────────
+// ─── Seri verilerini (yayınevi + ad) çiftine göre grupla ────────────────────
 function buildSeriesData() {
+  // Anahtar: "yayınevi|||seri adı" — aynı adlı iki seri farklı yayınevindeyse
+  // farklı gruplar oluşturur.
   const map = {};
 
   for (const book of state.books) {
-    const name = (book.series || "").trim();
+    const name      = (book.series    || "").trim();
+    const publisher = (book.publisher || "").trim();
     if (!name) continue;
 
-    if (!map[name]) {
-      map[name] = {
+    const key = `${publisher}|||${name}`;
+
+    if (!map[key]) {
+      map[key] = {
         name,
-        author: book.author || "",
-        total:  0,
-        read:   0,
-        books:  [],
+        publisher,
+        total : 0,
+        read  : 0,
+        books : [],
       };
     }
-    map[name].total++;
-    map[name].books.push(book);
-    if (book.status === "okundu") map[name].read++;
+    map[key].total++;
+    map[key].books.push(book);
+    if (book.status === "okundu") map[key].read++;
   }
 
   return Object.values(map);
 }
 
-// ─── Popüler seri kartı (büyük kart) ─────────────────────────────────────────
+// ─── Görüntü adı: "Seri Adı — Yayınevi" (yayınevi varsa) ────────────────────
+function displayName(s) {
+  return s.publisher ? `${s.name} — ${s.publisher}` : s.name;
+}
+
+// ─── Popüler seri kartı ───────────────────────────────────────────────────────
 function popularCardHtml(s) {
   const pct = s.total > 0 ? Math.round((s.read / s.total) * 100) : 0;
   return `
-    <div class="series-popular-card" data-series="${escAttr(s.name)}">
+    <div class="series-popular-card"
+         data-series="${escAttr(s.name)}"
+         data-publisher="${escAttr(s.publisher)}">
       <div class="series-popular-name">${esc(s.name)}</div>
-      <div class="series-popular-author">${esc(s.author)}</div>
+      ${s.publisher
+        ? `<div class="series-popular-publisher">${esc(s.publisher)}</div>`
+        : ""}
       <div class="series-popular-stats">
         <span>${s.total} kitap</span>
         <span class="series-read-label">${s.read} okundu</span>
@@ -128,14 +137,16 @@ function popularCardHtml(s) {
   `;
 }
 
-// ─── Seri listesi satırı ─────────────────────────────────────────────────────
+// ─── Seri listesi satırı ──────────────────────────────────────────────────────
 function seriesRowHtml(s) {
   const pct = s.total > 0 ? Math.round((s.read / s.total) * 100) : 0;
   return `
-    <div class="series-row" data-series="${escAttr(s.name)}">
+    <div class="series-row"
+         data-series="${escAttr(s.name)}"
+         data-publisher="${escAttr(s.publisher)}">
       <div class="series-row-main">
         <span class="series-row-name">${esc(s.name)}</span>
-        <span class="series-row-author">${esc(s.author)}</span>
+        <span class="series-row-author">${esc(s.publisher || "")}</span>
       </div>
       <div class="series-row-right">
         <span class="series-row-count">${s.read}/${s.total}</span>
@@ -152,13 +163,18 @@ function seriesRowHtml(s) {
 // SERİ DETAY GÖRÜNÜMÜ
 // ═══════════════════════════════════════════════════════════════
 
-function renderSeriesDetail(seriesName) {
+function renderSeriesDetail(seriesName, publisher) {
   const container = document.getElementById("series-content");
   if (!container) return;
 
-  // Bu serinin kitaplarını series_order'a göre sırala, sırası olmayanlar sona.
+  // Hem seri adı hem yayınevi eşleşmeli — aynı adlı serilerin karışmaması için.
   const books = state.books
-    .filter((b) => b.series === seriesName)
+    .filter((b) => {
+      const nameMatch = b.series === seriesName;
+      // Yayınevi boşsa: kitabın da yayınevinin boş olması gerekir.
+      const pubMatch  = (b.publisher || "") === (publisher || "");
+      return nameMatch && pubMatch;
+    })
     .sort((a, b) => {
       const ao = a.series_order ?? 9999;
       const bo = b.series_order ?? 9999;
@@ -169,9 +185,6 @@ function renderSeriesDetail(seriesName) {
   const readCount  = books.filter((b) => b.status === "okundu").length;
   const totalCount = books.length;
   const pct        = totalCount > 0 ? Math.round((readCount / totalCount) * 100) : 0;
-  const author     = books[0]?.author || "";
-
-  const bookRows = books.map((b) => detailBookRowHtml(b)).join("");
 
   container.innerHTML = `
     <div class="detail-header">
@@ -181,11 +194,12 @@ function renderSeriesDetail(seriesName) {
       </button>
       <div class="detail-title-wrap">
         <h2 class="detail-title">${esc(seriesName)}</h2>
-        <span class="detail-subtitle">${esc(author)}</span>
+        ${publisher
+          ? `<span class="detail-subtitle">${esc(publisher)}</span>`
+          : ""}
       </div>
     </div>
 
-    <!-- Genel ilerleme -->
     <div class="series-detail-progress">
       <div class="series-progress-track">
         <div class="series-progress-fill" style="width:${pct}%"></div>
@@ -193,13 +207,11 @@ function renderSeriesDetail(seriesName) {
       <span class="progress-bar-label">${readCount} / ${totalCount} kitap okundu — %${pct}</span>
     </div>
 
-    <!-- Kitap sırası -->
     <div class="series-book-list" id="series-book-list">
-      ${bookRows}
+      ${books.map((b) => detailBookRowHtml(b)).join("")}
     </div>
   `;
 
-  // Geri butonu
   document.getElementById("series-back-btn")?.addEventListener("click", () => {
     activeSeries = null;
     renderSeriesList();
@@ -209,7 +221,7 @@ function renderSeriesDetail(seriesName) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ─── Detay kitap satırı: sıra no + kapak + başlık + yazar + durum ────────────
+// ─── Detay kitap satırı ───────────────────────────────────────────────────────
 function detailBookRowHtml(book) {
   const statusClass = `status-${book.status || "okunmadi"}`;
   const statusText  = statusLabelLocal(book.status);
@@ -238,21 +250,24 @@ function statusLabelLocal(status) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// OLAYLARI BAĞLA (yalnızca bir kez)
+// OLAYLARI BAĞLA
 // ═══════════════════════════════════════════════════════════════
 
 export function initSeries() {
   document.getElementById("series-content")?.addEventListener("click", (e) => {
 
-    // Popüler kart veya liste satırı → detay görünümüne geç
+    // Popüler kart veya liste satırı → detay
     const seriesEl = e.target.closest("[data-series]");
     if (seriesEl && seriesEl.dataset.series) {
-      activeSeries = seriesEl.dataset.series;
-      renderSeriesDetail(activeSeries);
+      activeSeries = {
+        name      : seriesEl.dataset.series,
+        publisher : seriesEl.dataset.publisher || "",
+      };
+      renderSeriesDetail(activeSeries.name, activeSeries.publisher);
       return;
     }
 
-    // Detaydaki kitap satırı → pop-up aç
+    // Detaydaki kitap satırı → pop-up
     const bookRow = e.target.closest(".series-book-row");
     if (bookRow && bookRow.dataset.id) {
       openModal(bookRow.dataset.id);
