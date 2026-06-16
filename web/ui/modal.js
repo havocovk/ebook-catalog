@@ -46,6 +46,7 @@ export function openModal(bookId) {
   document.getElementById("modal-file-size").textContent = formatFileSize(book.file_size);
   document.getElementById("modal-format").textContent    = (book.format || "").toUpperCase();
 
+  document.getElementById("modal-language").value      = book.language || "";
   document.getElementById("modal-rating").innerHTML = renderStars(book.rating, true, bookId);
 
   const modal = document.getElementById("book-modal");
@@ -79,6 +80,7 @@ async function saveModal() {
     series:       document.getElementById("modal-series").value.trim() || null,
     series_order: seriesOrderRaw === "" ? null : parseInt(seriesOrderRaw) || null,
     year:         yearRaw === "" ? null : parseInt(yearRaw) || null,
+    language:     document.getElementById("modal-language").value || null,
     status:       document.getElementById("modal-status").value,
     notes:        document.getElementById("modal-notes").value.trim() || null,
     finished_at:  finishedAt,
