@@ -1043,3 +1043,136 @@ textarea { resize: vertical; }
 .modal-footer .btn iconify-icon {
   font-size: 1em;
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 4A — Dashboard: istatistik kartları                             */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Sayfa sarmalayıcı ───────────────────────────────────────── */
+.dashboard-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ── Bölüm başlığı ───────────────────────────────────────────── */
+.dash-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.dash-section-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.dash-section-title iconify-icon {
+  font-size: 1rem;
+  color: var(--text-3);
+}
+
+/* ── Kart ızgarası ───────────────────────────────────────────── */
+/* Masaüstü: 3 sütun; mobil: 2 sütun */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+/* ── İstatistik kartı ────────────────────────────────────────── */
+.stat-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.stat-card:hover {
+  border-color: var(--border-2);
+  transform: translateY(-1px);
+}
+
+/* Ikon alanı */
+.stat-card-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  margin-bottom: 0.1rem;
+}
+
+/* Sayı */
+.stat-card-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+/* Etiket */
+.stat-card-label {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+/* ── Kart renk varyantları ───────────────────────────────────── */
+.stat-card--accent  .stat-card-icon { color: var(--accent); }
+.stat-card--accent  .stat-card-value { color: var(--accent); }
+.stat-card--accent  { border-color: rgba(124,106,247,0.3); }
+
+.stat-card--success .stat-card-icon { color: var(--success); }
+.stat-card--success .stat-card-value { color: var(--success); }
+
+.stat-card--warning .stat-card-icon { color: var(--warning); }
+.stat-card--warning .stat-card-value { color: var(--warning); }
+
+.stat-card--neutral .stat-card-icon { color: var(--text-3); }
+
+/* ── Okuma ilerleme çubuğu ───────────────────────────────────── */
+.progress-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.progress-bar-track {
+  height: 6px;
+  background: var(--bg-3);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--success);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.progress-bar-label {
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+
+/* ── Mobil: 2 sütun ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-card-value { font-size: 1.5rem; }
+  .dashboard-wrap { padding: 1rem 0.75rem 2rem; }
+}
