@@ -2,9 +2,9 @@
 // CATALOG — Katalog sayfası mantığı.
 //
 // 3A: sayfalama (50/sayfa) + ızgara↔liste görünüm geçişi
-// 3B: filtreler üstten sol yana taşındı. Format/Durum chip buton,
-//     Yazar/Seri <select>. Mobilde drawer (çekmece), masaüstünde kalıcı panel.
-//     Aktif filtre sayısı "Filtrele (N)" butonunda gösterilir.
+// 3B: filtreler sol yan panel. Format/Durum chip, Yazar/Yayınevi/Seri select.
+//     Yayınevi seçilmeden Seri filtresi pasif. Yayınevi seçilince yalnızca
+//     o yayınevinin serileri Seri listesinde görünür.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../core/state.js";
@@ -15,19 +15,20 @@ import { escapeHtml, statusLabel } from "../ui/common.js";
 const PER_PAGE = 50;
 
 const ui = {
-  search: "",
-  filters: { format: "", status: "", author: "", series: "" },
-  sort: "added_at_desc",
-  view: "grid",
-  page: 1,
+  search  : "",
+  filters : { format: "", status: "", author: "", publisher: "", series: "" },
+  sort    : "added_at_desc",
+  view    : "grid",
+  page    : 1,
 };
 
 let filtered = [];
 
-// ─── Dışa açık: router her ziyarette çağırır ────────────────────────────────
+// ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderCatalog() {
   populateSelectOptions();
   syncChips();
+  updateSeriesOptions();   // yayınevi filtresine göre seri listesini güncelle
   recompute(false);
 }
 
@@ -39,17 +40,18 @@ function recompute(resetPage = false) {
     const q = ui.search.toLowerCase();
     result = result.filter(
       (b) =>
-        b.title?.toLowerCase().includes(q) ||
+        b.title?.toLowerCase().includes(q)  ||
         b.author?.toLowerCase().includes(q) ||
         b.series?.toLowerCase().includes(q) ||
         b.tags?.some((t) => t.toLowerCase().includes(q))
     );
   }
 
-  if (ui.filters.format) result = result.filter((b) => b.format === ui.filters.format);
-  if (ui.filters.status) result = result.filter((b) => b.status === ui.filters.status);
-  if (ui.filters.author) result = result.filter((b) => b.author === ui.filters.author);
-  if (ui.filters.series) result = result.filter((b) => b.series === ui.filters.series);
+  if (ui.filters.format)    result = result.filter((b) => b.format    === ui.filters.format);
+  if (ui.filters.status)    result = result.filter((b) => b.status    === ui.filters.status);
+  if (ui.filters.author)    result = result.filter((b) => b.author    === ui.filters.author);
+  if (ui.filters.publisher) result = result.filter((b) => b.publisher === ui.filters.publisher);
+  if (ui.filters.series)    result = result.filter((b) => b.series    === ui.filters.series);
 
   filtered = sortBooks(result, ui.sort);
   if (resetPage) ui.page = 1;
@@ -73,7 +75,7 @@ function clampPage() {
 function sortBooks(books, key) {
   const s = [...books];
   if (key === "title_asc")
-    return s.sort((a, b) => (a.title || "").localeCompare(b.title || "", "tr"));
+    return s.sort((a, b) => (a.title  || "").localeCompare(b.title  || "", "tr"));
   if (key === "author_asc")
     return s.sort((a, b) => (a.author || "").localeCompare(b.author || "", "tr"));
   if (key === "series_asc")
@@ -81,20 +83,61 @@ function sortBooks(books, key) {
       const c = (a.series || "").localeCompare(b.series || "", "tr");
       return c !== 0 ? c : (a.series_order || 0) - (b.series_order || 0);
     });
-  // added_at_desc (varsayılan)
   return s.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
 }
 
-// ─── Yazar / Seri <select> seçeneklerini doldur ─────────────────────────────
+// ─── Select seçeneklerini doldur ─────────────────────────────────────────────
+
 function populateSelectOptions() {
-  const authors = [...new Set(state.books.map((b) => b.author).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, "tr")
-  );
-  const series = [...new Set(state.books.map((b) => b.series).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, "tr")
-  );
+  // Yazar listesi
+  const authors = [...new Set(state.books.map((b) => b.author).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "tr"));
   fillSelect("filter-author", authors, ui.filters.author);
-  fillSelect("filter-series", series, ui.filters.series);
+
+  // Yayınevi listesi
+  const publishers = [...new Set(state.books.map((b) => b.publisher).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "tr"));
+  fillSelect("filter-publisher", publishers, ui.filters.publisher);
+
+  // Seri listesi (yayınevi filtresine göre)
+  updateSeriesOptions();
+}
+
+// Seri select'ini seçili yayınevine göre doldur.
+// Yayınevi seçili değilse select pasif + "Tümü" göster.
+function updateSeriesOptions() {
+  const seriesEl    = document.getElementById("filter-series");
+  const seriesWrap  = document.getElementById("filter-series-wrap");
+  if (!seriesEl) return;
+
+  const pub = ui.filters.publisher;
+
+  if (!pub) {
+    // Pasif: yayınevi seçilmemiş
+    seriesEl.disabled = true;
+    seriesEl.innerHTML = `<option value="">— Önce yayınevi seçin —</option>`;
+    seriesEl.value = "";
+    ui.filters.series = "";
+    if (seriesWrap) seriesWrap.classList.add("filter-group--disabled");
+    return;
+  }
+
+  // Seçili yayınevine ait seriler
+  const seriesOfPub = [...new Set(
+    state.books
+      .filter((b) => b.publisher === pub && b.series)
+      .map((b) => b.series)
+  )].sort((a, b) => a.localeCompare(b, "tr"));
+
+  seriesEl.disabled = false;
+  if (seriesWrap) seriesWrap.classList.remove("filter-group--disabled");
+  fillSelect("filter-series", seriesOfPub, ui.filters.series);
+
+  if (seriesOfPub.length === 0) {
+    seriesEl.disabled = true;
+    seriesEl.innerHTML = `<option value="">Bu yayınevinde seri yok</option>`;
+    if (seriesWrap) seriesWrap.classList.add("filter-group--disabled");
+  }
 }
 
 function fillSelect(id, options, current) {
@@ -103,14 +146,15 @@ function fillSelect(id, options, current) {
   el.innerHTML = `<option value="">Tümü</option>`;
   options.forEach((opt) => {
     const o = document.createElement("option");
-    o.value = opt;
+    o.value       = opt;
     o.textContent = opt;
     el.appendChild(o);
   });
-  el.value = current; // seçimi koru
+  // Seçili değer hâlâ listede varsa koru, yoksa sıfırla.
+  el.value = options.includes(current) ? current : "";
 }
 
-// ─── Chip butonlarını mevcut ui.filters değeriyle senkronize et ─────────────
+// ─── Chip butonlarını senkronize et ─────────────────────────────────────────
 function syncChips() {
   syncChipGroup("filter-format-chips", ui.filters.format);
   syncChipGroup("filter-status-chips", ui.filters.status);
@@ -124,7 +168,7 @@ function syncChipGroup(containerId, activeValue) {
   });
 }
 
-// ─── Kitapları çiz ──────────────────────────────────────────────────────────
+// ─── Kitapları çiz ───────────────────────────────────────────────────────────
 function renderBooks() {
   const grid = document.getElementById("books-grid");
   if (!grid) return;
@@ -136,7 +180,7 @@ function renderBooks() {
     return;
   }
 
-  const start = (ui.page - 1) * PER_PAGE;
+  const start    = (ui.page - 1) * PER_PAGE;
   const fragment = document.createDocumentFragment();
   filtered.slice(start, start + PER_PAGE).forEach((book) => {
     fragment.appendChild(ui.view === "list" ? createBookRow(book) : createBookCard(book));
@@ -146,16 +190,16 @@ function renderBooks() {
 
 function createBookRow(book) {
   const row = document.createElement("div");
-  row.className = "book-row";
+  row.className  = "book-row";
   row.dataset.id = book.$id;
   const statusClass = `status-${book.status || "okunmadi"}`;
-  const coverHtml = book.cover_url
+  const coverHtml   = book.cover_url
     ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" loading="lazy" />`
     : `<div class="row-cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
   row.innerHTML = `
     <div class="row-cover">${coverHtml}</div>
     <div class="row-main">
-      <span class="row-title">${escapeHtml(book.title || "Başlıksız")}</span>
+      <span class="row-title">${escapeHtml(book.title  || "Başlıksız")}</span>
       <span class="row-author">${escapeHtml(book.author || "Yazar bilinmiyor")}</span>
     </div>
     <span class="badge row-format">${(book.format || "").toUpperCase()}</span>
@@ -183,23 +227,22 @@ function renderPagination() {
 
 function pageNumbers(current, total) {
   const range = [];
-  const left = Math.max(2, current - 1);
+  const left  = Math.max(2, current - 1);
   const right = Math.min(total - 1, current + 1);
   range.push(1);
-  if (left > 2) range.push("...");
+  if (left  > 2)          range.push("...");
   for (let i = left; i <= right; i++) range.push(i);
-  if (right < total - 1) range.push("...");
-  if (total > 1) range.push(total);
+  if (right < total - 1)  range.push("...");
+  if (total > 1)           range.push(total);
   return range;
 }
 
-// ─── Aktif filtre sayısını butona ve rozete yaz ──────────────────────────────
+// ─── Aktif filtre rozeti ─────────────────────────────────────────────────────
 function updateFilterBadge() {
   const count = Object.values(ui.filters).filter(Boolean).length;
   const badge = document.getElementById("filter-badge");
-  const btn = document.getElementById("filter-toggle");
+  const btn   = document.getElementById("filter-toggle");
   if (!badge || !btn) return;
-
   if (count > 0) {
     badge.textContent = count;
     badge.classList.remove("hidden");
@@ -223,22 +266,22 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", series: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "" };
   syncChips();
-  const authorEl = document.getElementById("filter-author");
-  const seriesEl = document.getElementById("filter-series");
-  if (authorEl) authorEl.value = "";
-  if (seriesEl) seriesEl.value = "";
+  ["filter-author", "filter-publisher"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  updateSeriesOptions(); // seriyi pasif yap
   recompute(true);
 }
 
-// ─── Mobil drawer aç / kapat ─────────────────────────────────────────────────
+// ─── Mobil drawer ────────────────────────────────────────────────────────────
 function openFilterPanel() {
   document.getElementById("filter-panel")?.classList.add("open");
   document.getElementById("filter-overlay")?.classList.remove("hidden");
-  document.body.style.overflow = "hidden"; // arka planı kilitle
+  document.body.style.overflow = "hidden";
 }
-
 function closeFilterPanel() {
   document.getElementById("filter-panel")?.classList.remove("open");
   document.getElementById("filter-overlay")?.classList.add("hidden");
@@ -247,19 +290,16 @@ function closeFilterPanel() {
 
 // ─── Olayları bağla (yalnızca bir kez) ──────────────────────────────────────
 export function initCatalog() {
-  // Arama
   document.getElementById("search-input")?.addEventListener("input", (e) => {
     ui.search = e.target.value;
     recompute(true);
   });
 
-  // Sıralama
   document.getElementById("sort-select")?.addEventListener("change", (e) => {
     ui.sort = e.target.value;
     recompute(true);
   });
 
-  // Görünüm geçişi
   document.querySelector(".view-toggle")?.addEventListener("click", (e) => {
     const btn = e.target.closest(".view-btn");
     if (!btn) return;
@@ -267,54 +307,55 @@ export function initCatalog() {
     render();
   });
 
-  // Chip filtreler (format + durum): panel içindeki tüm chip'lere tek dinleyici
+  // Chip filtreler (format + durum)
   document.getElementById("filter-panel")?.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
     if (!chip) return;
     const filterKey = chip.dataset.filter;
-    const value = chip.dataset.value;
+    const value     = chip.dataset.value;
     if (!filterKey) return;
-
     ui.filters[filterKey] = value;
     syncChipGroup(`filter-${filterKey}-chips`, value);
     recompute(true);
   });
 
-  // Yazar <select>
+  // Yazar
   document.getElementById("filter-author")?.addEventListener("change", (e) => {
     ui.filters.author = e.target.value;
     recompute(true);
   });
 
-  // Seri <select>
+  // Yayınevi — değişince seri listesini de güncelle
+  document.getElementById("filter-publisher")?.addEventListener("change", (e) => {
+    ui.filters.publisher = e.target.value;
+    ui.filters.series    = "";  // yayınevi değişince seri seçimini sıfırla
+    updateSeriesOptions();
+    recompute(true);
+  });
+
+  // Seri
   document.getElementById("filter-series")?.addEventListener("change", (e) => {
     ui.filters.series = e.target.value;
     recompute(true);
   });
 
-  // Filtreleri temizle butonu
   document.getElementById("filter-clear")?.addEventListener("click", clearFilters);
 
-  // Mobil: filtre butonu paneli açar
   document.getElementById("filter-toggle")?.addEventListener("click", openFilterPanel);
-
-  // Mobil: arka plan karartısına tıklayınca kapat
   document.getElementById("filter-overlay")?.addEventListener("click", closeFilterPanel);
 
-  // Sayfalama
   document.getElementById("pagination")?.addEventListener("click", (e) => {
     const btn = e.target.closest(".page-btn");
     if (!btn || btn.disabled) return;
     const total = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
     const val = btn.dataset.page;
-    if (val === "prev") ui.page = Math.max(1, ui.page - 1);
+    if      (val === "prev") ui.page = Math.max(1, ui.page - 1);
     else if (val === "next") ui.page = Math.min(total, ui.page + 1);
-    else ui.page = parseInt(val);
+    else                     ui.page = parseInt(val);
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
-  // Kart / satır tıklaması
   document.getElementById("books-grid")?.addEventListener("click", (e) => {
     const el = e.target.closest(".book-card, .book-row");
     if (el?.dataset.id) openModal(el.dataset.id);

@@ -2099,3 +2099,9 @@ textarea { resize: vertical; }
   text-overflow: ellipsis;
   margin-top: -0.15rem;
 }
+
+/* ── Katalog filtre paneli: pasif grup (yayınevi seçilmemiş seri) */
+.filter-group--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
