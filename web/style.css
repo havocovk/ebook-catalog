@@ -2026,3 +2026,66 @@ textarea { resize: vertical; }
 }
 
 .entity-hint iconify-icon { font-size: 0.85rem; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Custom Dialog — window.prompt / confirm yerine tema uyumlu     */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.custom-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 300;          /* modal (100) + toast (200) üstünde */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.custom-dialog-overlay.hidden { display: none; }
+
+.custom-dialog-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 380px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: dialog-in 0.15s ease;
+}
+
+@keyframes dialog-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+.custom-dialog-message {
+  font-size: 0.9rem;
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;   /* silme onayındaki \n satır kırar */
+}
+
+.custom-dialog-input {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.custom-dialog-input:focus { border-color: var(--accent); }
+
+.custom-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}

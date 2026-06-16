@@ -430,6 +430,24 @@
     </div>
   </div>
 
+  <!-- ── Custom Dialog (window.prompt / confirm yerine) ───────────────────── -->
+  <div id="custom-dialog-overlay" class="custom-dialog-overlay hidden">
+    <div class="custom-dialog-box" role="dialog" aria-modal="true">
+      <p class="custom-dialog-message" id="custom-dialog-message"></p>
+      <input
+        type="text"
+        class="custom-dialog-input hidden"
+        id="custom-dialog-input"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <div class="custom-dialog-actions">
+        <button class="btn btn-sm" id="custom-dialog-cancel">İptal</button>
+        <button class="btn btn-sm btn-primary" id="custom-dialog-ok">Tamam</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-container" class="toast-container"></div>
   <script type="module" src="app.js"></script>
 </body>
