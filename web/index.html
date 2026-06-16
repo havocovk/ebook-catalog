@@ -44,12 +44,13 @@
       </span>
 
       <!-- Navigasyon: masaüstünde yatay bar, mobilde açılır menü -->
+      <!-- Sıra: Panel → Katalog → Yazarlar → Yayınevleri → Seriler -->
       <nav id="main-nav" class="main-nav">
-        <a href="#catalog" data-nav="catalog" class="nav-link">
-          <iconify-icon icon="lucide:book-open"></iconify-icon><span>Katalog</span>
-        </a>
         <a href="#dashboard" data-nav="dashboard" class="nav-link">
           <iconify-icon icon="lucide:layout-dashboard"></iconify-icon><span>Panel</span>
+        </a>
+        <a href="#catalog" data-nav="catalog" class="nav-link">
+          <iconify-icon icon="lucide:book-open"></iconify-icon><span>Katalog</span>
         </a>
         <a href="#authors" data-nav="authors" class="nav-link">
           <iconify-icon icon="lucide:users"></iconify-icon><span>Yazarlar</span>
@@ -125,11 +126,24 @@
           </div>
 
           <span id="result-count" class="result-count"></span>
+
+          <!-- Izgara / Liste görünüm geçişi -->
+          <div class="view-toggle">
+            <button class="view-btn active" data-view="grid" title="Izgara görünüm">
+              <iconify-icon icon="lucide:layout-grid"></iconify-icon>
+            </button>
+            <button class="view-btn" data-view="list" title="Liste görünüm">
+              <iconify-icon icon="lucide:list"></iconify-icon>
+            </button>
+          </div>
         </div>
 
         <div class="grid-container">
           <div id="books-grid" class="books-grid"></div>
         </div>
+
+        <!-- Sayfalama (içerik catalog.js tarafından doldurulur) -->
+        <div id="pagination" class="pagination"></div>
       </section>
 
       <!-- ── Panel (iskelet — Aşama 4'te doldurulacak) ───────────── -->

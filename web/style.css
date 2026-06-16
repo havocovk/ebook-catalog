@@ -716,3 +716,131 @@ textarea { resize: vertical; }
   /* Aksiyon butonlarındaki metinler masaüstünde görünür */
   .btn-label { display: inline; }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 3A — Görünüm geçişi, liste satırı ve sayfalama                   */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Görünüm geçişi (ızgara / liste) ──────────────────────────── */
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-btn {
+  background: var(--bg-3);
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  padding: 0.4rem 0.55rem;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  transition: background 0.15s, color 0.15s;
+}
+.view-btn + .view-btn { border-left: 1px solid var(--border); }
+.view-btn:hover { color: var(--text); }
+.view-btn.active { background: var(--accent); color: #fff; }
+
+/* ── Liste görünümü: ızgarayı dikey listeye çevir ─────────────── */
+.books-grid.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.book-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.book-row:hover { border-color: var(--accent); }
+.book-row:active { transform: scale(0.998); }
+
+.row-cover {
+  width: 36px;
+  height: 50px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg-3);
+}
+.row-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.row-cover-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: var(--text-3); font-size: 1.1rem;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.row-title {
+  font-size: 0.85rem; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.row-author {
+  font-size: 0.75rem; color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.row-format { flex-shrink: 0; }
+
+/* Liste satırındaki durum rozeti: karttaki absolute konumu sıfırla */
+.book-row .book-status-badge {
+  position: static;
+  flex-shrink: 0;
+}
+
+/* ── Sayfalama ────────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  padding: 0.25rem 1.25rem 2rem;
+}
+.pagination:empty { padding: 0; }
+
+.page-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 0.5rem;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.page-btn:hover:not(:disabled) { border-color: var(--accent); }
+.page-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.page-ellipsis {
+  color: var(--text-3);
+  padding: 0 0.15rem;
+}
+
+/* ── Mobilde görünüm geçişini sağa hizala ─────────────────────── */
+@media (max-width: 600px) {
+  .view-toggle { align-self: flex-end; }
+}
