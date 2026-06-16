@@ -1176,3 +1176,189 @@ textarea { resize: vertical; }
   .stat-card-value { font-size: 1.5rem; }
   .dashboard-wrap { padding: 1rem 0.75rem 2rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 4B — Halka grafik, Son eklenenler, Şu an okunuyor              */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Okuma durumu: kartlar + grafik yan yana ─────────────────── */
+.reading-status-wrap {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.reading-status-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+/* 2 sütunlu kart ızgarası (okuma durumu kartları için) */
+.stat-grid--2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+/* ── Halka grafik sarmalayıcı ────────────────────────────────── */
+.donut-wrap {
+  flex-shrink: 0;
+  width: 180px;
+  height: 180px;
+  position: relative;
+}
+
+.donut-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Şu An Okunuyor: yatay kart sırası ──────────────────────── */
+.reading-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.reading-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.6rem 0.9rem 0.6rem 0.6rem;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+  max-width: 260px;
+}
+
+.reading-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.reading-card-cover {
+  width: 44px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg-3);
+}
+
+.reading-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.reading-card-cover .cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-3);
+}
+
+.reading-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.reading-card-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.reading-card-author {
+  font-size: 0.73rem;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+/* ── Son Eklenenler: yatay kaydırılabilir kapak şeridi ───────── */
+.recent-strip {
+  display: flex;
+  gap: 0.65rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
+}
+
+.recent-strip::-webkit-scrollbar { height: 4px; }
+.recent-strip::-webkit-scrollbar-track { background: transparent; }
+.recent-strip::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 99px;
+}
+
+.recent-item {
+  flex-shrink: 0;
+  width: 80px;
+  height: 112px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.recent-item:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+}
+
+.recent-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.recent-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-3);
+}
+
+/* ── Mobil uyarlamaları ──────────────────────────────────────── */
+@media (max-width: 600px) {
+  .reading-status-wrap {
+    flex-direction: column-reverse; /* grafik üstte, kartlar altta */
+  }
+
+  .donut-wrap {
+    width: 140px;
+    height: 140px;
+    align-self: center;
+  }
+
+  .reading-card { max-width: 100%; }
+  .reading-card-title,
+  .reading-card-author { max-width: none; }
+
+  .recent-item { width: 68px; height: 96px; }
+}
