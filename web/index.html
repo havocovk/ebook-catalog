@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ebook Kataloğu</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Iconify web bileşeni — Lucide ikonlarını siteye taşır (lucide:* adları) -->
   <script src="https://code.iconify.design/iconify-icon/3.0.2/iconify-icon.min.js"></script>
 </head>
 <body>
@@ -15,7 +14,6 @@
     <div class="login-box">
       <h1 class="login-title">Ebook Kataloğu</h1>
       <p class="login-sub">Kişisel kitaplığın</p>
-
       <div class="field">
         <label for="login-email">E-posta</label>
         <input type="email" id="login-email" placeholder="orhan@example.com" autocomplete="email" />
@@ -43,7 +41,6 @@
         <span>Ebook Kataloğu</span>
       </span>
 
-      <!-- Navigasyon: masaüstünde yatay bar, mobilde açılır menü -->
       <!-- Sıra: Panel → Katalog → Yazarlar → Yayınevleri → Seriler -->
       <nav id="main-nav" class="main-nav">
         <a href="#dashboard" data-nav="dashboard" class="nav-link">
@@ -77,7 +74,7 @@
       </div>
     </header>
 
-    <!-- Yükleniyor (sayfadan bağımsız, her zaman erişilebilir) -->
+    <!-- Yükleniyor -->
     <div id="loading" class="loading hidden">
       <div class="spinner"></div>
       <span>Kitaplar yükleniyor...</span>
@@ -86,48 +83,25 @@
     <!-- Sayfalar -->
     <main class="page-container">
 
-      <!-- ── Katalog (varsayılan açık sayfa) ─────────────────────── -->
+      <!-- ── Katalog ───────────────────────────────────────────────── -->
       <section id="catalog-page" class="page">
+
+        <!-- Araç çubuğu: arama + sıralama + görünüm + mobil filtre butonu -->
         <div class="toolbar">
           <div class="search-wrap">
             <iconify-icon icon="lucide:search" class="search-icon"></iconify-icon>
             <input type="text" id="search-input" placeholder="Başlık, yazar, seri..." class="search-input" />
           </div>
 
-          <div class="filters">
-            <select id="filter-format" class="select">
-              <option value="">Format</option>
-              <option value="epub">EPUB</option>
-              <option value="pdf">PDF</option>
-            </select>
-
-            <select id="filter-status" class="select">
-              <option value="">Durum</option>
-              <option value="okunmadi">Okunmadı</option>
-              <option value="sirada">Sırada</option>
-              <option value="okunuyor">Okunuyor</option>
-              <option value="okundu">Okundu</option>
-            </select>
-
-            <select id="filter-author" class="select">
-              <option value="">Yazar</option>
-            </select>
-
-            <select id="filter-series" class="select">
-              <option value="">Seri</option>
-            </select>
-
-            <select id="sort-select" class="select">
-              <option value="added_at_desc">Yeni eklenen</option>
-              <option value="title_asc">Başlık A–Z</option>
-              <option value="author_asc">Yazar A–Z</option>
-              <option value="series_asc">Seri</option>
-            </select>
-          </div>
+          <select id="sort-select" class="select">
+            <option value="added_at_desc">Yeni eklenen</option>
+            <option value="title_asc">Başlık A–Z</option>
+            <option value="author_asc">Yazar A–Z</option>
+            <option value="series_asc">Seri</option>
+          </select>
 
           <span id="result-count" class="result-count"></span>
 
-          <!-- Izgara / Liste görünüm geçişi -->
           <div class="view-toggle">
             <button class="view-btn active" data-view="grid" title="Izgara görünüm">
               <iconify-icon icon="lucide:layout-grid"></iconify-icon>
@@ -136,17 +110,75 @@
               <iconify-icon icon="lucide:list"></iconify-icon>
             </button>
           </div>
+
+          <!-- Mobilde filtreyi açan buton (masaüstünde gizli) -->
+          <button id="filter-toggle" class="btn btn-sm filter-toggle-btn" title="Filtreler">
+            <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon>
+            <span>Filtrele</span>
+            <span id="filter-badge" class="filter-badge hidden">0</span>
+          </button>
         </div>
 
-        <div class="grid-container">
-          <div id="books-grid" class="books-grid"></div>
-        </div>
+        <!-- Katalog gövdesi: sol panel + sağ ızgara -->
+        <div class="catalog-body">
 
-        <!-- Sayfalama (içerik catalog.js tarafından doldurulur) -->
-        <div id="pagination" class="pagination"></div>
+          <!-- Sol: filtre paneli (masaüstünde kalıcı, mobilde drawer) -->
+          <aside id="filter-panel" class="filter-panel">
+            <div class="filter-panel-header">
+              <span class="filter-panel-title">
+                <iconify-icon icon="lucide:sliders-horizontal"></iconify-icon> Filtreler
+              </span>
+              <button id="filter-clear" class="btn-link" title="Tüm filtreleri temizle">Temizle</button>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Format</label>
+              <div class="filter-chips" id="filter-format-chips">
+                <button class="chip active" data-filter="format" data-value="">Tümü</button>
+                <button class="chip" data-filter="format" data-value="epub">EPUB</button>
+                <button class="chip" data-filter="format" data-value="pdf">PDF</button>
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Durum</label>
+              <div class="filter-chips" id="filter-status-chips">
+                <button class="chip active" data-filter="status" data-value="">Tümü</button>
+                <button class="chip" data-filter="status" data-value="okunmadi">Okunmadı</button>
+                <button class="chip" data-filter="status" data-value="sirada">Sırada</button>
+                <button class="chip" data-filter="status" data-value="okunuyor">Okunuyor</button>
+                <button class="chip" data-filter="status" data-value="okundu">Okundu</button>
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Yazar</label>
+              <select id="filter-author" class="select select-full">
+                <option value="">Tümü</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label class="filter-label">Seri</label>
+              <select id="filter-series" class="select select-full">
+                <option value="">Tümü</option>
+              </select>
+            </div>
+          </aside>
+
+          <!-- Mobil filtre çekmece arka planı (tıklayınca kapanır) -->
+          <div id="filter-overlay" class="filter-overlay hidden"></div>
+
+          <!-- Sağ: kitap ızgarası + sayfalama -->
+          <div class="catalog-main">
+            <div id="books-grid" class="books-grid"></div>
+            <div id="pagination" class="pagination"></div>
+          </div>
+
+        </div>
       </section>
 
-      <!-- ── Panel (iskelet — Aşama 4'te doldurulacak) ───────────── -->
+      <!-- ── Panel ─────────────────────────────────────────────────── -->
       <section id="dashboard-page" class="page hidden">
         <div class="page-placeholder">
           <iconify-icon icon="lucide:layout-dashboard"></iconify-icon>
@@ -154,7 +186,7 @@
         </div>
       </section>
 
-      <!-- ── Yazarlar (iskelet — Aşama 5'te doldurulacak) ────────── -->
+      <!-- ── Yazarlar ───────────────────────────────────────────────── -->
       <section id="authors-page" class="page hidden">
         <div class="page-placeholder">
           <iconify-icon icon="lucide:users"></iconify-icon>
@@ -162,7 +194,7 @@
         </div>
       </section>
 
-      <!-- ── Yayınevleri (iskelet — Aşama 6'da doldurulacak) ─────── -->
+      <!-- ── Yayınevleri ────────────────────────────────────────────── -->
       <section id="publishers-page" class="page hidden">
         <div class="page-placeholder">
           <iconify-icon icon="lucide:building-2"></iconify-icon>
@@ -170,7 +202,7 @@
         </div>
       </section>
 
-      <!-- ── Seriler (iskelet — Aşama 7'de doldurulacak) ─────────── -->
+      <!-- ── Seriler ────────────────────────────────────────────────── -->
       <section id="series-page" class="page hidden">
         <div class="page-placeholder">
           <iconify-icon icon="lucide:layers"></iconify-icon>
@@ -181,23 +213,16 @@
     </main>
   </div>
 
-  <!-- ── Kitap Detay Pop-up'ı (tüm sayfalarda ortak) ─────────────── -->
+  <!-- ── Kitap Detay Pop-up'ı ─────────────────────────────────────── -->
   <div id="book-modal" class="modal hidden">
     <div class="modal-box">
-
       <div class="modal-header">
         <h2 class="modal-heading">Kitap Detayı</h2>
         <button id="modal-close" class="modal-close" title="Kapat">✕</button>
       </div>
-
       <div class="modal-body">
-
-        <!-- Sol: kapak -->
         <div class="modal-cover" id="modal-cover"></div>
-
-        <!-- Sağ: form -->
         <div class="modal-fields">
-
           <div class="field">
             <label>Başlık</label>
             <input type="text" id="modal-title" />
@@ -206,7 +231,6 @@
             <label>Yazar</label>
             <input type="text" id="modal-author" />
           </div>
-
           <div class="field-row">
             <div class="field">
               <label>Seri</label>
@@ -217,7 +241,6 @@
               <input type="number" id="modal-series-order" min="1" />
             </div>
           </div>
-
           <div class="field-row">
             <div class="field">
               <label>Durum</label>
@@ -233,47 +256,37 @@
               <input type="number" id="modal-year" min="1000" max="2099" />
             </div>
           </div>
-
           <div class="field">
             <label>Puan</label>
             <div id="modal-rating" class="star-row"></div>
           </div>
-
           <div class="field">
             <label>Bitirildi</label>
             <input type="date" id="modal-finished-at" />
           </div>
-
           <div class="field">
             <label>Notlar</label>
             <textarea id="modal-notes" rows="3" placeholder="Kısa not..."></textarea>
           </div>
-
           <div class="field">
             <label>Etiketler <span class="hint">(virgülle ayır)</span></label>
             <input type="text" id="modal-tags" placeholder="fantastik, klasik, okunacak" />
           </div>
-
           <div class="file-meta">
             <span id="modal-format" class="badge"></span>
             <span id="modal-file-size" class="meta-text"></span>
             <span id="modal-file-path" class="meta-path"></span>
           </div>
-
         </div>
       </div>
-
       <div class="modal-footer">
         <button id="modal-delete" class="btn btn-danger">Sil</button>
         <button id="modal-save" class="btn btn-primary">Kaydet</button>
       </div>
-
     </div>
   </div>
 
-  <!-- ── Bildirimler ─────────────────────────────────────────────── -->
   <div id="toast-container" class="toast-container"></div>
-
   <script type="module" src="app.js"></script>
 </body>
 </html>

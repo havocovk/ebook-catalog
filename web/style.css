@@ -844,3 +844,185 @@ textarea { resize: vertical; }
 @media (max-width: 600px) {
   .view-toggle { align-self: flex-end; }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 3B — Yan panel filtreler, chip butonlar, mobil drawer           */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Katalog gövde düzeni: sol panel + sağ ızgara ────────────── */
+.catalog-body {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+}
+
+.catalog-main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.25rem;
+}
+
+/* ── Filtre paneli — masaüstü: kalıcı sol sütun ──────────────── */
+.filter-panel {
+  width: 210px;
+  flex-shrink: 0;
+  background: var(--bg-2);
+  border-right: 1px solid var(--border);
+  padding: 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-height: calc(100vh - 110px); /* header + toolbar yüksekliği kadar düş */
+  position: sticky;
+  top: 56px; /* header yüksekliği */
+  overflow-y: auto;
+}
+
+.filter-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-panel-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* "Temizle" linki */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+.btn-link:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+/* ── Filtre grubu (başlık + chip veya select) ─────────────────── */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Chip butonlar (format + durum) ──────────────────────────── */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  padding: 0.28rem 0.65rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Tam genişlik select (panel içinde) */
+.select-full { width: 100%; }
+
+/* ── Mobil: filtre butonunu araç çubuğunda göster ─────────────── */
+.filter-toggle-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Aktif filtre sayısı rozeti */
+.filter-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0.05rem 0.4rem;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.filter-toggle-btn.has-filters {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Mobil drawer arka plan karartısı ────────────────────────── */
+.filter-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 60;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Responsive — mobil: panel drawer'a dönüşür                      */
+/* ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  /* Masaüstü panel gizle; drawer olarak konumlandır */
+  .filter-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 70;
+    width: 260px;
+    min-height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    border-right: 1px solid var(--border-2);
+    overflow-y: auto;
+  }
+
+  .filter-panel.open {
+    transform: translateX(0);
+  }
+
+  /* Mobil: filtre butonunu araç çubuğunda göster */
+  .filter-toggle-btn { display: flex; }
+
+  /* catalog-main tam genişlik (panel yokken) */
+  .catalog-main { padding: 0.75rem; }
+}
+
+@media (min-width: 901px) {
+  /* Masaüstü: filtre butonu gereksiz, gizle */
+  .filter-toggle-btn { display: none; }
+
+  /* Masaüstü toolbar'da sıralama yanındaki boşluk */
+  .toolbar { gap: 0.75rem; }
+}
