@@ -1858,3 +1858,15 @@ textarea { resize: vertical; }
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* DÜZELTME — Seri detay satırındaki durum rozeti                  */
+/* book-status-badge genel olarak position:absolute tanımlı;       */
+/* kart-dışı satırlarda (series-book-row) static olması gerekir.   */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.series-book-row .book-status-badge {
+  position: static;
+  flex-shrink: 0;
+  align-self: center;
+}
