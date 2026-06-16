@@ -17,7 +17,7 @@ import { initCatalog, renderCatalog } from "./pages/catalog.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderAuthors, initAuthors } from "./pages/authors.js";
 import { renderPublishers, initPublishers } from "./pages/publishers.js";
-import { renderSeries } from "./pages/series.js";
+import { renderSeries, initSeries } from "./pages/series.js";
 import {
   fetchAllBooks,
   createBookRecord,
@@ -127,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initCatalog();
   initAuthors();
   initPublishers();
+  initSeries();
   initModal();
   bindBackupRestore();
 
