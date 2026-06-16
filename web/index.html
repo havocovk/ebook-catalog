@@ -214,6 +214,8 @@
   </div>
 
   <!-- ── Kitap Detay Pop-up'ı ─────────────────────────────────────── -->
+  <!-- Alan sırası: Kitap Adı → Yazar → Yayınevi → Seri → Durum/Yıl →
+                   Puan → Bitirildi → Notlar → Etiketler              -->
   <div id="book-modal" class="modal hidden">
     <div class="modal-box">
       <div class="modal-header">
@@ -223,17 +225,37 @@
       <div class="modal-body">
         <div class="modal-cover" id="modal-cover"></div>
         <div class="modal-fields">
+
+          <!-- Kitap Adı -->
           <div class="field">
-            <label>Başlık</label>
+            <label>
+              <iconify-icon icon="lucide:book-open"></iconify-icon> Kitap Adı
+            </label>
             <input type="text" id="modal-title" />
           </div>
+
+          <!-- Yazar -->
           <div class="field">
-            <label>Yazar</label>
+            <label>
+              <iconify-icon icon="lucide:user"></iconify-icon> Yazar
+            </label>
             <input type="text" id="modal-author" />
           </div>
+
+          <!-- Yayınevi (YENİ) -->
+          <div class="field">
+            <label>
+              <iconify-icon icon="lucide:building-2"></iconify-icon> Yayınevi
+            </label>
+            <input type="text" id="modal-publisher" placeholder="Yayınevi adı" />
+          </div>
+
+          <!-- Seri + Sıra No -->
           <div class="field-row">
             <div class="field">
-              <label>Seri</label>
+              <label>
+                <iconify-icon icon="lucide:layers"></iconify-icon> Seri
+              </label>
               <input type="text" id="modal-series" />
             </div>
             <div class="field field-narrow">
@@ -241,9 +263,13 @@
               <input type="number" id="modal-series-order" min="1" />
             </div>
           </div>
+
+          <!-- Durum + Yıl -->
           <div class="field-row">
             <div class="field">
-              <label>Durum</label>
+              <label>
+                <iconify-icon icon="lucide:bookmark"></iconify-icon> Durum
+              </label>
               <select id="modal-status" class="select">
                 <option value="okunmadi">Okunmadı</option>
                 <option value="sirada">Sırada</option>
@@ -252,36 +278,62 @@
               </select>
             </div>
             <div class="field field-narrow">
-              <label>Yıl</label>
+              <label>
+                <iconify-icon icon="lucide:calendar"></iconify-icon> Yıl
+              </label>
               <input type="number" id="modal-year" min="1000" max="2099" />
             </div>
           </div>
+
+          <!-- Puan -->
           <div class="field">
-            <label>Puan</label>
+            <label>
+              <iconify-icon icon="lucide:star"></iconify-icon> Puan
+            </label>
             <div id="modal-rating" class="star-row"></div>
           </div>
+
+          <!-- Bitirildi -->
           <div class="field">
-            <label>Bitirildi</label>
+            <label>
+              <iconify-icon icon="lucide:check-circle"></iconify-icon> Bitirildi
+            </label>
             <input type="date" id="modal-finished-at" />
           </div>
+
+          <!-- Notlar -->
           <div class="field">
-            <label>Notlar</label>
+            <label>
+              <iconify-icon icon="lucide:notebook-pen"></iconify-icon> Notlar
+            </label>
             <textarea id="modal-notes" rows="3" placeholder="Kısa not..."></textarea>
           </div>
+
+          <!-- Etiketler -->
           <div class="field">
-            <label>Etiketler <span class="hint">(virgülle ayır)</span></label>
+            <label>
+              <iconify-icon icon="lucide:tag"></iconify-icon>
+              Etiketler <span class="hint">(virgülle ayır)</span>
+            </label>
             <input type="text" id="modal-tags" placeholder="fantastik, klasik, okunacak" />
           </div>
+
+          <!-- Dosya bilgisi (sadece okunur) -->
           <div class="file-meta">
             <span id="modal-format" class="badge"></span>
             <span id="modal-file-size" class="meta-text"></span>
             <span id="modal-file-path" class="meta-path"></span>
           </div>
+
         </div>
       </div>
       <div class="modal-footer">
-        <button id="modal-delete" class="btn btn-danger">Sil</button>
-        <button id="modal-save" class="btn btn-primary">Kaydet</button>
+        <button id="modal-delete" class="btn btn-danger">
+          <iconify-icon icon="lucide:trash-2"></iconify-icon> Sil
+        </button>
+        <button id="modal-save" class="btn btn-primary">
+          <iconify-icon icon="lucide:save"></iconify-icon> Kaydet
+        </button>
       </div>
     </div>
   </div>

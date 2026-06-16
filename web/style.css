@@ -1026,3 +1026,20 @@ textarea { resize: vertical; }
   /* Masaüstü toolbar'da sıralama yanındaki boşluk */
   .toolbar { gap: 0.75rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 3C — Modal alan ikonları                                         */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Label içindeki Lucide ikonları metinle aynı hizada dursun */
+.modal-fields label iconify-icon {
+  font-size: 0.9em;
+  color: var(--accent);
+  vertical-align: -0.1em;
+  margin-right: 0.15rem;
+}
+
+/* Footer butonlarındaki ikonlar */
+.modal-footer .btn iconify-icon {
+  font-size: 1em;
+}
