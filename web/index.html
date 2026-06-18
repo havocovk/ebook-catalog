@@ -171,6 +171,34 @@
                 <option value="">— Önce yayınevi seçin —</option>
               </select>
             </div>
+
+            <!-- ── Adım J4: Dil Filtresi ─────────────────────────────── -->
+            <div class="filter-group">
+              <label class="filter-label">Dil</label>
+              <div class="filter-chips" id="filter-language-chips">
+                <button class="chip active" data-filter="language" data-value="">Tümü</button>
+                <button class="chip" data-filter="language" data-value="tr">🇹🇷 Türkçe</button>
+                <button class="chip" data-filter="language" data-value="en">🇬🇧 İngilizce</button>
+                <button class="chip" data-filter="language" data-value="de">🇩🇪 Almanca</button>
+                <button class="chip" data-filter="language" data-value="fr">🇫🇷 Fransızca</button>
+                <button class="chip" data-filter="language" data-value="es">🇪🇸 İspanyolca</button>
+                <button class="chip" data-filter="language" data-value="it">🇮🇹 İtalyanca</button>
+                <button class="chip" data-filter="language" data-value="ru">🇷🇺 Rusça</button>
+                <button class="chip" data-filter="language" data-value="ar">🇸🇦 Arapça</button>
+                <button class="chip" data-filter="language" data-value="ja">🇯🇵 Japonca</button>
+                <button class="chip" data-filter="language" data-value="zh">🇨🇳 Çince</button>
+                <button class="chip" data-filter="language" data-value="other">Diğer</button>
+              </div>
+            </div>
+
+            <!-- ── Adım J4: Etiket Filtresi ──────────────────────────── -->
+            <div class="filter-group" id="filter-tag-wrap">
+              <label class="filter-label">Etiket</label>
+              <div class="filter-chips" id="filter-tag-chips">
+                <button class="chip active" data-filter="tag" data-value="">Tümü</button>
+                <!-- Dinamik chip'ler catalog.js tarafından doldurulur -->
+              </div>
+            </div>
           </aside>
 
           <!-- Mobil filtre çekmece arka planı (tıklayınca kapanır) -->

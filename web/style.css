@@ -2105,3 +2105,14 @@ textarea { resize: vertical; }
   opacity: 0.5;
   pointer-events: none;
 }
+
+/* ── Adım J4: Dil chip'leri — bayrak emojisi için hafif genişletme */
+#filter-language-chips .chip {
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+}
+
+/* ── Adım J4: Etiket chip'leri — hiç etiket yoksa grubu gizle */
+#filter-tag-wrap:has(#filter-tag-chips .chip[data-value=""]:only-child) {
+  display: none;
+}

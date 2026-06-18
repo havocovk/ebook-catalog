@@ -16,7 +16,7 @@ const PER_PAGE = 50;
 
 const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "" },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "" },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -27,9 +27,37 @@ let filtered = [];
 // ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderCatalog() {
   populateSelectOptions();
+  populateTagChips();     // ── Adım J4: dinamik etiket chip'leri
   syncChips();
   updateSeriesOptions();   // yayınevi filtresine göre seri listesini güncelle
   recompute(false);
+}
+
+// ── Adım J4: Katalogdaki tüm etiketi toplayıp chip olarak doldur ────────────
+function populateTagChips() {
+  const container = document.getElementById("filter-tag-chips");
+  if (!container) return;
+
+  // Tüm kitapların etiketlerini topla, tekrar etmeyenleri al, sırala
+  const allTags = [...new Set(
+    state.books.flatMap((b) => b.tags || []).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "tr"));
+
+  // Sadece etiket chip'lerini yenile (Tümü butonu HTML'de kalıcı)
+  const existing = [...container.querySelectorAll(".chip[data-filter='tag']:not([data-value=''])")];
+  existing.forEach((c) => c.remove());
+
+  allTags.forEach((tag) => {
+    const btn = document.createElement("button");
+    btn.className    = "chip";
+    btn.dataset.filter = "tag";
+    btn.dataset.value  = tag;
+    btn.textContent  = tag;
+    container.appendChild(btn);
+  });
+
+  // Seçili etiketi senkronize et
+  syncChipGroup("filter-tag-chips", ui.filters.tag);
 }
 
 // ─── Filtrele + sırala + çiz ────────────────────────────────────────────────
@@ -52,6 +80,10 @@ function recompute(resetPage = false) {
   if (ui.filters.author)    result = result.filter((b) => b.author    === ui.filters.author);
   if (ui.filters.publisher) result = result.filter((b) => b.publisher === ui.filters.publisher);
   if (ui.filters.series)    result = result.filter((b) => b.series    === ui.filters.series);
+  // ── Adım J4: Dil ve Etiket filtreleri ───────────────────────────────────
+  if (ui.filters.language)  result = result.filter((b) => b.language  === ui.filters.language);
+  if (ui.filters.tag)       result = result.filter((b) => b.tags?.includes(ui.filters.tag));
+  // ── Adım J4 sonu ─────────────────────────────────────────────────────────
 
   filtered = sortBooks(result, ui.sort);
   if (resetPage) ui.page = 1;
@@ -158,6 +190,9 @@ function fillSelect(id, options, current) {
 function syncChips() {
   syncChipGroup("filter-format-chips", ui.filters.format);
   syncChipGroup("filter-status-chips", ui.filters.status);
+  // ── Adım J4 ──
+  syncChipGroup("filter-language-chips", ui.filters.language);
+  syncChipGroup("filter-tag-chips", ui.filters.tag);
 }
 
 function syncChipGroup(containerId, activeValue) {
@@ -266,7 +301,7 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "" };
   syncChips();
   ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);
