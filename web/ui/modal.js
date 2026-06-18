@@ -165,10 +165,51 @@ async function applyUpdate(id, updates) {
   }
 }
 
+// ── Adım J5: Custom dialog ile onay ─────────────────────────────────────────
+// Tarayıcının varsayılan confirm() kutusu yerine index.html'deki
+// #custom-dialog-overlay kullanılır. Böylece silme onayı da tema uyumlu olur.
+//
+// entity-picker.js'te aynı dialog sistemi mevcuttur; burada modal.js'e özgü
+// hafif bir kopyası kullanılır (import bağımlılığı eklememek için).
+function _showConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay  = document.getElementById("custom-dialog-overlay");
+    const msgEl    = document.getElementById("custom-dialog-message");
+    const inputEl  = document.getElementById("custom-dialog-input");
+    const okBtn    = document.getElementById("custom-dialog-ok");
+    const cancelBtn= document.getElementById("custom-dialog-cancel");
+
+    if (!overlay || !msgEl || !okBtn || !cancelBtn) {
+      // Fallback: custom dialog yoksa tarayıcının confirm'ini kullan
+      resolve(confirm(message));
+      return;
+    }
+
+    msgEl.textContent = message;
+    inputEl?.classList.add("hidden");   // Input alanı gizli (sadece onay istiyoruz)
+    overlay.classList.remove("hidden");
+
+    function cleanup(result) {
+      overlay.classList.add("hidden");
+      okBtn.removeEventListener("click", onOk);
+      cancelBtn.removeEventListener("click", onCancel);
+      resolve(result);
+    }
+
+    const onOk     = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+
+    okBtn.addEventListener("click", onOk,     { once: true });
+    cancelBtn.addEventListener("click", onCancel, { once: true });
+  });
+}
+
 // ─── Sil ────────────────────────────────────────────────────────────────────
 async function deleteCurrentBook() {
   if (!editingId) return;
-  if (!confirm("Bu kitabı katalogdan sil?")) return;
+  // ── Adım J5: confirm() → _showConfirm() (tema uyumlu custom dialog) ──────
+  const confirmed = await _showConfirm("Bu kitabı katalogdan sil?");
+  if (!confirmed) return;
 
   try {
     await deleteBookRecord(editingId);
