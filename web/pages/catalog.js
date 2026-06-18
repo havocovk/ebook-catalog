@@ -24,12 +24,49 @@ const ui = {
 
 let filtered = [];
 
+// ── Adım J6: LocalStorage yardımcıları ──────────────────────────────────────
+// Kaydedilen tercihler: arama terimi, sıralama, görünüm modu (kart/liste).
+// Filtreler (yazar, yayınevi, dil vb.) kasıtlı olarak kaydedilmiyor —
+// bir sonraki oturumda beklenmedik "kitaplar eksik" durumu yaratabilir.
+
+const _PREFS_KEY = {
+  search : "ec_search",
+  sort   : "ec_sort",
+  view   : "ec_view",
+};
+
+function _savePref(key, value) {
+  try { localStorage.setItem(_PREFS_KEY[key], value); } catch { /* özel mod */ }
+}
+
+function _loadPrefs() {
+  try {
+    const search = localStorage.getItem(_PREFS_KEY.search) ?? "";
+    const sort   = localStorage.getItem(_PREFS_KEY.sort)   ?? "added_at_desc";
+    const view   = localStorage.getItem(_PREFS_KEY.view)   ?? "grid";
+
+    ui.search = search;
+    ui.sort   = sort;
+    ui.view   = view;
+
+    // Arama kutusunu doldur
+    const searchEl = document.getElementById("search-input");
+    if (searchEl) searchEl.value = search;
+
+    // Sıralama select'ini senkronize et
+    const sortEl = document.getElementById("sort-select");
+    if (sortEl) sortEl.value = sort;
+  } catch { /* özel mod veya localStorage erişim hatası — varsayılanlarla devam */ }
+}
+// ── Adım J6 sonu ─────────────────────────────────────────────────────────────
+
 // ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderCatalog() {
+  _loadPrefs();               // ── Adım J6: kayıtlı tercihleri yükle
   populateSelectOptions();
-  populateTagChips();     // ── Adım J4: dinamik etiket chip'leri
+  populateTagChips();         // ── Adım J4: dinamik etiket chip'leri
   syncChips();
-  updateSeriesOptions();   // yayınevi filtresine göre seri listesini güncelle
+  updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle
   recompute(false);
 }
 
@@ -338,6 +375,7 @@ export function initCatalog() {
   let _searchDebounceTimer = null;
   document.getElementById("search-input")?.addEventListener("input", (e) => {
     ui.search = e.target.value;
+    _savePref("search", ui.search);   // ── Adım J6: kaydet
     clearTimeout(_searchDebounceTimer);
     _searchDebounceTimer = setTimeout(() => recompute(true), 300);
   });
@@ -345,6 +383,7 @@ export function initCatalog() {
 
   document.getElementById("sort-select")?.addEventListener("change", (e) => {
     ui.sort = e.target.value;
+    _savePref("sort", ui.sort);   // ── Adım J6: kaydet
     recompute(true);
   });
 
@@ -352,6 +391,7 @@ export function initCatalog() {
     const btn = e.target.closest(".view-btn");
     if (!btn) return;
     ui.view = btn.dataset.view;
+    _savePref("view", ui.view);   // ── Adım J6: kaydet
     render();
   });
 
