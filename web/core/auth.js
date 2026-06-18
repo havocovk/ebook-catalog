@@ -17,11 +17,32 @@ export async function initAuth() {
   try {
     state.user = await account.get();
     showApp();
-    await loadBooks();           // önce kitaplar gelsin
-    await bootstrapAuthors();    // yazar listesini yükle + senkronize et
-    await bootstrapPublishers(); // yayınevi listesini yükle + senkronize et
-    await bootstrapSeries();     // seri listesini yükle (yayınevlerine bağlı)
-    initRouter();                // sonra ilgili sayfa çizilsin
+
+    // ── Adım J2: Paralel başlangıç yüklemesi ──────────────────────────────
+    // Kitaplar, yazarlar ve yayınevleri birbirinden bağımsız Appwrite sorguları
+    // olduğu için aynı anda paralel başlatılır. Seriler yayınevi ID'lerine
+    // bağlı olduğundan yayınevleri yüklendikten sonra çalıştırılır.
+    //
+    // Mevcut (sıralı — yavaş):
+    //   await loadBooks();           // ~800ms
+    //   await bootstrapAuthors();    // ~400ms
+    //   await bootstrapPublishers(); // ~400ms
+    //   await bootstrapSeries();     // ~400ms
+    //   Toplam: ~2000ms
+    //
+    // Yeni (paralel — hızlı):
+    //   await Promise.all([loadBooks, bootstrapAuthors, bootstrapPublishers])
+    //   await bootstrapSeries();
+    //   Toplam: ~800ms (en uzun sürenin kadar)
+    await Promise.all([
+      loadBooks(),
+      bootstrapAuthors(),
+      bootstrapPublishers(),
+    ]);
+    await bootstrapSeries();         // Yayınevlerine bağlı — en sona kalır
+    // ── Adım J2 sonu ──────────────────────────────────────────────────────
+
+    initRouter();                    // Tüm veriler yüklendikten sonra sayfa çizilsin
   } catch {
     // Oturum yok — giriş ekranını göster.
     showLogin();
@@ -71,10 +92,16 @@ async function login() {
     await account.createEmailPasswordSession(email, password);
     state.user = await account.get();
     showApp();
-    await loadBooks();
-    await bootstrapAuthors();
-    await bootstrapPublishers();
-    await bootstrapSeries();
+
+    // ── Adım J2: Paralel başlangıç yüklemesi (initAuth ile aynı mantık) ───
+    await Promise.all([
+      loadBooks(),
+      bootstrapAuthors(),
+      bootstrapPublishers(),
+    ]);
+    await bootstrapSeries();         // Yayınevlerine bağlı — en sona kalır
+    // ── Adım J2 sonu ──────────────────────────────────────────────────────
+
     initRouter();
   } catch (err) {
     errorEl.textContent = "Giriş başarısız: " + (err?.message || "bilinmeyen hata");
