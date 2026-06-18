@@ -64,26 +64,35 @@ def _book_id_from_path(file_path: str) -> str:
 # ─── Duplicate check ──────────────────────────────────────────────────────────
 
 def is_already_indexed(file_path: str) -> bool:
-    """Bu dosya veritabanında zaten var mı, file_path'e göre kontrol eder.
+    """Bu dosya veritabanında zaten var mı kontrol eder.
 
-    NOT: Bunun çalışması için Appwrite panelinde books tablosunda
-    `file_path` alanına bir index eklenmiş olmalı. (Indexes sekmesi → Create index → key: file_path, type: key)
+    Appwrite SDK 5.0.1'de list_documents ve get_document dahil tüm çağrılar
+    GET isteğine body ekleyip '400 request cannot have request body' hatasına
+    yol açıyor. Bu yüzden SDK bypass edilerek doğrudan HTTP GET atılıyor.
+
+    doc_id = dosya yolunun MD5 hash'i (_book_id_from_path ile aynı mantık).
+    Belge varsa HTTP 200 → True (zaten kayıtlı, atla).
+    Belge yoksa HTTP 404 → False (yeni kitap, işleme devam et).
     """
-    db = get_databases()
+    _init()
+    doc_id = _book_id_from_path(file_path)
+    url = (
+        f"{APPWRITE_ENDPOINT}/databases/{DATABASE_ID}"
+        f"/collections/{TABLE_ID}/documents/{doc_id}"
+    )
+    headers = {
+        "X-Appwrite-Project": APPWRITE_PROJECT_ID,
+        "X-Appwrite-Key":     APPWRITE_API_KEY,
+        "Content-Type":       "application/json",
+    }
     try:
-        result = db.list_documents(
-            database_id=DATABASE_ID,
-            collection_id=TABLE_ID,
-            queries=[
-                str(Query.equal("file_path", [file_path])),
-                str(Query.limit(1)),
-            ],
-        )
-        return result.get("total", 0) > 0
-    except AppwriteException as e:
-        # Index yoksa veya başka bir sorun varsa: güvenli tarafta kal,
-        # "kayıtlı değil" döndürmek yerine hatayı bildir ve atlanmasını engelle.
-        print(f"  [Kontrol hatası] {e.message}")
+        resp = requests.get(url, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            return True   # Belge var → zaten kayıtlı
+        if resp.status_code == 404:
+            return False  # Belge yok → yeni kitap
+        # Başka hata (ağ, izin vb.) → atlamadan devam et
+        print(f"  [Kontrol hatası] HTTP {resp.status_code}: {resp.text[:120]}")
         return False
     except Exception as e:
         print(f"  [Kontrol hatası] {e}")
@@ -182,7 +191,7 @@ def save_book(metadata: dict, cover_url: str = None) -> bool:
         "publisher": metadata.get("publisher"),   # YENİ
         "language": metadata.get("language"),     # YENİ
         "series": metadata.get("series"),
-        "series_order": metadata.get("series_order"),
+        "series_order": metadata.get("series_order") or metadata.get("series_index"),
         "format": metadata.get("format"),
         "file_path": file_path,
         "file_size": metadata.get("file_size"),
@@ -194,6 +203,9 @@ def save_book(metadata: dict, cover_url: str = None) -> bool:
         "notes": None,
         "finished_at": None,
         "tags": [],
+        # ── Adım P8: Güven skoru alanları ──────────────────────────────────
+        "confidence_score": metadata.get("confidence_score"),
+        "metadata_source": metadata.get("metadata_source"),
     }
 
     # series_order ve year integer alanları; boş string gelirse None yap

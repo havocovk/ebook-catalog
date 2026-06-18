@@ -4,3 +4,22 @@ Pillow==10.3.0
 appwrite==6.1.0
 requests==2.32.3
 python-dotenv==1.0.1
+nameparser==1.2.0
+tenacity>=8.2.0
+
+# ── Adım P6: OCR (taratılmış PDF'ler için) — OPSİYONEL ──────────────────────
+# Taratılmış (metin katmanı olmayan) PDF'lerden bilgi çıkarmak istiyorsan
+# aşağıdaki iki seçenekten BİRİNİ kur. İkisi de kurulu değilse program
+# normal çalışır, sadece taratılmış PDF'lerden bilgi alamaz.
+#
+# SEÇENEK 1 — Tesseract (küçük, hızlı):
+#   1) pip install pytesseract
+#   2) Tesseract programını ayrıca kur:
+#      Windows: https://github.com/UB-Mannheim/tesseract/wiki
+#      Kurulum sırasında Türkçe dil paketini (tur) seçmeyi unutma.
+#
+# SEÇENEK 2 — EasyOCR (büyük ~2GB, sadece pip, PATH'e dokunmaz):
+#   pip install easyocr
+#
+# pytesseract>=0.3.10
+# easyocr>=1.7.0

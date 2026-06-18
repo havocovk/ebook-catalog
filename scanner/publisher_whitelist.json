@@ -1,0 +1,63 @@
+{
+  "_comment": "Bilinen yayınevleri listesi. Adım 11 — Yayınevi Doğrulama Katmanı.",
+
+  "keywords_accept": [
+    "yayınları", "yayinlari", "yayınevi", "yayinevi", "yayıncılık", "yayincilik",
+    "publishing", "publishers", "press", "verlag", "editions", "editore",
+    "editorial", "éditions", "uitgeverij", "förlag"
+  ],
+
+  "keywords_reject": [
+    "unknown", "bilinmiyor", "yok", "none", "null", "n/a", "na",
+    "library of congress", "internet archive", "google", "amazon",
+    "self-published", "independently published", "bağımsız"
+  ],
+
+  "turkish": [
+    "İthaki", "Ithaki", "Can Yayınları", "Yapı Kredi Yayınları", "YKY",
+    "Metis Yayınları", "Doğan Kitap", "İletişim Yayınları", "İletişim",
+    "Türkiye İş Bankası Kültür Yayınları", "İş Bankası Yayınları", "İBK",
+    "Alfa Yayınları", "Alfa", "Altın Kitaplar", "Epsilon Yayınları", "Epsilon",
+    "Everest Yayınları", "Everest", "Bilge Kültür Sanat", "Bilge Kültür",
+    "Sola Unitas", "Olimpos Yayınları", "Olimpos", "Kronik Kitap", "Kronik",
+    "Pegasus Yayınları", "Pegasus", "Destek Yayınları", "Destek",
+    "Eksik Parça", "April Yayıncılık", "April", "Aylak Adam", "Aylak",
+    "Bağlam Yayınları", "Bağlam", "Bilim ve Sanat", "Bilim Sanat",
+    "Boğaziçi Üniversitesi Yayınevi", "BÜYAY", "Der Yayınları", "Der",
+    "Dost Kitabevi", "Dost", "E Yayınları", "Fol Kitap", "Fol",
+    "Güncel Yayıncılık", "Hayalet Kitap", "Kabalcı Yayınevi", "Kabalcı",
+    "Kırmızı Kedi", "Kırmızı Kedi Yayınevi", "Kültür Sanat Yayıncılık",
+    "Liberus", "Mikado Yayınları", "Paloma", "Phoenix Yayınevi", "Phoenix",
+    "Remzi Kitabevi", "Remzi", "Say Yayınları", "Say", "Sel Yayıncılık", "Sel",
+    "Sonsuz Kitap", "Telos Yayıncılık", "Telos", "Timas Yayınları", "Timaş",
+    "Totem Yayıncılık", "Uçan Fil", "Varlık Yayınları", "Varlık",
+    "Versus Kitap", "Xlibris", "Zargan", "Okuyan Us", "Çınar Yayınları",
+    "Şule Yayınları", "Şule", "Gece Kitaplığı", "Gece", "Maya Kitap",
+    "İnkılap Kitabevi", "İnkılap", "Hayat Yayınları", "Hayat",
+    "Karbon Kitaplar", "Karbon", "Kürre Yayınları", "Kürre"
+  ],
+
+  "international": [
+    "Penguin", "Penguin Books", "Penguin Random House", "Random House",
+    "HarperCollins", "Harper Collins", "Simon & Schuster", "Simon and Schuster",
+    "Macmillan", "Hachette", "Hachette Book Group", "Scholastic",
+    "Oxford University Press", "Oxford", "Cambridge University Press", "Cambridge",
+    "MIT Press", "Yale University Press", "Harvard University Press",
+    "Norton", "W. W. Norton", "Doubleday", "Knopf", "Vintage",
+    "Bantam", "Bantam Books", "Tor", "Tor Books", "Del Rey",
+    "Ace Books", "Ace", "Orbit", "Gollancz", "Bloomsbury",
+    "Hodder", "Hodder and Stoughton", "Faber", "Faber and Faber",
+    "Pan Macmillan", "Picador", "Headline", "Transworld", "Corgi",
+    "Ballantine", "Ballantine Books", "Berkley", "NAL", "Signet",
+    "Pocket Books", "Pocket", "Warner Books", "Warner",
+    "Little Brown", "Little, Brown", "Scribner", "Atheneum",
+    "Farrar", "Farrar Straus", "Grove Press", "Grove",
+    "Canongate", "Canongate Books", "Profile Books", "Profile",
+    "Verso", "Verso Books", "Penguin Classics", "Everyman",
+    "Gallimard", "Seuil", "Flammarion", "Albin Michel",
+    "Suhrkamp", "Fischer", "Hanser", "dtv", "Rowohlt",
+    "Mondadori", "Einaudi", "Feltrinelli", "Adelphi",
+    "Anagrama", "Planeta", "Alfaguara", "Alianza Editorial",
+    "Tusquets", "Salamandra"
+  ]
+}
