@@ -290,10 +290,23 @@ function closeFilterPanel() {
 
 // ─── Olayları bağla (yalnızca bir kez) ──────────────────────────────────────
 export function initCatalog() {
+  // ── Adım J3: Arama Debounce ──────────────────────────────────────────────
+  // Kullanıcı her harf yazdığında filtreleme tetiklenmez. Yazmayı bıraktıktan
+  // 300ms sonra tek seferlik filtreleme yapılır. Böylece "Vakıf" yazarken
+  // V-A-K-I-F için 5 ayrı filtreleme yerine sadece 1 filtreleme çalışır.
+  //
+  // Mevcut (her tuşta — yavaş):
+  //   input → ui.search güncelle → recompute()
+  //
+  // Yeni (300ms bekleyerek — hızlı):
+  //   input → ui.search güncelle → debounce → recompute()
+  let _searchDebounceTimer = null;
   document.getElementById("search-input")?.addEventListener("input", (e) => {
     ui.search = e.target.value;
-    recompute(true);
+    clearTimeout(_searchDebounceTimer);
+    _searchDebounceTimer = setTimeout(() => recompute(true), 300);
   });
+  // ── Adım J3 sonu ─────────────────────────────────────────────────────────
 
   document.getElementById("sort-select")?.addEventListener("change", (e) => {
     ui.sort = e.target.value;
