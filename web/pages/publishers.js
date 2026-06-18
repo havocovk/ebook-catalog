@@ -79,7 +79,7 @@ function groupByLetter() {
   }
 
   for (const letter of Object.keys(grouped)) {
-    grouped[letter].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+    grouped[letter].sort((a, b) => a.name.localeCompare(b.name, "tr", { sensitivity: "base" }));
   }
   return grouped;
 }
@@ -163,10 +163,10 @@ function renderPublisherDetail(publisherName) {
   }
 
   // Seri adlarını alfabetik sırala
-  const sortedSeries = Object.keys(seriesMap).sort((a, b) => a.localeCompare(b, "tr"));
+  const sortedSeries = Object.keys(seriesMap).sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
 
   // Bağımsız kitapları alfabetik sırala
-  standalone.sort((a, b) => (a.title || "").localeCompare(b.title || "", "tr"));
+  standalone.sort((a, b) => (a.title || "").localeCompare(b.title || "", "tr", { sensitivity: "base" }));
 
   // HTML
   let sectionsHtml = "";

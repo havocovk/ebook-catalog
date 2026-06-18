@@ -52,9 +52,9 @@ function renderSeriesList() {
 
   // Tam liste: önce seri adına, sonra yayınevine göre alfabetik.
   const allSorted = [...seriesData].sort((a, b) => {
-    const nameComp = a.name.localeCompare(b.name, "tr");
+    const nameComp = a.name.localeCompare(b.name, "tr", { sensitivity: "base" });
     if (nameComp !== 0) return nameComp;
-    return (a.publisher || "").localeCompare(b.publisher || "", "tr");
+    return (a.publisher || "").localeCompare(b.publisher || "", "tr", { sensitivity: "base" });
   });
 
   container.innerHTML = `
@@ -179,7 +179,7 @@ function renderSeriesDetail(seriesName, publisher) {
       const ao = a.series_order ?? 9999;
       const bo = b.series_order ?? 9999;
       if (ao !== bo) return ao - bo;
-      return (a.title || "").localeCompare(b.title || "", "tr");
+      return (a.title || "").localeCompare(b.title || "", "tr", { sensitivity: "base" });
     });
 
   const readCount  = books.filter((b) => b.status === "okundu").length;

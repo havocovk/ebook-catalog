@@ -63,7 +63,7 @@ function groupByLetter() {
   }
 
   for (const letter of Object.keys(grouped)) {
-    grouped[letter].sort((a, b) => a.name.localeCompare(b.name, "tr"));
+    grouped[letter].sort((a, b) => a.name.localeCompare(b.name, "tr", { sensitivity: "base" }));
   }
   return grouped;
 }
@@ -131,7 +131,7 @@ function renderAuthorDetail(authorName) {
 
   const books = state.books
     .filter((b) => b.author === authorName)
-    .sort((a, b) => (a.title || "").localeCompare(b.title || "", "tr"));
+    .sort((a, b) => (a.title || "").localeCompare(b.title || "", "tr", { sensitivity: "base" }));
 
   // Başlık bölümü
   container.innerHTML = `

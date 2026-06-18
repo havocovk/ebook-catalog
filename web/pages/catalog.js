@@ -78,7 +78,7 @@ function populateTagChips() {
   // Tüm kitapların etiketlerini topla, tekrar etmeyenleri al, sırala
   const allTags = [...new Set(
     state.books.flatMap((b) => b.tags || []).filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, "tr"));
+  )].sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
 
   // Sadece etiket chip'lerini yenile (Tümü butonu HTML'de kalıcı)
   const existing = [...container.querySelectorAll(".chip[data-filter='tag']:not([data-value=''])")];
@@ -144,12 +144,12 @@ function clampPage() {
 function sortBooks(books, key) {
   const s = [...books];
   if (key === "title_asc")
-    return s.sort((a, b) => (a.title  || "").localeCompare(b.title  || "", "tr"));
+    return s.sort((a, b) => (a.title  || "").localeCompare(b.title  || "", "tr", { sensitivity: "base" }));
   if (key === "author_asc")
-    return s.sort((a, b) => (a.author || "").localeCompare(b.author || "", "tr"));
+    return s.sort((a, b) => (a.author || "").localeCompare(b.author || "", "tr", { sensitivity: "base" }));
   if (key === "series_asc")
     return s.sort((a, b) => {
-      const c = (a.series || "").localeCompare(b.series || "", "tr");
+      const c = (a.series || "").localeCompare(b.series || "", "tr", { sensitivity: "base" });
       return c !== 0 ? c : (a.series_order || 0) - (b.series_order || 0);
     });
   return s.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
@@ -160,12 +160,12 @@ function sortBooks(books, key) {
 function populateSelectOptions() {
   // Yazar listesi
   const authors = [...new Set(state.books.map((b) => b.author).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, "tr"));
+    .sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
   fillSelect("filter-author", authors, ui.filters.author);
 
   // Yayınevi listesi
   const publishers = [...new Set(state.books.map((b) => b.publisher).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, "tr"));
+    .sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
   fillSelect("filter-publisher", publishers, ui.filters.publisher);
 
   // Seri listesi (yayınevi filtresine göre)
@@ -196,7 +196,7 @@ function updateSeriesOptions() {
     state.books
       .filter((b) => b.publisher === pub && b.series)
       .map((b) => b.series)
-  )].sort((a, b) => a.localeCompare(b, "tr"));
+  )].sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
 
   seriesEl.disabled = false;
   if (seriesWrap) seriesWrap.classList.remove("filter-group--disabled");
