@@ -16,9 +16,54 @@ import { escapeHtml } from "../ui/common.js";
 let chartJsReady = false;
 let activeChart  = null;
 
+// ── Adım J9: Yeniden çizim önleme ───────────────────────────────────────────
+// Dashboard'a her geçişte sıfırdan çizim yapmak yerine istatistikler
+// değişmediyse mevcut HTML ve grafik korunur.
+//
+// _lastStatsKey: bir önceki ziyarette hesaplanan istatistiklerin özeti.
+// compute() çıktısının JSON'u bu anahtarla karşılaştırılır.
+// Eşleşiyorsa → yeniden çizim yok. Değişti → normal çizim yapılır.
+let _lastStatsKey = null;
+
+function _statsKey(stats) {
+  // recent ve reading listelerindeki kitap ID sırası değişmiş olabilir;
+  // bunları da özete dahil ediyoruz ki bir kitabın durumu değişince
+  // dashboard da tazelenir.
+  return JSON.stringify({
+    total:          stats.total,
+    epub:           stats.epub,
+    pdf:            stats.pdf,
+    okunmadi:       stats.okunmadi,
+    sirada:         stats.sirada,
+    okunuyor:       stats.okunuyor,
+    okundu:         stats.okundu,
+    authorCount:    stats.authorCount,
+    publisherCount: stats.publisherCount,
+    seriesCount:    stats.seriesCount,
+    langTr:         stats.langTr,
+    langEn:         stats.langEn,
+    langOther:      stats.langOther,
+    recentIds:      stats.recent.map((b) => b.$id),
+    readingIds:     stats.reading.map((b) => b.$id),
+  });
+}
+// ── Adım J9 sonu ─────────────────────────────────────────────────────────────
+
 // ─── Dışa açık: router her ziyarette çağırır ────────────────────────────────
 export async function renderDashboard() {
   const stats = compute();
+
+  // ── Adım J9: İstatistikler değişmemişse yeniden çizme ───────────────────
+  const key = _statsKey(stats);
+  if (key === _lastStatsKey && document.getElementById("dashboard-content")?.hasChildNodes()) {
+    // Veri aynı ve DOM zaten dolu → sadece tıklama olaylarını yenile
+    // (router sayfayı tekrar monte edince listener'lar sıfırlanır)
+    bindRecentClicks();
+    return;
+  }
+  _lastStatsKey = key;
+  // ── Adım J9 sonu ────────────────────────────────────────────────────────
+
   renderLayout(stats);     // HTML iskeletini hemen çiz
   bindRecentClicks();      // Son eklenenler tıklama olayları
   await loadChartJs();     // Chart.js yüklenmesini bekle
