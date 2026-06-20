@@ -55,8 +55,13 @@ export function renderDedupe() {
   `;
 }
 
-// ─── Veritabanını tara, "yazar+kitap adı" eşleşen gruplari üret ─────────────
-// Dönüş: [{ key, author, title, books: [book, book, ...] }, ...]
+// ─── Veritabanını tara, "yazar+kitap adı+format" eşleşen grupları üret ──────
+// Format da anahtara dahildir: bir kitabın PDF + EPUB sürümünü kasıtlı olarak
+// saklamak normaldir, bu yüzden farklı formatlar "tekrar" sayılmaz.
+// Sadece aynı yazar + aynı kitap adı + AYNI format (örn. PDF+PDF, EPUB+EPUB)
+// olan kayıtlar bir grupta toplanır.
+//
+// Dönüş: [{ key, author, title, format, books: [book, book, ...] }, ...]
 // Sadece 2 veya daha fazla kitabı olan gruplar döner (tek başına olanlar atlanır).
 function findDuplicateGroups() {
   const map = {};
@@ -64,17 +69,19 @@ function findDuplicateGroups() {
   for (const book of state.books) {
     const authorKey = normalizeKey(book.author);
     const titleKey  = normalizeKey(book.title);
+    const formatKey = normalizeKey(book.format);
 
-    // Yazar veya başlık boşsa güvenilir bir eşleştirme yapılamaz — atla.
-    if (!authorKey || !titleKey) continue;
+    // Yazar, başlık veya format boşsa güvenilir bir eşleştirme yapılamaz — atla.
+    if (!authorKey || !titleKey || !formatKey) continue;
 
-    const key = `${authorKey}|||${titleKey}`;
+    const key = `${authorKey}|||${titleKey}|||${formatKey}`;
 
     if (!map[key]) {
       map[key] = {
         key,
         author: book.author,   // Gösterim için orijinal (normalize edilmemiş) yazı
         title:  book.title,
+        format: book.format,
         books:  [],
       };
     }
@@ -128,6 +135,7 @@ function runScanAndRender() {
     header.innerHTML = `
       <span class="dedupe-group-title">${escapeHtml(group.title || "Başlıksız")}</span>
       <span class="dedupe-group-author">${escapeHtml(group.author || "")}</span>
+      <span class="dedupe-group-format-badge">${escapeHtml((group.format || "").toUpperCase())}</span>
       <span class="dedupe-group-count">${group.books.length} kayıt</span>
     `;
     groupBox.appendChild(header);

@@ -2208,6 +2208,17 @@ textarea { resize: vertical; }
   color: var(--text-2);
 }
 
+.dedupe-group-format-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-2);
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
 .dedupe-group-count {
   margin-left: auto;
   font-size: 0.78rem;
