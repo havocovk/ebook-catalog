@@ -83,7 +83,7 @@ const PER_PAGE = 50;
 
 const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "" },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "" },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -210,6 +210,9 @@ function recompute(resetPage = false) {
   // ── Adım J4: Dil ve Etiket filtreleri ───────────────────────────────────
   if (ui.filters.language)  result = result.filter((b) => b.language  === ui.filters.language);
   if (ui.filters.tag)       result = result.filter((b) => b.tags?.includes(ui.filters.tag));
+  // ── Adım 1: Kategori filtresi ────────────────────────────────────────────
+  if (ui.filters.category)  result = result.filter((b) => b.category  === ui.filters.category);
+  // ── Adım 1 sonu ──────────────────────────────────────────────────────────
   // ── Adım J4 sonu ─────────────────────────────────────────────────────────
 
   filtered = sortBooks(result, ui.sort);
@@ -257,6 +260,12 @@ function populateSelectOptions() {
   const publishers = [...new Set(state.books.map((b) => b.publisher).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
   fillSelect("filter-publisher", publishers, ui.filters.publisher);
+
+  // ── Adım 1: Kategori listesi (kitaplardan otomatik toplanır, serbest metin) ──
+  const categories = [...new Set(state.books.map((b) => b.category).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
+  fillSelect("filter-category", categories, ui.filters.category);
+  // ── Adım 1 sonu ──────────────────────────────────────────────────────────
 
   // Seri listesi (yayınevi filtresine göre)
   updateSeriesOptions();
@@ -428,9 +437,9 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "" };
   syncChips();
-  ["filter-author", "filter-publisher"].forEach((id) => {
+  ["filter-author", "filter-publisher", "filter-category"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
@@ -516,6 +525,13 @@ export function initCatalog() {
     ui.filters.series = e.target.value;
     recompute(true);
   });
+
+  // ── Adım 1: Kategori ──────────────────────────────────────────────────────
+  document.getElementById("filter-category")?.addEventListener("change", (e) => {
+    ui.filters.category = e.target.value;
+    recompute(true);
+  });
+  // ── Adım 1 sonu ──────────────────────────────────────────────────────────
 
   document.getElementById("filter-clear")?.addEventListener("click", clearFilters);
 

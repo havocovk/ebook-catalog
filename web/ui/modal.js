@@ -101,6 +101,7 @@ export function openModal(bookId) {
     updateSeriesAvailability(false);   // kayıtlı veri tutarlı; temizleme yok
   }
   document.getElementById("modal-series-order").value = book.series_order ?? "";
+  document.getElementById("modal-category").value     = book.category || "";   // ── Adım 1
   document.getElementById("modal-year").value         = book.year ?? "";
   document.getElementById("modal-status").value       = book.status || "okunmadi";
   document.getElementById("modal-notes").value        = book.notes || "";
@@ -143,6 +144,7 @@ async function saveModal() {
     publisher:    document.getElementById("modal-publisher").value.trim() || null,  // YENİ
     series:       document.getElementById("modal-series").value.trim() || null,
     series_order: seriesOrderRaw === "" ? null : parseInt(seriesOrderRaw) || null,
+    category:     document.getElementById("modal-category").value.trim() || null,  // ── Adım 1
     year:         yearRaw === "" ? null : parseInt(yearRaw) || null,
     language:     document.getElementById("modal-language").value || null,
     status:       document.getElementById("modal-status").value,

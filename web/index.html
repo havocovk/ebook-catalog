@@ -193,6 +193,14 @@
               </div>
             </div>
 
+            <!-- ── Adım 1: Kategori Filtresi ─────────────────────────── -->
+            <div class="filter-group">
+              <label class="filter-label">Kategori</label>
+              <select id="filter-category" class="select select-full">
+                <option value="">Tümü</option>
+              </select>
+            </div>
+
             <!-- ── Adım J4: Etiket Filtresi ──────────────────────────── -->
             <div class="filter-group" id="filter-tag-wrap">
               <label class="filter-label">Etiket</label>
@@ -385,6 +393,14 @@
               </label>
               <input type="number" id="modal-series-order" min="1" />
             </div>
+          </div>
+
+          <!-- ── Adım 1: Kategori (serbest metin) ──────────────────── -->
+          <div class="field">
+            <label>
+              <iconify-icon icon="lucide:tags"></iconify-icon> Kategori
+            </label>
+            <input type="text" id="modal-category" placeholder="Roman, Akademik, Ders Notları..." />
           </div>
 
           <!-- Durum + Yıl -->
