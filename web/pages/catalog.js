@@ -83,13 +83,16 @@ const PER_PAGE = 50;
 
 const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "", confidence: "" },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "", confidence: "", yearMin: null, yearMax: null },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
 };
 
 let filtered = [];
+
+// ── Adım 4: Kitaplardaki gerçek en eski/en yeni yıl (slider sınırları) ──────
+let yearBounds = { min: 1900, max: new Date().getFullYear() };
 
 // ── Adım J6: LocalStorage yardımcıları ──────────────────────────────────────
 // Kaydedilen tercihler: arama terimi, sıralama, görünüm modu (kart/liste).
@@ -132,6 +135,7 @@ export function renderCatalog() {
   _loadPrefs();               // ── Adım J6: kayıtlı tercihleri yükle
   populateSelectOptions();
   populateTagChips();         // ── Adım J4: dinamik etiket chip'leri
+  populateYearSlider();       // ── Adım 4: yıl aralığı slider sınırlarını ayarla
   syncChips();
   updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle
   recompute(false);
@@ -163,6 +167,62 @@ function populateTagChips() {
   // Seçili etiketi senkronize et
   syncChipGroup("filter-tag-chips", ui.filters.tag);
 }
+
+// ── Adım 4: Yıl Aralığı Slider'ı Kur ────────────────────────────────────────
+// Kitaplardaki gerçek en eski/en yeni yılı bulup slider'ın min/max
+// sınırlarını buna göre ayarlar. Hiç yıl bilgisi yoksa 1900-bugün varsayılır.
+function populateYearSlider() {
+  const years = state.books.map((b) => b.year).filter((y) => Number.isFinite(y));
+  if (years.length > 0) {
+    yearBounds = { min: Math.min(...years), max: Math.max(...years) };
+  }
+
+  const minInput = document.getElementById("year-range-min");
+  const maxInput = document.getElementById("year-range-max");
+  if (!minInput || !maxInput) return;
+
+  minInput.min = yearBounds.min;
+  minInput.max = yearBounds.max;
+  maxInput.min = yearBounds.min;
+  maxInput.max = yearBounds.max;
+
+  // Filtre henüz uygulanmamışsa (null) slider'ı tam aralıkta başlat.
+  minInput.value = ui.filters.yearMin ?? yearBounds.min;
+  maxInput.value = ui.filters.yearMax ?? yearBounds.max;
+
+  updateYearRangeUI();
+}
+
+// Slider hareket ettikçe: dolgu çizgisinin genişliğini ve üstteki
+// "1990 — 2024" yazısını günceller. Filtreleme yapmaz (sadece görsel).
+function updateYearRangeUI() {
+  const minInput = document.getElementById("year-range-min");
+  const maxInput = document.getElementById("year-range-max");
+  const fill     = document.getElementById("year-range-fill");
+  const display  = document.getElementById("filter-year-display");
+  if (!minInput || !maxInput || !fill || !display) return;
+
+  let minVal = parseInt(minInput.value);
+  let maxVal = parseInt(maxInput.value);
+
+  // İki tutamaç birbirini geçemez — geçerse yer değiştirip düzelt.
+  if (minVal > maxVal) {
+    [minVal, maxVal] = [maxVal, minVal];
+    minInput.value = minVal;
+    maxInput.value = maxVal;
+  }
+
+  const span = yearBounds.max - yearBounds.min || 1;   // sıfıra bölme koruması
+  const leftPct  = ((minVal - yearBounds.min) / span) * 100;
+  const rightPct = ((maxVal - yearBounds.min) / span) * 100;
+  fill.style.left  = leftPct + "%";
+  fill.style.width = (rightPct - leftPct) + "%";
+
+  // Tam aralıktaysa (filtre yok) "Tümü" göster, değilse aralığı göster.
+  const isFullRange = minVal === yearBounds.min && maxVal === yearBounds.max;
+  display.textContent = isFullRange ? "Tümü" : `${minVal} — ${maxVal}`;
+}
+// ── Adım 4 sonu (kurulum fonksiyonları) ─────────────────────────────────────
 
 // ─── Filtrele + sırala + çiz ────────────────────────────────────────────────
 function recompute(resetPage = false) {
@@ -219,6 +279,16 @@ function recompute(resetPage = false) {
     result = result.filter((b) => confidenceLevel(b.confidence_score) === ui.filters.confidence);
   }
   // ── Adım 3 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 4: Yıl aralığı filtresi ─────────────────────────────────────────
+  // null = filtre uygulanmamış (slider tam aralıkta). Filtre aktifse,
+  // yıl bilgisi olmayan kitaplar (b.year boş/null) sonuçtan çıkarılır.
+  if (ui.filters.yearMin !== null || ui.filters.yearMax !== null) {
+    const lo = ui.filters.yearMin ?? yearBounds.min;
+    const hi = ui.filters.yearMax ?? yearBounds.max;
+    result = result.filter((b) => Number.isFinite(b.year) && b.year >= lo && b.year <= hi);
+  }
+  // ── Adım 4 sonu ──────────────────────────────────────────────────────────
   // ── Adım J4 sonu ─────────────────────────────────────────────────────────
 
   filtered = sortBooks(result, ui.sort);
@@ -445,12 +515,13 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "", confidence: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "", confidence: "", yearMin: null, yearMax: null };
   syncChips();
   ["filter-author", "filter-publisher", "filter-category"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
+  populateYearSlider();   // ── Adım 4: slider'ı tam aralığa geri döndür
   updateSeriesOptions(); // seriyi pasif yap
   recompute(true);
 }
@@ -540,6 +611,31 @@ export function initCatalog() {
     recompute(true);
   });
   // ── Adım 1 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 4: Yıl Aralığı Slider ───────────────────────────────────────────
+  // "input" → sürüklerken anında görsel güncelleme (akıcı, ama filtreleme yapmaz).
+  // "change" → kullanıcı tutamaçı bıraktığında gerçek filtreleme tetiklenir.
+  // Bu ayrım, binlerce kitapta her piksel hareketinde yeniden hesaplama
+  // yapılmasını önler — sadece bırakınca bir kez filtrelenir.
+  const yearMinInput = document.getElementById("year-range-min");
+  const yearMaxInput = document.getElementById("year-range-max");
+
+  [yearMinInput, yearMaxInput].forEach((input) => {
+    input?.addEventListener("input", updateYearRangeUI);
+
+    input?.addEventListener("change", () => {
+      let minVal = parseInt(yearMinInput.value);
+      let maxVal = parseInt(yearMaxInput.value);
+      if (minVal > maxVal) [minVal, maxVal] = [maxVal, minVal];
+
+      // Tam aralığa geri dönülürse filtre tamamen kaldırılır (null).
+      const isFullRange = minVal === yearBounds.min && maxVal === yearBounds.max;
+      ui.filters.yearMin = isFullRange ? null : minVal;
+      ui.filters.yearMax = isFullRange ? null : maxVal;
+      recompute(true);
+    });
+  });
+  // ── Adım 4 sonu ──────────────────────────────────────────────────────────
 
   document.getElementById("filter-clear")?.addEventListener("click", clearFilters);
 

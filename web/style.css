@@ -970,7 +970,92 @@ textarea { resize: vertical; }
   color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  display: flex;              /* ── Adım 4: yıl göstergesini sağa itmek için ── */
+  align-items: center;
+  justify-content: space-between;
 }
+
+/* ── Adım 4: Yıl Aralığı — Çift Uçlu Slider ───────────────────────── */
+.filter-year-display {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.year-range-slider {
+  position: relative;
+  height: 1.4rem;
+  margin-top: 0.35rem;
+}
+
+/* Arka plandaki sabit (gri) çizgi — tüm aralığı temsil eder. */
+.year-range-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--border-2);
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+/* Seçili aralığı vurgulayan renkli (mor) dolgu — JS ile genişliği ayarlanır. */
+.year-range-fill {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+/* İki range input da aynı alanı kaplar; tıklama alanları sayesinde
+   her biri bağımsız sürüklenebilir. Kendi track/arka planları şeffaf —
+   sadece üstteki .year-range-track ve .year-range-fill görünür. */
+.year-range-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1.4rem;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;   /* sadece thumb (tutamaç) tıklanabilir olsun */
+}
+
+/* Tutamaç (thumb) — Chrome/Edge/Safari (WebKit) */
+.year-range-input::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Tutamaç (thumb) — Firefox */
+.year-range-input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Firefox'un kendi track çizgisini şeffaf yap (üstteki özel track görünsün). */
+.year-range-input::-moz-range-track { background: transparent; }
+/* ── Adım 4 sonu ──────────────────────────────────────────────────── */
 
 /* ── Chip butonlar (format + durum) ──────────────────────────── */
 .filter-chips {

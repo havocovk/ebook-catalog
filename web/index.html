@@ -220,6 +220,20 @@
                 <!-- Dinamik chip'ler catalog.js tarafından doldurulur -->
               </div>
             </div>
+
+            <!-- ── Adım 4: Yıl Aralığı Filtresi (çift uçlu slider) ─────── -->
+            <div class="filter-group" id="filter-year-wrap">
+              <label class="filter-label">
+                Yayın Yılı
+                <span class="filter-year-display" id="filter-year-display">Tümü</span>
+              </label>
+              <div class="year-range-slider" id="year-range-slider">
+                <div class="year-range-track"></div>
+                <div class="year-range-fill" id="year-range-fill"></div>
+                <input type="range" id="year-range-min" class="year-range-input" />
+                <input type="range" id="year-range-max" class="year-range-input" />
+              </div>
+            </div>
           </aside>
 
           <!-- Mobil filtre çekmece arka planı (tıklayınca kapanır) -->
