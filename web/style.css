@@ -176,19 +176,9 @@ iconify-icon {
   min-width: 200px;
 }
 
-.search-icon {
-  position: absolute;
-  left: 0.65rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1rem;
-  color: var(--text-3);
-  pointer-events: none;
-}
-
 .search-input {
   width: 100%;
-  padding: 0.45rem 0.75rem 0.45rem 2rem;
+  padding: 0.45rem 0.75rem;
   background: var(--bg-3);
   border: 1px solid var(--border);
   border-radius: var(--radius);
