@@ -193,12 +193,13 @@
               </div>
             </div>
 
-            <!-- ── Adım 1: Kategori Filtresi ─────────────────────────── -->
-            <div class="filter-group">
-              <label class="filter-label">Kategori</label>
-              <select id="filter-category" class="select select-full">
-                <option value="">Tümü</option>
-              </select>
+            <!-- ── Adım 1: Kategori Filtresi (Adım 11'de çoklu seçime çevrildi) ── -->
+            <div class="filter-group" id="filter-category-wrap">
+              <label class="filter-label">Kategori <span class="filter-hint">(çoklu seçim)</span></label>
+              <div class="filter-chips" id="filter-category-chips">
+                <button class="chip active" data-filter="category" data-value="">Tümü</button>
+                <!-- Dinamik chip'ler catalog.js tarafından doldurulur -->
+              </div>
             </div>
 
             <!-- ── Adım 3: Güven Skoru Filtresi ─────────────────────────── -->

@@ -83,7 +83,7 @@ const PER_PAGE = 50;
 
 const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: "", confidence: "", yearMin: null, yearMax: null },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], confidence: "", yearMin: null, yearMax: null },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -135,6 +135,7 @@ export function renderCatalog() {
   _loadPrefs();               // ── Adım J6: kayıtlı tercihleri yükle
   populateSelectOptions();
   populateTagChips();         // ── Adım J4: dinamik etiket chip'leri
+  populateCategoryChips();    // ── Adım 11: dinamik kategori chip'leri (çoklu seçim)
   populateYearSlider();       // ── Adım 4: yıl aralığı slider sınırlarını ayarla
   syncChips();
   updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle
@@ -167,6 +168,36 @@ function populateTagChips() {
   // Seçili etiketleri senkronize et (Adım 9: artık dizi, çoklu seçim olabilir)
   syncChipGroup("filter-tag-chips", ui.filters.tag);
 }
+
+// ── Adım 11: Katalogdaki tüm kategorileri toplayıp chip olarak doldur ───────
+// (populateTagChips ile birebir aynı mantık — kategori de serbest metin,
+//  kitaplardan otomatik toplanıp tekrarsız + sıralı şekilde chip yapılır.)
+function populateCategoryChips() {
+  const container = document.getElementById("filter-category-chips");
+  if (!container) return;
+
+  // Tüm kitapların kategorilerini topla, tekrar etmeyenleri al, sırala
+  const allCategories = [...new Set(
+    state.books.map((b) => b.category).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
+
+  // Sadece kategori chip'lerini yenile ("Tümü" butonu HTML'de kalıcı)
+  const existing = [...container.querySelectorAll(".chip[data-filter='category']:not([data-value=''])")];
+  existing.forEach((c) => c.remove());
+
+  allCategories.forEach((cat) => {
+    const btn = document.createElement("button");
+    btn.className     = "chip";
+    btn.dataset.filter = "category";
+    btn.dataset.value  = cat;
+    btn.textContent    = cat;
+    container.appendChild(btn);
+  });
+
+  // Seçili kategorileri senkronize et (dizi, çoklu seçim)
+  syncChipGroup("filter-category-chips", ui.filters.category);
+}
+// ── Adım 11 sonu ─────────────────────────────────────────────────────────────
 
 // ── Adım 4: Yıl Aralığı Slider'ı Kur ────────────────────────────────────────
 // Kitaplardaki gerçek en eski/en yeni yılı bulup slider'ın min/max
@@ -280,9 +311,14 @@ function recompute(resetPage = false) {
     result = result.filter((b) => ui.filters.tag.every((t) => b.tags?.includes(t)));
   }
   // ── Adım 9 sonu ───────────────────────────────────────────────────────────
-  // ── Adım 1: Kategori filtresi ────────────────────────────────────────────
-  if (ui.filters.category)  result = result.filter((b) => b.category  === ui.filters.category);
-  // ── Adım 1 sonu ──────────────────────────────────────────────────────────
+  // ── Adım 11: Kategori filtresi (çoklu seçim, VEYA mantığı) ───────────────
+  // Dil filtresiyle aynı mantık: bir kitabın TEK kategorisi var (book.category),
+  // o yüzden "VEYA" doğru — seçilen kategorilerden HERHANGİ BİRİYLE eşleşen
+  // kitaplar gösterilir.
+  if (ui.filters.category.length > 0) {
+    result = result.filter((b) => ui.filters.category.includes(b.category));
+  }
+  // ── Adım 11 sonu ──────────────────────────────────────────────────────────
 
   // ── Adım 3: Güven skoru seviye filtresi ──────────────────────────────────
   if (ui.filters.confidence) {
@@ -347,11 +383,7 @@ function populateSelectOptions() {
     .sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
   fillSelect("filter-publisher", publishers, ui.filters.publisher);
 
-  // ── Adım 1: Kategori listesi (kitaplardan otomatik toplanır, serbest metin) ──
-  const categories = [...new Set(state.books.map((b) => b.category).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
-  fillSelect("filter-category", categories, ui.filters.category);
-  // ── Adım 1 sonu ──────────────────────────────────────────────────────────
+  // (Adım 11: Kategori artık dropdown değil, chip — populateCategoryChips() ile doldurulur)
 
   // Seri listesi (yayınevi filtresine göre)
   updateSeriesOptions();
@@ -417,6 +449,8 @@ function syncChips() {
   syncChipGroup("filter-tag-chips", ui.filters.tag);
   // ── Adım 3: Güven skoru ──────────────────────────────────────────────────
   syncChipGroup("filter-confidence-chips", ui.filters.confidence);
+  // ── Adım 11: Kategori (çoklu seçim) ──────────────────────────────────────
+  syncChipGroup("filter-category-chips", ui.filters.category);
 }
 
 // ── Adım 9: activeValue artık ya tek bir string (Format/Durum/Güven gibi
@@ -539,9 +573,9 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: "", confidence: "", yearMin: null, yearMax: null };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], confidence: "", yearMin: null, yearMax: null };
   syncChips();
-  ["filter-author", "filter-publisher", "filter-category"].forEach((id) => {
+  ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
@@ -597,13 +631,12 @@ export function initCatalog() {
     render();
   });
 
-  // Chip filtreler (format + durum + ...)
-  // ── Adım 9: Dil ve Etiket "çoklu seçim" (MULTI_SELECT_FILTERS) listesinde —
-  // bu ikisinde tıklama AÇIK/KAPALI (toggle) çalışır, birden fazla chip aynı
-  // anda aktif olabilir. Diğer tüm filtreler (Format, Durum, Güven Skoru vb.)
-  // eskisi gibi TEK seçimli kalır — bu liste dışındaki her filterKey için
-  // davranış hiç değişmedi.
-  const MULTI_SELECT_FILTERS = new Set(["language", "tag"]);
+  // ── Adım 9 + Adım 11: Dil, Etiket ve Kategori "çoklu seçim" (MULTI_SELECT_FILTERS)
+  // listesinde — bu üçünde tıklama AÇIK/KAPALI (toggle) çalışır, birden fazla
+  // chip aynı anda aktif olabilir. Diğer tüm filtreler (Format, Durum, Güven
+  // Skoru vb.) eskisi gibi TEK seçimli kalır — bu liste dışındaki her
+  // filterKey için davranış hiç değişmedi.
+  const MULTI_SELECT_FILTERS = new Set(["language", "tag", "category"]);
 
   document.getElementById("filter-panel")?.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
@@ -654,12 +687,10 @@ export function initCatalog() {
     recompute(true);
   });
 
-  // ── Adım 1: Kategori ──────────────────────────────────────────────────────
-  document.getElementById("filter-category")?.addEventListener("change", (e) => {
-    ui.filters.category = e.target.value;
-    recompute(true);
-  });
-  // ── Adım 1 sonu ──────────────────────────────────────────────────────────
+  // ── Adım 1 → Adım 11: Kategori artık chip mantığıyla çalışıyor.
+  // (Eski <select> dinleyicisi kaldırıldı; tıklama olayı yukarıdaki genel
+  //  "filter-panel" click dinleyicisi + MULTI_SELECT_FILTERS tarafından
+  //  otomatik olarak yönetiliyor — Dil/Etiket ile aynı mekanizma.)
 
   // ── Adım 4: Yıl Aralığı Slider ───────────────────────────────────────────
   // "input" → sürüklerken anında görsel güncelleme (akıcı, ama filtreleme yapmaz).
