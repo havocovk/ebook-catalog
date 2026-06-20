@@ -83,3 +83,22 @@ export function confidenceLabel(level) {
   const labels = { high: "Yüksek", medium: "Orta", low: "Düşük" };
   return labels[level] || "";
 }
+
+// ── Adım 6: Authors/Publishers/Series Ortak Yardımcıları ───────────────────
+// NOT: escapeHtml() apostrofu (') da kaçırır (&#039;); bu fonksiyon kaçırmaz.
+// authors/publishers/series sayfalarındaki eski "esc()" davranışını korumak
+// için ayrı tutuldu — birleştirseydik "O'Brien" gibi adların görünümü
+// "O&#039;Brien" olarak değişirdi (davranış değişikliği, istemiyoruz).
+export function escapeHtmlBasic(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+// Eski "escAttr()" ile birebir aynı: tırnak + apostrof kaçırır (HTML
+// attribute değerleri için, örn. data-author="...").
+export function escapeAttr(str) {
+  return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}

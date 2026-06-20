@@ -9,6 +9,7 @@
 
 import { state } from "../core/state.js";
 import { openModal } from "../ui/modal.js";
+import { escapeHtmlBasic as esc, escapeAttr as escAttr, statusLabel as statusLabelLocal } from "../ui/common.js";
 
 const POPULAR_COUNT = 6;
 
@@ -244,11 +245,6 @@ function detailBookRowHtml(book) {
   `;
 }
 
-function statusLabelLocal(status) {
-  const map = { okunmadi: "Okunmadı", sirada: "Sırada", okunuyor: "Okunuyor", okundu: "Okundu" };
-  return map[status] || "Okunmadı";
-}
-
 // ═══════════════════════════════════════════════════════════════
 // OLAYLARI BAĞLA
 // ═══════════════════════════════════════════════════════════════
@@ -274,14 +270,4 @@ export function initSeries() {
       return;
     }
   });
-}
-
-// ─── Yardımcılar ─────────────────────────────────────────────────────────────
-function esc(str) {
-  return String(str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-function escAttr(str) {
-  return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }

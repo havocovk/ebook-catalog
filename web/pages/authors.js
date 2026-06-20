@@ -7,13 +7,19 @@
 //
 // Görünüm durumu (liste / detay) bu dosyada yerel tutulur; router'a ekstra
 // rota eklenmez çünkü bu bir alt-görünümdür.
+//
+// Adım 6: A-Z harf çubuğu + alfabetik gruplama mantığı artık burada DEĞİL —
+// publishers.js ile birebir aynı olduğu için ../ui/alpha-list.js'e taşındı.
+// Bu dosyada sadece yazara özel kısım kaldı: detay görünümü (kitap kartları).
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
 import { openModal } from "../ui/modal.js";
+import { escapeHtmlBasic as esc } from "../ui/common.js";
+import { groupByLetter, renderAlphaBar, renderGroups, scrollToGroup } from "../ui/alpha-list.js";
 
-const ALPHABET = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
+const ID_PREFIX = "author";
 
 // Şu an detayda gösterilen yazar adı. Liste görünümünde null.
 let activeAuthor = null;
@@ -32,7 +38,7 @@ export function renderAuthors() {
 // ═══════════════════════════════════════════════════════════════
 
 function renderAuthorList() {
-  const grouped = groupByLetter();
+  const grouped = groupByLetter(state.books, "author");
   const activeLetters = new Set(Object.keys(grouped));
   const container = document.getElementById("authors-content");
   if (!container) return;
@@ -40,85 +46,9 @@ function renderAuthorList() {
   container.innerHTML = `
     ${renderAlphaBar(activeLetters)}
     <div class="author-list" id="author-list">
-      ${renderGroups(grouped)}
+      ${renderGroups(grouped, { idPrefix: ID_PREFIX, emptyMessage: "Henüz yazar bilgisi olan kitap yok." })}
     </div>
   `;
-}
-
-// ─── Yazarları ilk harfe göre grupla ────────────────────────────────────────
-function groupByLetter() {
-  const countMap = {};
-  for (const book of state.books) {
-    const name = (book.author || "").trim();
-    if (!name) continue;
-    countMap[name] = (countMap[name] || 0) + 1;
-  }
-
-  const grouped = {};
-  for (const [name, count] of Object.entries(countMap)) {
-    const firstChar = name.charAt(0).toLocaleUpperCase("tr-TR");
-    const letter = ALPHABET.includes(firstChar) ? firstChar : "#";
-    if (!grouped[letter]) grouped[letter] = [];
-    grouped[letter].push({ name, count });
-  }
-
-  for (const letter of Object.keys(grouped)) {
-    grouped[letter].sort((a, b) => a.name.localeCompare(b.name, "tr", { sensitivity: "base" }));
-  }
-  return grouped;
-}
-
-// ─── Harf çubuğu ─────────────────────────────────────────────────────────────
-function renderAlphaBar(activeLetters) {
-  const buttons = ALPHABET.map((letter) => {
-    const active = activeLetters.has(letter);
-    return `<button
-      class="alpha-btn ${active ? "" : "alpha-btn--empty"}"
-      ${active ? `data-letter="${letter}"` : "disabled"}
-      title="${letter}"
-    >${letter}</button>`;
-  }).join("");
-  return `<div class="alpha-bar" id="alpha-bar">${buttons}</div>`;
-}
-
-// ─── Harf grupları ────────────────────────────────────────────────────────────
-function renderGroups(grouped) {
-  const sortedLetters = ALPHABET.filter((l) => grouped[l]);
-  if (grouped["#"]) sortedLetters.push("#");
-
-  if (sortedLetters.length === 0) {
-    return `<div class="empty-state">Henüz yazar bilgisi olan kitap yok.</div>`;
-  }
-
-  return sortedLetters.map((letter) => {
-    const authors = grouped[letter];
-    const rows = authors.map((a) => `
-      <div class="author-row" data-author="${escAttr(a.name)}">
-        <span class="author-name">${esc(a.name)}</span>
-        <span class="author-count">${a.count} kitap</span>
-        <iconify-icon icon="lucide:chevron-right" class="author-row-arrow"></iconify-icon>
-      </div>
-    `).join("");
-
-    return `
-      <div class="author-group" id="author-group-${letter}">
-        <div class="author-group-header">
-          <span class="author-group-letter">${letter}</span>
-          <span class="author-group-line"></span>
-        </div>
-        <div class="author-rows">${rows}</div>
-      </div>
-    `;
-  }).join("");
-}
-
-// ─── Harf grubuna smooth-scroll ──────────────────────────────────────────────
-function scrollToGroup(letter) {
-  const target = document.getElementById(`author-group-${letter}`);
-  if (!target) return;
-  const offset = 56 + 52 + 8;
-  const top = target.getBoundingClientRect().top + window.scrollY - offset;
-  window.scrollTo({ top, behavior: "smooth" });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -178,7 +108,7 @@ export function initAuthors() {
     // Harf çubuğu → o gruba kaydır
     const alphaBtn = e.target.closest(".alpha-btn");
     if (alphaBtn && alphaBtn.dataset.letter) {
-      scrollToGroup(alphaBtn.dataset.letter);
+      scrollToGroup(alphaBtn.dataset.letter, ID_PREFIX);
       return;
     }
 
@@ -197,14 +127,4 @@ export function initAuthors() {
       return;
     }
   });
-}
-
-// ─── Yardımcılar ─────────────────────────────────────────────────────────────
-function esc(str) {
-  return String(str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-function escAttr(str) {
-  return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }

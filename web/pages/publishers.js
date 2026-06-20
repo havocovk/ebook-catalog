@@ -9,13 +9,18 @@
 //
 // NOT: publisher alanı 1A'dan itibaren dolmaya başladı. Alanı boş olan kitaplar
 // bu sayfada görünmez — bu beklenen davranış.
+//
+// Adım 6: A-Z harf çubuğu + alfabetik gruplama mantığı artık burada DEĞİL —
+// authors.js ile birebir aynı olduğu için ../ui/alpha-list.js'e taşındı.
+// Bu dosyada sadece yayınevine özel kısım kaldı: seri gruplu detay görünümü.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../core/state.js";
-import { createBookCard } from "../ui/components.js";
 import { openModal } from "../ui/modal.js";
+import { escapeHtmlBasic as esc, escapeAttr, statusLabel } from "../ui/common.js";
+import { groupByLetter, renderAlphaBar, renderGroups, scrollToGroup } from "../ui/alpha-list.js";
 
-const ALPHABET = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
+const ID_PREFIX = "publisher";
 
 // Şu an detayda gösterilen yayınevi adı. Liste görünümünde null.
 let activePublisher = null;
@@ -34,7 +39,7 @@ export function renderPublishers() {
 // ═══════════════════════════════════════════════════════════════
 
 function renderPublisherList() {
-  const grouped   = groupByLetter();
+  const grouped   = groupByLetter(state.books, "publisher");
   const activeLetters = new Set(Object.keys(grouped));
   const container = document.getElementById("publishers-content");
   if (!container) return;
@@ -56,81 +61,9 @@ function renderPublisherList() {
   container.innerHTML = `
     ${renderAlphaBar(activeLetters)}
     <div class="publisher-list" id="publisher-list">
-      ${renderGroups(grouped)}
+      ${renderGroups(grouped, { idPrefix: ID_PREFIX, emptyMessage: "" })}
     </div>
   `;
-}
-
-// ─── Yayınevlerini ilk harfe göre grupla ────────────────────────────────────
-function groupByLetter() {
-  const countMap = {};
-  for (const book of state.books) {
-    const name = (book.publisher || "").trim();
-    if (!name) continue;
-    countMap[name] = (countMap[name] || 0) + 1;
-  }
-
-  const grouped = {};
-  for (const [name, count] of Object.entries(countMap)) {
-    const firstChar = name.charAt(0).toLocaleUpperCase("tr-TR");
-    const letter    = ALPHABET.includes(firstChar) ? firstChar : "#";
-    if (!grouped[letter]) grouped[letter] = [];
-    grouped[letter].push({ name, count });
-  }
-
-  for (const letter of Object.keys(grouped)) {
-    grouped[letter].sort((a, b) => a.name.localeCompare(b.name, "tr", { sensitivity: "base" }));
-  }
-  return grouped;
-}
-
-// ─── Harf çubuğu ─────────────────────────────────────────────────────────────
-function renderAlphaBar(activeLetters) {
-  const buttons = ALPHABET.map((letter) => {
-    const active = activeLetters.has(letter);
-    return `<button
-      class="alpha-btn ${active ? "" : "alpha-btn--empty"}"
-      ${active ? `data-letter="${letter}"` : "disabled"}
-      title="${letter}"
-    >${letter}</button>`;
-  }).join("");
-  return `<div class="alpha-bar" id="alpha-bar">${buttons}</div>`;
-}
-
-// ─── Harf grupları ────────────────────────────────────────────────────────────
-function renderGroups(grouped) {
-  const sortedLetters = ALPHABET.filter((l) => grouped[l]);
-  if (grouped["#"]) sortedLetters.push("#");
-
-  return sortedLetters.map((letter) => {
-    const publishers = grouped[letter];
-    const rows = publishers.map((p) => `
-      <div class="author-row" data-publisher="${escAttr(p.name)}">
-        <span class="author-name">${esc(p.name)}</span>
-        <span class="author-count">${p.count} kitap</span>
-        <iconify-icon icon="lucide:chevron-right" class="author-row-arrow"></iconify-icon>
-      </div>
-    `).join("");
-
-    return `
-      <div class="author-group" id="publisher-group-${letter}">
-        <div class="author-group-header">
-          <span class="author-group-letter">${letter}</span>
-          <span class="author-group-line"></span>
-        </div>
-        <div class="author-rows">${rows}</div>
-      </div>
-    `;
-  }).join("");
-}
-
-// ─── Harf grubuna smooth-scroll ──────────────────────────────────────────────
-function scrollToGroup(letter) {
-  const target = document.getElementById(`publisher-group-${letter}`);
-  if (!target) return;
-  const offset = 56 + 52 + 8;
-  const top    = target.getBoundingClientRect().top + window.scrollY - offset;
-  window.scrollTo({ top, behavior: "smooth" });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -182,7 +115,7 @@ function renderPublisherDetail(publisherName) {
           ${esc(seriesName)}
           <span class="detail-sub-count">${books.length} kitap</span>
         </h3>
-        <div class="books-grid author-books-grid" data-grid-id="series-${escAttr(seriesName)}">${cards}</div>
+        <div class="books-grid author-books-grid" data-grid-id="series-${escapeAttr(seriesName)}">${cards}</div>
       </div>
     `;
   }
@@ -242,7 +175,7 @@ function cardHtml(book) {
       <div class="book-cover">
         ${coverHtml}
         <span class="book-format">${book.format || ""}</span>
-        <span class="book-status-badge ${statusClass}">${statusLabelLocal(book.status)}</span>
+        <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
       </div>
       <div class="book-info">
         <h3 class="book-title">${esc(book.title || "Başlıksız")}</h3>
@@ -255,11 +188,6 @@ function cardHtml(book) {
   `;
 }
 
-function statusLabelLocal(status) {
-  const map = { okunmadi: "Okunmadı", sirada: "Sırada", okunuyor: "Okunuyor", okundu: "Okundu" };
-  return map[status] || "Okunmadı";
-}
-
 // ═══════════════════════════════════════════════════════════════
 // OLAYLARI BAĞLA (yalnızca bir kez)
 // ═══════════════════════════════════════════════════════════════
@@ -270,7 +198,7 @@ export function initPublishers() {
     // Harf çubuğu → o gruba kaydır
     const alphaBtn = e.target.closest(".alpha-btn");
     if (alphaBtn && alphaBtn.dataset.letter) {
-      scrollToGroup(alphaBtn.dataset.letter);
+      scrollToGroup(alphaBtn.dataset.letter, ID_PREFIX);
       return;
     }
 
@@ -289,14 +217,4 @@ export function initPublishers() {
       return;
     }
   });
-}
-
-// ─── Yardımcılar ─────────────────────────────────────────────────────────────
-function esc(str) {
-  return String(str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-function escAttr(str) {
-  return String(str).replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }

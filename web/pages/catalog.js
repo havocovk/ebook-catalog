@@ -83,7 +83,7 @@ const PER_PAGE = 50;
 
 const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "", confidence: "", yearMin: null, yearMax: null },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: "", confidence: "", yearMin: null, yearMax: null },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -164,7 +164,7 @@ function populateTagChips() {
     container.appendChild(btn);
   });
 
-  // Seçili etiketi senkronize et
+  // Seçili etiketleri senkronize et (Adım 9: artık dizi, çoklu seçim olabilir)
   syncChipGroup("filter-tag-chips", ui.filters.tag);
 }
 
@@ -267,9 +267,19 @@ function recompute(resetPage = false) {
   if (ui.filters.author)    result = result.filter((b) => b.author    === ui.filters.author);
   if (ui.filters.publisher) result = result.filter((b) => b.publisher === ui.filters.publisher);
   if (ui.filters.series)    result = result.filter((b) => b.series    === ui.filters.series);
-  // ── Adım J4: Dil ve Etiket filtreleri ───────────────────────────────────
-  if (ui.filters.language)  result = result.filter((b) => b.language  === ui.filters.language);
-  if (ui.filters.tag)       result = result.filter((b) => b.tags?.includes(ui.filters.tag));
+  // ── Adım 9: Dil (VEYA) ve Etiket (VE) — çoklu seçim ──────────────────────
+  // Dil: bir kitabın TEK dili var (book.language), o yüzden "VEYA" mantıklı —
+  //      seçilen dillerden HERHANGİ BİRİYLE eşleşen kitaplar gösterilir.
+  // Etiket: bir kitabın BİRDEN FAZLA etiketi olabilir (book.tags dizisi),
+  //      o yüzden "VE" mantıklı — seçilen etiketlerin TÜMÜNE sahip olan
+  //      kitaplar gösterilir (daha dar, daha kesin sonuç).
+  if (ui.filters.language.length > 0) {
+    result = result.filter((b) => ui.filters.language.includes(b.language));
+  }
+  if (ui.filters.tag.length > 0) {
+    result = result.filter((b) => ui.filters.tag.every((t) => b.tags?.includes(t)));
+  }
+  // ── Adım 9 sonu ───────────────────────────────────────────────────────────
   // ── Adım 1: Kategori filtresi ────────────────────────────────────────────
   if (ui.filters.category)  result = result.filter((b) => b.category  === ui.filters.category);
   // ── Adım 1 sonu ──────────────────────────────────────────────────────────
@@ -409,11 +419,18 @@ function syncChips() {
   syncChipGroup("filter-confidence-chips", ui.filters.confidence);
 }
 
+// ── Adım 9: activeValue artık ya tek bir string (Format/Durum/Güven gibi
+// tek-seçim filtreler) ya da bir dizi (Dil/Etiket gibi çoklu-seçim filtreler)
+// olabilir. Hangisi geldiyse ona göre "bu chip aktif mi?" kontrolü yapılır.
 function syncChipGroup(containerId, activeValue) {
   const el = document.getElementById(containerId);
   if (!el) return;
+  const isMulti = Array.isArray(activeValue);
   el.querySelectorAll(".chip").forEach((chip) => {
-    chip.classList.toggle("active", chip.dataset.value === activeValue);
+    const isActive = isMulti
+      ? (chip.dataset.value === "" ? activeValue.length === 0 : activeValue.includes(chip.dataset.value))
+      : chip.dataset.value === activeValue;
+    chip.classList.toggle("active", isActive);
   });
 }
 
@@ -487,8 +504,15 @@ function pageNumbers(current, total) {
 }
 
 // ─── Aktif filtre rozeti ─────────────────────────────────────────────────────
+// Adım 9 ÖNEMLİ DÜZELTME: language/tag artık dizi. Boolean([]) JavaScript'te
+// "true" döner (boş dizi de "truthy" sayılır) — bu yüzden basit Boolean()
+// kontrolü diziler için YANLIŞ sonuç verirdi (hiç seçim yokken bile "aktif
+// filtre" sayardı). Dizi ise .length > 0 kontrolü, değilse eski Boolean()
+// kontrolü kullanılır.
 function updateFilterBadge() {
-  const count = Object.values(ui.filters).filter(Boolean).length;
+  const count = Object.values(ui.filters).filter((v) =>
+    Array.isArray(v) ? v.length > 0 : Boolean(v)
+  ).length;
   const badge = document.getElementById("filter-badge");
   const btn   = document.getElementById("filter-toggle");
   if (!badge || !btn) return;
@@ -515,7 +539,7 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "", confidence: "", yearMin: null, yearMax: null };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: "", confidence: "", yearMin: null, yearMax: null };
   syncChips();
   ["filter-author", "filter-publisher", "filter-category"].forEach((id) => {
     const el = document.getElementById(id);
@@ -573,15 +597,40 @@ export function initCatalog() {
     render();
   });
 
-  // Chip filtreler (format + durum)
+  // Chip filtreler (format + durum + ...)
+  // ── Adım 9: Dil ve Etiket "çoklu seçim" (MULTI_SELECT_FILTERS) listesinde —
+  // bu ikisinde tıklama AÇIK/KAPALI (toggle) çalışır, birden fazla chip aynı
+  // anda aktif olabilir. Diğer tüm filtreler (Format, Durum, Güven Skoru vb.)
+  // eskisi gibi TEK seçimli kalır — bu liste dışındaki her filterKey için
+  // davranış hiç değişmedi.
+  const MULTI_SELECT_FILTERS = new Set(["language", "tag"]);
+
   document.getElementById("filter-panel")?.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
     if (!chip) return;
     const filterKey = chip.dataset.filter;
     const value     = chip.dataset.value;
     if (!filterKey) return;
-    ui.filters[filterKey] = value;
-    syncChipGroup(`filter-${filterKey}-chips`, value);
+
+    if (MULTI_SELECT_FILTERS.has(filterKey)) {
+      // "Tümü" butonu (value === "") → seçimi tamamen temizle
+      if (value === "") {
+        ui.filters[filterKey] = [];
+      } else {
+        const current = ui.filters[filterKey];
+        const idx = current.indexOf(value);
+        if (idx === -1) {
+          current.push(value);       // henüz seçili değildi → ekle
+        } else {
+          current.splice(idx, 1);    // zaten seçiliydi → çıkar (toggle kapat)
+        }
+      }
+    } else {
+      // Eski davranış: tek seçim, dokunulmadı.
+      ui.filters[filterKey] = value;
+    }
+
+    syncChipGroup(`filter-${filterKey}-chips`, ui.filters[filterKey]);
     recompute(true);
   });
 
