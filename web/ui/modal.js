@@ -115,6 +115,14 @@ export function openModal(bookId) {
   }
   document.getElementById("modal-series-order").value = book.series_order ?? "";
   document.getElementById("modal-category").value     = book.category || "";   // ── Adım 1
+
+  // ── Adım 11: Akademik kutucuğu + Alt Alan/Konu doldur ───────────────────
+  const isAcademic = Boolean(book.is_academic);
+  document.getElementById("modal-is-academic").checked = isAcademic;
+  document.getElementById("modal-subcategory").value   = book.subcategory || "";
+  document.getElementById("modal-topic").value         = book.topic || "";
+  toggleAcademicFields(isAcademic);
+  // ── Adım 11 sonu ─────────────────────────────────────────────────────────
   document.getElementById("modal-year").value         = book.year ?? "";
   document.getElementById("modal-status").value       = book.status || "okunmadi";
   document.getElementById("modal-notes").value        = book.notes || "";
@@ -158,6 +166,14 @@ async function saveModal() {
     series:       document.getElementById("modal-series").value.trim() || null,
     series_order: seriesOrderRaw === "" ? null : parseInt(seriesOrderRaw) || null,
     category:     document.getElementById("modal-category").value.trim() || null,  // ── Adım 1
+    // ── Adım 11: Akademik işareti + Alt Alan/Konu ────────────────────────
+    // Akademik kutucuğu işaretsizse Alt Alan/Konu zaten boşaltılmış olur
+    // (toggleAcademicFields tarafından) — burada tekrar null'a zorlamaya
+    // gerek yok, kutudaki gerçek değeri (boşsa boş) kaydediyoruz.
+    is_academic:  document.getElementById("modal-is-academic").checked,
+    subcategory:  document.getElementById("modal-subcategory").value.trim() || null,
+    topic:        document.getElementById("modal-topic").value.trim() || null,
+    // ── Adım 11 sonu ──────────────────────────────────────────────────────
     year:         yearRaw === "" ? null : parseInt(yearRaw) || null,
     language:     document.getElementById("modal-language").value || null,
     status:       document.getElementById("modal-status").value,
@@ -373,4 +389,24 @@ export function initModal() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeModal();
   });
+
+  // ── Adım 11: Akademik onay kutusu — işaretlenince Alt Alan/Konu görünür ──
+  document.getElementById("modal-is-academic")?.addEventListener("change", (e) => {
+    toggleAcademicFields(e.target.checked);
+  });
+  // ── Adım 11 sonu ──────────────────────────────────────────────────────────
 }
+
+// ── Adım 11: Alt Alan/Konu kutularını göster/gizle ──────────────────────────
+// Akademik kutucuğu işaretliyken kutular görünür; işaretsizken gizlenir ve
+// kutuların içeriği temizlenir (gizliyken eski değer kalıp sessizce kaydedilmesin).
+function toggleAcademicFields(isAcademic) {
+  const wrap = document.getElementById("modal-academic-fields");
+  if (!wrap) return;
+  wrap.classList.toggle("hidden", !isAcademic);
+  if (!isAcademic) {
+    document.getElementById("modal-subcategory").value = "";
+    document.getElementById("modal-topic").value        = "";
+  }
+}
+// ── Adım 11 sonu ─────────────────────────────────────────────────────────────

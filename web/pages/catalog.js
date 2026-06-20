@@ -83,7 +83,7 @@ const PER_PAGE = 50;
 
 const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], confidence: "", yearMin: null, yearMax: null },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -136,6 +136,8 @@ export function renderCatalog() {
   populateSelectOptions();
   populateTagChips();         // ── Adım J4: dinamik etiket chip'leri
   populateCategoryChips();    // ── Adım 11: dinamik kategori chip'leri (çoklu seçim)
+  populateSubcategoryChips(); // ── Adım 11: alt alan chip'leri (sadece akademik)
+  populateTopicChips();       // ── Adım 11: konu chip'leri (alt alana bağlı)
   populateYearSlider();       // ── Adım 4: yıl aralığı slider sınırlarını ayarla
   syncChips();
   updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle
@@ -197,6 +199,96 @@ function populateCategoryChips() {
   // Seçili kategorileri senkronize et (dizi, çoklu seçim)
   syncChipGroup("filter-category-chips", ui.filters.category);
 }
+
+// ── Adım 11: Alt Alan chip'lerini doldur (sadece akademik kitaplardan) ──────
+// Ağacın 2. seviyesi. Sadece b.is_academic === true olan kitaplardan toplanır
+// — kategori adı "Akademik" yazmasa da is_academic işaretliyse dahil edilir
+// (Seçenek A: category metni ile is_academic checkbox'ı bağımsız).
+// Görünürlük: en az 1 akademik kitap yoksa grup tamamen gizlenir.
+function populateSubcategoryChips() {
+  const wrap      = document.getElementById("filter-subcategory-wrap");
+  const container = document.getElementById("filter-subcategory-chips");
+  if (!wrap || !container) return;
+
+  const academicBooks = state.books.filter((b) => b.is_academic);
+
+  if (academicBooks.length === 0) {
+    wrap.classList.add("hidden");
+    ui.filters.subcategory = [];
+    return;
+  }
+
+  const allSubcats = [...new Set(
+    academicBooks.map((b) => b.subcategory).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
+
+  // Hiç alt alan girilmemişse (hepsi boş) grup gizlenir.
+  if (allSubcats.length === 0) {
+    wrap.classList.add("hidden");
+    ui.filters.subcategory = [];
+    return;
+  }
+
+  wrap.classList.remove("hidden");
+
+  const existing = [...container.querySelectorAll(".chip[data-filter='subcategory']:not([data-value=''])")];
+  existing.forEach((c) => c.remove());
+
+  allSubcats.forEach((sub) => {
+    const btn = document.createElement("button");
+    btn.className     = "chip";
+    btn.dataset.filter = "subcategory";
+    btn.dataset.value  = sub;
+    btn.textContent    = sub;
+    container.appendChild(btn);
+  });
+
+  syncChipGroup("filter-subcategory-chips", ui.filters.subcategory);
+}
+
+// ── Adım 11: Konu chip'lerini doldur (ağacın 3. seviyesi) ───────────────────
+// Sadece akademik kitaplardan VE (eğer Alt Alan seçiliyse) o alt alana ait
+// kitaplardan toplanır. Alt Alan hiç seçili değilse, tüm akademik kitapların
+// konuları gösterilir (henüz daraltma yapılmamış demektir).
+function populateTopicChips() {
+  const wrap      = document.getElementById("filter-topic-wrap");
+  const container = document.getElementById("filter-topic-chips");
+  if (!wrap || !container) return;
+
+  let academicBooks = state.books.filter((b) => b.is_academic);
+
+  // Alt Alan seçiliyse, konu listesini o alt alan(lar)a göre daralt.
+  if (ui.filters.subcategory.length > 0) {
+    academicBooks = academicBooks.filter((b) => ui.filters.subcategory.includes(b.subcategory));
+  }
+
+  const allTopics = [...new Set(
+    academicBooks.map((b) => b.topic).filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
+
+  if (allTopics.length === 0) {
+    wrap.classList.add("hidden");
+    ui.filters.topic = [];
+    return;
+  }
+
+  wrap.classList.remove("hidden");
+
+  const existing = [...container.querySelectorAll(".chip[data-filter='topic']:not([data-value=''])")];
+  existing.forEach((c) => c.remove());
+
+  allTopics.forEach((topic) => {
+    const btn = document.createElement("button");
+    btn.className     = "chip";
+    btn.dataset.filter = "topic";
+    btn.dataset.value  = topic;
+    btn.textContent    = topic;
+    container.appendChild(btn);
+  });
+
+  syncChipGroup("filter-topic-chips", ui.filters.topic);
+}
+// ── Adım 11 sonu ─────────────────────────────────────────────────────────────
 // ── Adım 11 sonu ─────────────────────────────────────────────────────────────
 
 // ── Adım 4: Yıl Aralığı Slider'ı Kur ────────────────────────────────────────
@@ -319,6 +411,17 @@ function recompute(resetPage = false) {
     result = result.filter((b) => ui.filters.category.includes(b.category));
   }
   // ── Adım 11 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 11: Alt Alan ve Konu filtreleri (ağacın 2. ve 3. seviyesi) ──────
+  // Her ikisi de VEYA mantığıyla çoklu seçim — bir kitabın tek bir alt alanı
+  // ve tek bir konusu olur (book.subcategory / book.topic tekil değer).
+  if (ui.filters.subcategory.length > 0) {
+    result = result.filter((b) => ui.filters.subcategory.includes(b.subcategory));
+  }
+  if (ui.filters.topic.length > 0) {
+    result = result.filter((b) => ui.filters.topic.includes(b.topic));
+  }
+  // ── Adım 11 (Alt Alan/Konu) sonu ─────────────────────────────────────────
 
   // ── Adım 3: Güven skoru seviye filtresi ──────────────────────────────────
   if (ui.filters.confidence) {
@@ -451,6 +554,8 @@ function syncChips() {
   syncChipGroup("filter-confidence-chips", ui.filters.confidence);
   // ── Adım 11: Kategori (çoklu seçim) ──────────────────────────────────────
   syncChipGroup("filter-category-chips", ui.filters.category);
+  syncChipGroup("filter-subcategory-chips", ui.filters.subcategory);
+  syncChipGroup("filter-topic-chips", ui.filters.topic);
 }
 
 // ── Adım 9: activeValue artık ya tek bir string (Format/Durum/Güven gibi
@@ -573,12 +678,14 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], confidence: "", yearMin: null, yearMax: null };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null };
   syncChips();
   ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
+  populateSubcategoryChips(); // ── Adım 11: alt alan/konu grupları sıfırlanmış filtreyle yeniden çizilir
+  populateTopicChips();       // ── Adım 11
   populateYearSlider();   // ── Adım 4: slider'ı tam aralığa geri döndür
   updateSeriesOptions(); // seriyi pasif yap
   recompute(true);
@@ -636,7 +743,7 @@ export function initCatalog() {
   // chip aynı anda aktif olabilir. Diğer tüm filtreler (Format, Durum, Güven
   // Skoru vb.) eskisi gibi TEK seçimli kalır — bu liste dışındaki her
   // filterKey için davranış hiç değişmedi.
-  const MULTI_SELECT_FILTERS = new Set(["language", "tag", "category"]);
+  const MULTI_SELECT_FILTERS = new Set(["language", "tag", "category", "subcategory", "topic"]);
 
   document.getElementById("filter-panel")?.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");
@@ -664,6 +771,17 @@ export function initCatalog() {
     }
 
     syncChipGroup(`filter-${filterKey}-chips`, ui.filters[filterKey]);
+
+    // ── Adım 11: Ağaç daraltma — üst seviye değişince alt seviye yeniden
+    // hesaplanır. Alt Alan seçimi değişince Konu listesi (o alt alana göre)
+    // güncellenir. Kategori değişimi Alt Alan/Konu'yu etkilemez çünkü onlar
+    // zaten "is_academic" bayrağına göre (kategori adına göre değil) toplanıyor.
+    if (filterKey === "subcategory") {
+      ui.filters.topic = [];   // alt alan değişti → eski konu seçimleri geçersiz
+      populateTopicChips();
+    }
+    // ── Adım 11 sonu ──────────────────────────────────────────────────────────
+
     recompute(true);
   });
 

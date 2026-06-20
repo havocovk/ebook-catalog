@@ -220,6 +220,25 @@ iconify-icon {
 .field-row .field { flex: 1; }
 .field-row .field-narrow { flex: 0 0 80px; }
 
+/* ── Adım 11: Akademik onay kutusu ────────────────────────────── */
+.field-checkbox label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.field-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+/* ── Adım 11 sonu ─────────────────────────────────────────────── */
+
 label {
   font-size: 0.8rem;
   color: var(--text-2);

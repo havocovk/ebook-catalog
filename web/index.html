@@ -202,6 +202,25 @@
               </div>
             </div>
 
+            <!-- ── Adım 11: Alt Alan Filtresi (sadece akademik kategori seçiliyken görünür) ── -->
+            <div class="filter-group hidden" id="filter-subcategory-wrap">
+              <label class="filter-label">Alt Alan <span class="filter-hint">(çoklu seçim)</span></label>
+              <div class="filter-chips" id="filter-subcategory-chips">
+                <button class="chip active" data-filter="subcategory" data-value="">Tümü</button>
+                <!-- Dinamik chip'ler catalog.js tarafından doldurulur -->
+              </div>
+            </div>
+
+            <!-- ── Adım 11: Konu Filtresi (sadece Alt Alan seçiliyken görünür) ── -->
+            <div class="filter-group hidden" id="filter-topic-wrap">
+              <label class="filter-label">Konu <span class="filter-hint">(çoklu seçim)</span></label>
+              <div class="filter-chips" id="filter-topic-chips">
+                <button class="chip active" data-filter="topic" data-value="">Tümü</button>
+                <!-- Dinamik chip'ler catalog.js tarafından doldurulur -->
+              </div>
+            </div>
+            <!-- ── Adım 11 sonu ─────────────────────────────────────────── -->
+
             <!-- ── Adım 3: Güven Skoru Filtresi ─────────────────────────── -->
             <div class="filter-group">
               <label class="filter-label">Güven Skoru</label>
@@ -429,6 +448,30 @@
             </label>
             <input type="text" id="modal-category" placeholder="Roman, Akademik, Ders Notları..." />
           </div>
+
+          <!-- ── Adım 11 (genişletilmiş): Akademik işareti + Alt Alan/Konu ── -->
+          <div class="field field-checkbox">
+            <label>
+              <input type="checkbox" id="modal-is-academic" />
+              Akademik
+            </label>
+          </div>
+
+          <div class="field-row hidden" id="modal-academic-fields">
+            <div class="field">
+              <label>
+                <iconify-icon icon="lucide:layers"></iconify-icon> Alt Alan
+              </label>
+              <input type="text" id="modal-subcategory" placeholder="Termodinamik, Elektrik..." />
+            </div>
+            <div class="field">
+              <label>
+                <iconify-icon icon="lucide:bookmark-plus"></iconify-icon> Konu
+              </label>
+              <input type="text" id="modal-topic" placeholder="Yanma, Isı Transferi..." />
+            </div>
+          </div>
+          <!-- ── Adım 11 sonu ────────────────────────────────────────── -->
 
           <!-- Durum + Yıl -->
           <div class="field-row">
