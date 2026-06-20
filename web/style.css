@@ -1474,7 +1474,6 @@ textarea { resize: vertical; }
 .author-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0.55rem 0.75rem;
   border-radius: var(--radius);
   cursor: pointer;
@@ -1487,9 +1486,14 @@ textarea { resize: vertical; }
 }
 
 .author-name {
+  flex: 1;
+  min-width: 0;
   font-size: 0.9rem;
   color: var(--text);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .author-row:hover .author-name {
@@ -1501,6 +1505,11 @@ textarea { resize: vertical; }
   color: var(--text-3);
   white-space: nowrap;
   flex-shrink: 0;
+  /* Sabit genişlik: isim ne kadar uzun/kısa olursa olsun, sayı hep aynı
+     dikey çizgide başlar. Üç hane (örn. "999 kitap") rahatça sığacak
+     genişlik + sağa hizalama ile rakamlar da kendi içinde hizalı durur. */
+  width: 4.5rem;
+  text-align: right;
 }
 
 /* ── Mobil ───────────────────────────────────────────────────── */
