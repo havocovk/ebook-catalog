@@ -13,6 +13,7 @@ import { state } from "../core/state.js";
 import {
   updateBookRecord,
   deleteBookRecord,
+  uploadBookCover,
   createAuthor,
   renameAuthorEverywhere,
   deleteAuthorEverywhere,
@@ -71,6 +72,16 @@ function updateSeriesAvailability(resetIfInvalid) {
   }
 }
 
+// ─── Kapak alanını çiz: resim varsa göster, yoksa yer tutucu göster ────────
+// Hem modal açılışında hem de yeni kapak yüklendikten sonra çağrılır.
+function renderCoverArea(book) {
+  const coverHtml = book.cover_url
+    ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" />`
+    : `<div class="cover-placeholder large">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+
+  document.getElementById("modal-cover").innerHTML = coverHtml;
+}
+
 // ─── Modal'ı aç ─────────────────────────────────────────────────────────────
 export function openModal(bookId) {
   const book = state.books.find((b) => b.$id === bookId);
@@ -78,11 +89,7 @@ export function openModal(bookId) {
 
   editingId = bookId;
 
-  const coverHtml = book.cover_url
-    ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" />`
-    : `<div class="cover-placeholder large">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
-
-  document.getElementById("modal-cover").innerHTML = coverHtml;
+  renderCoverArea(book);
 
   // Alan sırası: Kitap Adı → Yazar → Yayınevi → Seri → Durum/Yıl → Puan → ...
   document.getElementById("modal-title").value        = book.title || "";
@@ -204,6 +211,34 @@ function _showConfirm(message) {
   });
 }
 
+// ── Kapak resmi yükle ────────────────────────────────────────────────────────
+// Buton tıklanınca gizli dosya seçiciyi açar; dosya seçilince Appwrite
+// Storage'a yükler, eski kapak varsa siler, kitap kaydını ve ekranı günceller.
+async function handleCoverFileSelected(file) {
+  if (!file || !editingId) return;
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedTypes.includes(file.type)) {
+    showToast("Sadece JPG, PNG veya WEBP resim dosyası yükleyebilirsiniz.", "error");
+    return;
+  }
+
+  try {
+    showToast("Kapak resmi yükleniyor...");
+    const newCoverUrl = await uploadBookCover(editingId, file);
+
+    // Modal'daki kapak alanını anında güncelle.
+    const book = state.books.find((b) => b.$id === editingId);
+    if (book) renderCoverArea(book);
+
+    // Kataloğdaki kart görünümünü de tazele.
+    refreshCurrentPage();
+    showToast("Kapak resmi güncellendi.");
+  } catch (err) {
+    showToast("Kapak yüklenemedi: " + (err?.message || err), "error");
+  }
+}
+
 // ─── Sil ────────────────────────────────────────────────────────────────────
 async function deleteCurrentBook() {
   if (!editingId) return;
@@ -291,6 +326,17 @@ export function initModal() {
   document.getElementById("modal-close").addEventListener("click", closeModal);
   document.getElementById("modal-save").addEventListener("click", saveModal);
   document.getElementById("modal-delete").addEventListener("click", deleteCurrentBook);
+
+  // ── Kapak resmi yükleme: butona basınca gizli dosya seçiciyi tetikle ──────
+  const coverInput = document.getElementById("modal-cover-input");
+  document.getElementById("modal-cover-upload-btn")?.addEventListener("click", () => {
+    coverInput?.click();
+  });
+  coverInput?.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    handleCoverFileSelected(file);
+    e.target.value = ""; // aynı dosya tekrar seçilebilsin
+  });
 
   document.getElementById("book-modal").addEventListener("click", (e) => {
     if (e.target === e.currentTarget) closeModal();

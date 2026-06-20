@@ -9,10 +9,14 @@
 
 import {
   databases,
+  storage,
   Query,
   ID,
+  APPWRITE_ENDPOINT,
+  APPWRITE_PROJECT_ID,
   DATABASE_ID,
   TABLE_ID,
+  BUCKET_ID,
   AUTHORS_ID,
   PUBLISHERS_ID,
   SERIES_ID,
@@ -454,4 +458,52 @@ export async function deleteSeriesEverywhere(seriesId, name, publisherId) {
   } finally {
     showLoading(false);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// KİTAP KAPAĞI — manuel yükleme (Kitap Ayıklayıcı / modal'dan).
+//
+// Tarayıcı kapak resmini dosyadan çıkaramadığında, kullanıcı kendi bulduğu
+// resmi buradan yükleyebilir. Dosya ID'si olarak kitabın kendi $id'si
+// kullanılır — Python tarayıcısının kapak dosyalarını isimlendirme mantığıyla
+// aynı yöntem (bkz. scanner/uploader.py _book_id_from_path / upload_cover).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Storage dosyası için herkese açık görüntüleme adresini kur ────────────
+// Python tarafındaki _build_public_url ile birebir aynı format kullanılır.
+function buildPublicCoverUrl(fileId) {
+  return (
+    `${APPWRITE_ENDPOINT}/storage/buckets/${BUCKET_ID}` +
+    `/files/${fileId}/view?project=${APPWRITE_PROJECT_ID}`
+  );
+}
+
+// ─── Bir kitabın kapak resmini yükle/değiştir ───────────────────────────────
+// 1) Kitabın storage'da zaten bir kapak dosyası varsa onu siler (temiz tutmak için).
+// 2) Yeni dosyayı kitabın $id'siyle storage'a yükler.
+// 3) Kitap kaydındaki cover_url alanını yeni adresle günceller (veritabanı + hafıza).
+//
+// Dönüş: güncellenmiş cover_url (başarılıysa), hata olursa fırlatır.
+export async function uploadBookCover(bookId, file) {
+  const fileId = bookId; // Kitap $id'si = kapak dosya ID'si (Python tarafıyla aynı kural)
+
+  // 1) Aynı ID'li eski kapak dosyası varsa sil (upsert davranışı).
+  try {
+    await storage.deleteFile(BUCKET_ID, fileId);
+  } catch {
+    // Dosya yoksa Appwrite 404 fırlatır — bu normal, sorun değil.
+  }
+
+  // 2) Yeni dosyayı yükle.
+  await storage.createFile(BUCKET_ID, fileId, file);
+
+  // 3) Yeni adresi kitabın kaydına yaz.
+  const coverUrl = buildPublicCoverUrl(fileId);
+  await databases.updateDocument(DATABASE_ID, TABLE_ID, bookId, { cover_url: coverUrl });
+
+  // Hafızadaki kopyayı da güncelle (sayfa yeniden çekmeden anında görünsün).
+  const idx = state.books.findIndex((b) => b.$id === bookId);
+  if (idx !== -1) state.books[idx] = { ...state.books[idx], cover_url: coverUrl };
+
+  return coverUrl;
 }

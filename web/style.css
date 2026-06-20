@@ -571,9 +571,16 @@ textarea { resize: vertical; }
   flex: 1;
 }
 
-.modal-cover {
+.modal-cover-wrap {
   flex-shrink: 0;
   width: 130px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modal-cover {
+  width: 100%;
 }
 
 .modal-cover img {
@@ -587,6 +594,13 @@ textarea { resize: vertical; }
   height: 180px;
   border-radius: var(--radius);
   font-size: 2.5rem;
+}
+
+.modal-cover-upload-btn {
+  width: 100%;
+  justify-content: center;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.5rem;
 }
 
 .modal-fields {

@@ -28,6 +28,8 @@ export {
   storage,
   Query,
   ID,
+  APPWRITE_ENDPOINT,
+  APPWRITE_PROJECT_ID,
   DATABASE_ID,
   TABLE_ID,
   BUCKET_ID,

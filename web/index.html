@@ -269,7 +269,14 @@
         <button id="modal-close" class="modal-close" title="Kapat">✕</button>
       </div>
       <div class="modal-body">
-        <div class="modal-cover" id="modal-cover"></div>
+        <div class="modal-cover-wrap">
+          <div class="modal-cover" id="modal-cover"></div>
+          <button type="button" id="modal-cover-upload-btn" class="btn btn-sm modal-cover-upload-btn">
+            <iconify-icon icon="lucide:image-up"></iconify-icon>
+            <span>Resim Yükle</span>
+          </button>
+          <input type="file" id="modal-cover-input" accept="image/jpeg,image/png,image/webp" hidden />
+        </div>
         <div class="modal-fields">
 
           <!-- Kitap Adı -->
