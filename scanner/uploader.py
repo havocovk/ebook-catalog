@@ -11,7 +11,6 @@ from appwrite.exception import AppwriteException
 
 
 # ─── Configuration ────────────────────────────────────────────────────────────
-# Bu değerleri scanner/.env dosyasından okur.
 APPWRITE_ENDPOINT = os.getenv("APPWRITE_ENDPOINT", "https://fra.cloud.appwrite.io/v1")
 APPWRITE_PROJECT_ID = os.getenv("APPWRITE_PROJECT_ID", "YOUR_PROJECT_ID")
 APPWRITE_API_KEY = os.getenv("APPWRITE_API_KEY", "YOUR_API_KEY")
@@ -20,8 +19,6 @@ DATABASE_ID = os.getenv("APPWRITE_DATABASE_ID", "ebook_catalog")
 TABLE_ID = os.getenv("APPWRITE_TABLE_ID", "books")
 BUCKET_ID = os.getenv("APPWRITE_BUCKET_ID", "covers")
 
-# Kayıtlara yazılacak kullanıcı ID'si. Appwrite panelinde Auth altında
-# oluşturduğun kullanıcının ID'si ($id). .env içine APPWRITE_USER_ID olarak gir.
 OWNER_USER_ID = os.getenv("APPWRITE_USER_ID", "YOUR_USER_ID")
 
 
@@ -31,7 +28,6 @@ _storage: Storage = None
 
 
 def _init():
-    """Appwrite client'ı ve servisleri tek seferlik kurar."""
     global _client, _databases, _storage
     if _client is None:
         _client = (
@@ -55,25 +51,10 @@ def get_storage() -> Storage:
 
 
 def _book_id_from_path(file_path: str) -> str:
-    """Dosya yolundan kararlı (deterministik) bir ID üretir.
-    Aynı dosya tekrar taranırsa aynı ID döner, böylece storage'da tekrar oluşmaz.
-    Appwrite ID'leri max 36 karakter; md5 hash 32 karakter, güvenli."""
     return hashlib.md5(file_path.encode("utf-8")).hexdigest()
 
 
-# ─── Duplicate check ──────────────────────────────────────────────────────────
-
 def is_already_indexed(file_path: str) -> bool:
-    """Bu dosya veritabanında zaten var mı kontrol eder.
-
-    Appwrite SDK 5.0.1'de list_documents ve get_document dahil tüm çağrılar
-    GET isteğine body ekleyip '400 request cannot have request body' hatasına
-    yol açıyor. Bu yüzden SDK bypass edilerek doğrudan HTTP GET atılıyor.
-
-    doc_id = dosya yolunun MD5 hash'i (_book_id_from_path ile aynı mantık).
-    Belge varsa HTTP 200 → True (zaten kayıtlı, atla).
-    Belge yoksa HTTP 404 → False (yeni kitap, işleme devam et).
-    """
     _init()
     doc_id = _book_id_from_path(file_path)
     url = (
@@ -88,10 +69,9 @@ def is_already_indexed(file_path: str) -> bool:
     try:
         resp = requests.get(url, headers=headers, timeout=10)
         if resp.status_code == 200:
-            return True   # Belge var → zaten kayıtlı
+            return True
         if resp.status_code == 404:
-            return False  # Belge yok → yeni kitap
-        # Başka hata (ağ, izin vb.) → atlamadan devam et
+            return False
         print(f"  [Kontrol hatası] HTTP {resp.status_code}: {resp.text[:120]}")
         return False
     except Exception as e:
@@ -99,11 +79,90 @@ def is_already_indexed(file_path: str) -> bool:
         return False
 
 
-# ─── Cover upload ─────────────────────────────────────────────────────────────
+# ── Adım 7: Toplu "zaten kayıtlı mı?" kontrolü ─────────────────────────────────
+#
+# is_already_indexed() her dosya için AYRI bir HTTP isteği atıyor — 3000 kitaplık
+# bir kütüphanede bu, tekrar taramalarda 3000 ayrı ağ isteği demek (çok yavaş).
+#
+# Bu fonksiyon yerine, TÜM dosya yollarını alıp tek (veya birkaç) toplu sorguyla
+# "bunlardan hangileri zaten kayıtlı?" sorusunu sorar. Appwrite'ın list_documents
+# endpoint'i tek seferde en fazla 100 ID sorgulayabildiği için (ve SDK 5.0.1'de
+# GET isteklerine body eklenip 400 hatası verdiği için, is_already_indexed'teki
+# aynı nedenle), burada da SDK bypass edilip doğrudan HTTP GET kullanılıyor.
+#
+# Örnek: 3000 dosya → 30 toplu istek (her biri 100 ID). Önceki yöntemle bu
+# 3000 ayrı istek olurdu. ~100x daha az ağ isteği.
+#
+# GÜVENLİK: Herhangi bir toplu istek başarısız olursa (ağ hatası, beklenmeyen
+# yanıt), o gruptaki dosyalar için sessizce is_already_indexed() (tek-tek,
+# eski yöntem) fallback olarak devreye girer — tarama asla bu yüzden durmaz.
+_BATCH_SIZE = 100  # Appwrite: tek sorguda en fazla 100 değer + max 100 query
+
+
+def get_indexed_paths_batch(file_paths: list) -> set:
+    """Verilen dosya yollarından hangilerinin veritabanında zaten kayıtlı
+    olduğunu toplu sorgularla bulur. Dönüş: kayıtlı olan dosya yollarının
+    kümesi (set) — `path in result` ile O(1) hızda kontrol edilebilir.
+    """
+    _init()
+    indexed_paths = set()
+
+    # Dosya yolu → doc_id eşlemesi (doc_id'den geri dosya yoluna dönmek için)
+    path_by_doc_id = {_book_id_from_path(p): p for p in file_paths}
+    all_doc_ids = list(path_by_doc_id.keys())
+
+    url = f"{APPWRITE_ENDPOINT}/databases/{DATABASE_ID}/collections/{TABLE_ID}/documents"
+    headers = {
+        "X-Appwrite-Project": APPWRITE_PROJECT_ID,
+        "X-Appwrite-Key":     APPWRITE_API_KEY,
+        "Content-Type":       "application/json",
+    }
+
+    # 100'lük gruplar halinde sorgula
+    for i in range(0, len(all_doc_ids), _BATCH_SIZE):
+        batch_ids = all_doc_ids[i : i + _BATCH_SIZE]
+        batch_paths = [path_by_doc_id[d] for d in batch_ids]
+
+        try:
+            queries = [
+                Query.equal("$id", batch_ids),
+                Query.limit(_BATCH_SIZE),
+            ]
+            resp = requests.get(
+                url,
+                headers=headers,
+                params={"queries[]": queries},
+                timeout=20,
+            )
+            if resp.status_code != 200:
+                print(f"  [Toplu kontrol hatası] HTTP {resp.status_code} — bu grup için tek-tek kontrole geçiliyor.")
+                _fallback_check_batch(batch_paths, indexed_paths)
+                continue
+
+            found_docs = resp.json().get("documents", [])
+            for doc in found_docs:
+                doc_id = doc.get("$id")
+                if doc_id in path_by_doc_id:
+                    indexed_paths.add(path_by_doc_id[doc_id])
+
+        except Exception as e:
+            print(f"  [Toplu kontrol hatası] {e} — bu grup için tek-tek kontrole geçiliyor.")
+            _fallback_check_batch(batch_paths, indexed_paths)
+
+    return indexed_paths
+
+
+def _fallback_check_batch(batch_paths: list, indexed_paths: set):
+    """Toplu sorgu başarısız olduğunda, o gruptaki dosyaları eski (tek-tek)
+    yöntemle kontrol eder ve sonuçları indexed_paths kümesine ekler.
+    Bu fonksiyon tarama sırasında SESSİZCE devreye girer — kullanıcı için
+    tek fark, o grup için biraz daha yavaş olması (yine de tarama durmaz)."""
+    for p in batch_paths:
+        if is_already_indexed(p):
+            indexed_paths.add(p)
+
 
 def _build_public_url(file_id: str) -> str:
-    """Storage dosyası için public görüntüleme URL'i kurar.
-    covers bucket'ı public okuma izinli olduğundan bu URL tarayıcıda açılır."""
     return (
         f"{APPWRITE_ENDPOINT}/storage/buckets/{BUCKET_ID}"
         f"/files/{file_id}/view?project={APPWRITE_PROJECT_ID}"
@@ -111,22 +170,17 @@ def _build_public_url(file_id: str) -> str:
 
 
 def _delete_if_exists(file_id: str):
-    """Aynı ID'li dosya storage'da varsa siler (upsert davranışı için)."""
     storage = get_storage()
     try:
         storage.get_file(bucket_id=BUCKET_ID, file_id=file_id)
-        # Varsa sil
         storage.delete_file(bucket_id=BUCKET_ID, file_id=file_id)
     except AppwriteException:
-        # Yoksa zaten sorun yok
         pass
 
 
 def upload_cover(local_cover_path: str, book_id: str) -> str | None:
-    """Yerel kapak görselini Appwrite Storage'a yükler.
-    Başarılıysa public URL, değilse None döner."""
     storage = get_storage()
-    file_id = book_id  # md5 hash, 32 karakter — geçerli Appwrite ID
+    file_id = book_id
 
     try:
         _delete_if_exists(file_id)
@@ -145,8 +199,6 @@ def upload_cover(local_cover_path: str, book_id: str) -> str | None:
 
 
 def upload_cover_from_url(api_cover_url: str, book_id: str) -> str | None:
-    """Kapağı bir API URL'inden indirip Appwrite Storage'a yükler.
-    Dosyadan kapak çıkarılamadığında yedek yol olarak kullanılır."""
     storage = get_storage()
     file_id = book_id
 
@@ -172,24 +224,18 @@ def upload_cover_from_url(api_cover_url: str, book_id: str) -> str | None:
         return None
 
 
-# ─── Save record ──────────────────────────────────────────────────────────────
-
 def save_book(metadata: dict, cover_url: str = None) -> bool:
-    """Kitap kaydını Appwrite veritabanına yazar.
-    Başarılıysa True, değilse False döner."""
     db = get_databases()
 
     file_path = metadata.get("file_path")
     doc_id = _book_id_from_path(file_path) if file_path else ID.unique()
 
-    # Appwrite, None değerleri kabul eder ama yalnızca alan "required" değilse.
-    # tags alanı array; boş liste olarak veriyoruz.
     data = {
         "user_id": OWNER_USER_ID,
         "title": metadata.get("title"),
         "author": metadata.get("author"),
-        "publisher": metadata.get("publisher"),   # YENİ
-        "language": metadata.get("language"),     # YENİ
+        "publisher": metadata.get("publisher"),
+        "language": metadata.get("language"),
         "series": metadata.get("series"),
         "series_order": metadata.get("series_order") or metadata.get("series_index"),
         "format": metadata.get("format"),
@@ -203,15 +249,12 @@ def save_book(metadata: dict, cover_url: str = None) -> bool:
         "notes": None,
         "finished_at": None,
         "tags": [],
-        # ── Adım P8: Güven skoru alanları ──────────────────────────────────
         "confidence_score": metadata.get("confidence_score"),
         "metadata_source": metadata.get("metadata_source"),
     }
 
-    # series_order ve year integer alanları; boş string gelirse None yap
     for int_field in ("series_order", "file_size", "year", "rating"):
         if data.get(int_field) in ("", 0) and int_field in ("series_order", "year", "rating"):
-            # 0 geçerli bir year/rating değil; None'a çevir
             if data[int_field] == "":
                 data[int_field] = None
 
@@ -224,7 +267,6 @@ def save_book(metadata: dict, cover_url: str = None) -> bool:
         )
         return True
     except AppwriteException as e:
-        # Aynı doc_id zaten varsa (409) güncelle
         if getattr(e, "code", None) == 409:
             try:
                 db.update_document(

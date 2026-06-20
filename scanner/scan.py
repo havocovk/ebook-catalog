@@ -19,8 +19,16 @@ from uploader import (
     upload_cover_from_url,
     save_book,
     is_already_indexed,
+    get_indexed_paths_batch,
     _book_id_from_path,
 )
+from logger_setup import get_logger
+
+# ── Adım 8: Loglama ──────────────────────────────────────────────────────────
+# "Orta seviye" loglama: özet istatistikler + hatalar. Her kitabın detayı
+# loglanmaz (bkz. logger_setup.py docstring'i). Ekrandaki print() ifadeleri
+# bu logger'dan bağımsız çalışmaya devam eder — hiçbiri kaldırılmadı.
+log = get_logger()
 
 SUPPORTED_FORMATS = {".epub", ".pdf"}
 
@@ -44,6 +52,7 @@ def check_env():
         for var in missing:
             print(f"    - {var}")
         print("\nLütfen scanner/.env dosyasını doldurup tekrar çalıştır.")
+        log.error(f".env dosyasında eksik değerler, tarama başlatılamadı: {', '.join(missing)}")
         sys.exit(1)
 
 
@@ -193,10 +202,12 @@ def scan_folder(
 ):
     if not os.path.isdir(folder_path):
         print(f"Hata: '{folder_path}' klasörü bulunamadı.")
+        log.error(f"Klasör bulunamadı: {folder_path}")
         sys.exit(1)
 
     print(f"\n📚 Klasör taranıyor: {folder_path}")
     print("─" * 55)
+    log.info(f"Tarama başladı: {folder_path}")
 
     # ── Adım P3: Yayınevi ve seri belirleme ─────────────────────────────────
     #
@@ -259,6 +270,15 @@ def scan_folder(
         _print_summary(stats, missing_tracker)
         return
 
+    # ── Adım 7: Toplu "zaten kayıtlı mı?" kontrolü ──────────────────────────
+    # Taramaya başlamadan ÖNCE, tüm dosyalar için TEK SEFERDE (100'lük gruplar
+    # halinde) Appwrite'a sorulur. Önceki yöntemde her dosya için ayrı bir
+    # ağ isteği atılıyordu (3000 kitapta 3000 istek); şimdi en fazla
+    # ceil(3000/100) = 30 istek atılıyor.
+    print("🔍 Hangi dosyaların zaten kayıtlı olduğu kontrol ediliyor (toplu sorgu)...")
+    indexed_paths = get_indexed_paths_batch(files)
+    print(f"   {len(indexed_paths)}/{total} dosya zaten kayıtlı, atlanacak.\n")
+
     # ── Worker sayısını belirle ──────────────────────────────────────────────
     # Dosya sayısından fazla worker açmak anlamsız
     effective_workers = max(1, min(workers, total))
@@ -269,6 +289,7 @@ def scan_folder(
         _scan_sequential(
             files, stats, missing_tracker,
             verbose, forced_publisher, forced_series,
+            indexed_paths,
         )
     else:
         # Paralel mod
@@ -276,7 +297,7 @@ def scan_folder(
         _scan_parallel(
             files, stats, missing_tracker,
             verbose, forced_publisher, forced_series,
-            effective_workers,
+            effective_workers, indexed_paths,
         )
 
     _print_summary(stats, missing_tracker)
@@ -288,10 +309,15 @@ def scan_folder(
 def _scan_sequential(
     files, stats, missing_tracker,
     verbose, forced_publisher, forced_series,
+    indexed_paths,
 ):
     """
     Dosyaları tek tek, sırayla işler (eski davranış).
     --workers 1 verildiğinde veya tek dosya olduğunda kullanılır.
+
+    Adım 7: "zaten kayıtlı mı?" kontrolü artık burada ağ isteği atmıyor —
+    indexed_paths kümesi taramaya başlamadan ÖNCE toplu sorguyla hesaplandı
+    (bkz. scan_folder). Burada sadece kümede arama yapılıyor (anında, ağ yok).
     """
     total = len(files)
     for i, file_path in enumerate(files, 1):
@@ -299,7 +325,7 @@ def _scan_sequential(
         print(f"[{i}/{total}] {filename}")
 
         try:
-            if is_already_indexed(file_path):
+            if file_path in indexed_paths:
                 stats["skipped"] += 1
                 print("  ⏭  Zaten kayıtlı, atlanıyor.")
                 continue
@@ -325,12 +351,13 @@ def _scan_sequential(
         except Exception as e:
             stats["error"] += 1
             print(f"  ✗ Hata: {e}")
+            log.error(f"Dosya işlenemedi: {file_path} — {e}")
 
 
 def _scan_parallel(
     files, stats, missing_tracker,
     verbose, forced_publisher, forced_series,
-    workers,
+    workers, indexed_paths,
 ):
     """
     Dosyaları paralel olarak (aynı anda 'workers' adet) işler.
@@ -343,6 +370,12 @@ def _scan_parallel(
          halinde gerçek terminale basılır — satırlar karışmaz.
       4) Sayaçlar (stats) ve eksik alan listesi (missing_tracker) yalnızca
          bu ana döngüde, tek thread tarafından güncellenir — yarış durumu olmaz.
+
+    Adım 7: indexed_paths kümesi (taramaya başlamadan önce toplu sorguyla
+    hesaplandı) tüm worker thread'lerine salt-okunur olarak paylaşılır.
+    Sadece okuma yapıldığı için (hiçbir thread içeriğini değiştirmiyor)
+    ek bir kilitleme (lock) gerekmez — Python'da salt-okunur set paylaşımı
+    thread-safe'tir.
     """
     total = len(files)
     real_stdout = sys.stdout
@@ -356,6 +389,7 @@ def _scan_parallel(
                     _process_one,
                     file_path, proxy,
                     verbose, forced_publisher, forced_series,
+                    indexed_paths,
                 ): file_path
                 for file_path in files
             }
@@ -392,6 +426,7 @@ def _scan_parallel(
 def _process_one(
     file_path, proxy,
     verbose, forced_publisher, forced_series,
+    indexed_paths,
 ):
     """
     Tek bir dosyayı bir worker thread'inde işler.
@@ -399,6 +434,9 @@ def _process_one(
     Bu fonksiyon paralel havuzda çağrılır. Tüm print çıktısını kendi
     tamponuna toplar ve sonunda (durum, metadata, çıktı metni) döndürür.
     Ana thread bu sonucu alıp terminale basar ve sayaçları günceller.
+
+    Adım 7: indexed_paths kümesinde arama yapmak ağ isteği gerektirmez
+    (anında sonuç) — eski is_already_indexed() çağrısı ağ isteği atıyordu.
     """
     buffer = StringIO()
     proxy.set_buffer(buffer)
@@ -410,7 +448,7 @@ def _process_one(
         filename = os.path.basename(file_path)
         print(f"{filename}")
 
-        if is_already_indexed(file_path):
+        if file_path in indexed_paths:
             print("  ⏭  Zaten kayıtlı, atlanıyor.")
             status = "skipped"
         else:
@@ -429,6 +467,7 @@ def _process_one(
 
     except Exception as e:
         print(f"  ✗ Hata: {e}")
+        log.error(f"Dosya işlenemedi: {file_path} — {e}")
         status = "error"
     finally:
         proxy.clear_buffer()
@@ -608,6 +647,16 @@ def _print_summary(stats: dict, missing_tracker: dict):
             print(f"  {label}: {count:3d} / {processed}  [{bar}] %{pct}")
 
     print("=" * 55)
+
+    # ── Adım 8: Tarama özetini logla ────────────────────────────────────────
+    # Burası "orta seviye" loglamanın ana noktası: her kitabın tek tek detayı
+    # değil, ama taramanın genel sonucu kalıcı olarak kaydedilir.
+    log.info(
+        f"Tarama tamamlandı — Yeni: {stats['new']}, "
+        f"Atlanan: {stats['skipped']}, Hata: {stats['error']}"
+    )
+    if stats["error"] > 0:
+        log.warning(f"Bu taramada {stats['error']} dosya hata ile sonuçlandı (detaylar yukarıda).")
 
 
 def _write_csv_report(csv_path: str, missing_tracker: dict):
