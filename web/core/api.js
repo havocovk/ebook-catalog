@@ -464,9 +464,9 @@ export async function deleteSeriesEverywhere(seriesId, name, publisherId) {
 // KİTAP KAPAĞI — manuel yükleme (Kitap Ayıklayıcı / modal'dan).
 //
 // Tarayıcı kapak resmini dosyadan çıkaramadığında, kullanıcı kendi bulduğu
-// resmi buradan yükleyebilir. Dosya ID'si olarak kitabın kendi $id'si
-// kullanılır — Python tarayıcısının kapak dosyalarını isimlendirme mantığıyla
-// aynı yöntem (bkz. scanner/uploader.py _book_id_from_path / upload_cover).
+// resmi buradan yükleyebilir. Her yükleme YENİ ve BENZERSİZ bir dosya ID'si
+// alır (bkz. uploadBookCover altındaki not — eski dosya kasıtlı olarak
+// silinmez, çünkü silme izni client tarafında yok).
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Storage dosyası için herkese açık görüntüleme adresini kur ────────────
@@ -479,25 +479,25 @@ function buildPublicCoverUrl(fileId) {
 }
 
 // ─── Bir kitabın kapak resmini yükle/değiştir ───────────────────────────────
-// 1) Kitabın storage'da zaten bir kapak dosyası varsa onu siler (temiz tutmak için).
-// 2) Yeni dosyayı kitabın $id'siyle storage'a yükler.
-// 3) Kitap kaydındaki cover_url alanını yeni adresle günceller (veritabanı + hafıza).
+// ÖNEMLİ: Eski kapak dosyası SİLİNMEYE ÇALIŞILMAZ. Sebep: Python tarayıcısı
+// kapak dosyalarını server API key ile (izin belirtmeden) yüklüyor; bu da
+// dosyayı sadece o API key'in silebileceği anlamına geliyor. Tarayıcıdan
+// (kullanıcı oturumuyla) o dosyayı silmeye çalışmak HTTP 401 (yetkisiz)
+// hatası verir — bu da yüklemenin tamamını bozar (409 "ID already exists").
 //
-// Dönüş: güncellenmiş cover_url (başarılıysa), hata olursa fırlatır.
+// Bu yüzden her yükleme YENİ ve BENZERSİZ bir dosya ID'si (ID.unique()) ile
+// yapılır. Eski dosya storage'da kalır (silinmez) ama kitabın cover_url alanı
+// her zaman en güncel resme işaret eder — yani kullanıcı için kapak değişimi
+// sınırsız sayıda ve sorunsuz çalışır.
+//
+// Dönüş: yeni cover_url (başarılıysa), hata olursa fırlatır.
 export async function uploadBookCover(bookId, file) {
-  const fileId = bookId; // Kitap $id'si = kapak dosya ID'si (Python tarafıyla aynı kural)
+  const fileId = ID.unique(); // Her yüklemede yepyeni, çakışmayan bir ID
 
-  // 1) Aynı ID'li eski kapak dosyası varsa sil (upsert davranışı).
-  try {
-    await storage.deleteFile(BUCKET_ID, fileId);
-  } catch {
-    // Dosya yoksa Appwrite 404 fırlatır — bu normal, sorun değil.
-  }
-
-  // 2) Yeni dosyayı yükle.
+  // 1) Yeni dosyayı storage'a yükle.
   await storage.createFile(BUCKET_ID, fileId, file);
 
-  // 3) Yeni adresi kitabın kaydına yaz.
+  // 2) Yeni adresi kitabın kaydına yaz (eski kapak referansının üzerine yazılır).
   const coverUrl = buildPublicCoverUrl(fileId);
   await databases.updateDocument(DATABASE_ID, TABLE_ID, bookId, { cover_url: coverUrl });
 
