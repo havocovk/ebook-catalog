@@ -41,7 +41,7 @@
         <span>Ebook Kataloğu</span>
       </span>
 
-      <!-- Sıra: Panel → Katalog → Yazarlar → Yayınevleri → Seriler -->
+      <!-- Sıra: Panel → Katalog → Yazarlar → Yayınevleri → Seriler → Kitap Ayıklayıcı -->
       <nav id="main-nav" class="main-nav">
         <a href="#dashboard" data-nav="dashboard" class="nav-link">
           <iconify-icon icon="lucide:layout-dashboard"></iconify-icon><span>Panel</span>
@@ -57,6 +57,9 @@
         </a>
         <a href="#series" data-nav="series" class="nav-link">
           <iconify-icon icon="lucide:layers"></iconify-icon><span>Seriler</span>
+        </a>
+        <a href="#dedupe" data-nav="dedupe" class="nav-link">
+          <iconify-icon icon="lucide:copy-x"></iconify-icon><span>Kitap Ayıklayıcı</span>
         </a>
       </nav>
 
@@ -242,6 +245,14 @@
         <div class="authors-wrap">
           <!-- series.js bu div'in içini doldurur -->
           <div id="series-content"></div>
+        </div>
+      </section>
+
+      <!-- ── Kitap Ayıklayıcı ───────────────────────────────────────── -->
+      <section id="dedupe-page" class="page hidden">
+        <div class="authors-wrap">
+          <!-- dedupe.js bu div'in içini doldurur -->
+          <div id="dedupe-content"></div>
         </div>
       </section>
 

@@ -2116,3 +2116,35 @@ textarea { resize: vertical; }
 #filter-tag-wrap:has(#filter-tag-chips .chip[data-value=""]:only-child) {
   display: none;
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* KİTAP AYIKLAYICI — Karşılama kutusu (Adım 1)                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.dedupe-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 4rem 1rem 3rem;
+  text-align: center;
+}
+
+.dedupe-intro-icon {
+  font-size: 3rem;
+  color: var(--accent);
+}
+
+.dedupe-intro-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dedupe-intro-text {
+  max-width: 480px;
+  font-size: 0.95rem;
+  color: var(--text-2);
+  line-height: 1.5;
+}
