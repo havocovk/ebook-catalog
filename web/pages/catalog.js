@@ -10,7 +10,7 @@
 import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
 import { openModal } from "../ui/modal.js";
-import { escapeHtml, statusLabel } from "../ui/common.js";
+import { escapeHtml, statusLabel, confidenceLevel } from "../ui/common.js";
 
 // ── Adım J8: Fuse.js — Fuzzy (bulanık) arama ────────────────────────────────
 // CDN'den ES Module olarak yüklenir; yüklenemezse tam eşleşme devreye girer.
@@ -83,7 +83,7 @@ const PER_PAGE = 50;
 
 const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "" },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "", confidence: "" },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -213,6 +213,12 @@ function recompute(resetPage = false) {
   // ── Adım 1: Kategori filtresi ────────────────────────────────────────────
   if (ui.filters.category)  result = result.filter((b) => b.category  === ui.filters.category);
   // ── Adım 1 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 3: Güven skoru seviye filtresi ──────────────────────────────────
+  if (ui.filters.confidence) {
+    result = result.filter((b) => confidenceLevel(b.confidence_score) === ui.filters.confidence);
+  }
+  // ── Adım 3 sonu ──────────────────────────────────────────────────────────
   // ── Adım J4 sonu ─────────────────────────────────────────────────────────
 
   filtered = sortBooks(result, ui.sort);
@@ -329,6 +335,8 @@ function syncChips() {
   // ── Adım J4 ──
   syncChipGroup("filter-language-chips", ui.filters.language);
   syncChipGroup("filter-tag-chips", ui.filters.tag);
+  // ── Adım 3: Güven skoru ──────────────────────────────────────────────────
+  syncChipGroup("filter-confidence-chips", ui.filters.confidence);
 }
 
 function syncChipGroup(containerId, activeValue) {
@@ -437,7 +445,7 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: "", tag: "", category: "", confidence: "" };
   syncChips();
   ["filter-author", "filter-publisher", "filter-category"].forEach((id) => {
     const el = document.getElementById(id);

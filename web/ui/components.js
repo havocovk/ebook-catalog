@@ -6,7 +6,7 @@
 // yazar detayında da aynı kart kullanılacak; o yüzden burada duruyorlar.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { escapeHtml, statusLabel } from "./common.js";
+import { escapeHtml, statusLabel, confidenceLevel } from "./common.js";
 
 // 1–5 yıldız çizer.
 //   interactive=false → sadece gösterim (kartlarda)
@@ -38,6 +38,12 @@ export function createBookCard(book) {
   const statusClass = `status-${book.status || "okunmadi"}`;
   const ratingHtml = renderStars(book.rating, false);
 
+  // ── Adım 3: Güven skoru rozeti (sağ üst köşe) ──────────────────────────
+  const confLevel = confidenceLevel(book.confidence_score);
+  const confBadgeHtml = confLevel
+    ? `<span class="confidence-badge confidence-${confLevel}" title="Güven Skoru: ${book.confidence_score}/100">${book.confidence_score}</span>`
+    : "";
+
   const coverHtml = book.cover_url
     ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" loading="lazy" />`
     : `<div class="cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
@@ -46,6 +52,7 @@ export function createBookCard(book) {
     <div class="book-cover">
       ${coverHtml}
       <span class="book-format">${book.format || ""}</span>
+      ${confBadgeHtml}
       <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
     </div>
     <div class="book-info">

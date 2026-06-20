@@ -63,3 +63,23 @@ export function formatFileSize(bytes) {
 export function today() {
   return new Date().toISOString().split("T")[0];
 }
+
+// ── Adım 3: Güven Skoru Yardımcıları ────────────────────────────────────────
+// Veritabanındaki confidence_score (0-100) sayısını 3 seviyeye böler:
+//   Yüksek (80+)  → "high"   → yeşil
+//   Orta   (50-79)→ "medium" → sarı
+//   Düşük  (<50)  → "low"    → kırmızı
+// score null/undefined ise null döner (rozet hiç gösterilmez — eski taramalar
+// veya henüz işlenmemiş kayıtlar için).
+export function confidenceLevel(score) {
+  if (score === null || score === undefined) return null;
+  if (score >= 80) return "high";
+  if (score >= 50) return "medium";
+  return "low";
+}
+
+// Seviye koduna göre Türkçe kısa etiket.
+export function confidenceLabel(level) {
+  const labels = { high: "Yüksek", medium: "Orta", low: "Düşük" };
+  return labels[level] || "";
+}

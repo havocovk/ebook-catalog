@@ -25,7 +25,7 @@ import {
   deleteSeriesEverywhere,
 } from "../core/api.js";
 import { refreshCurrentPage } from "../core/router.js";
-import { showToast, escapeHtml, formatFileSize } from "./common.js";
+import { showToast, escapeHtml, formatFileSize, confidenceLevel, confidenceLabel } from "./common.js";
 import { renderStars } from "./components.js";
 import { mountEntityPicker } from "./entity-picker.js";
 
@@ -90,6 +90,19 @@ export function openModal(bookId) {
   editingId = bookId;
 
   renderCoverArea(book);
+
+  // ── Adım 3: Modal başlığındaki güven skoru rozeti ──────────────────────
+  const confBadgeEl = document.getElementById("modal-confidence-badge");
+  if (confBadgeEl) {
+    const level = confidenceLevel(book.confidence_score);
+    if (level) {
+      confBadgeEl.textContent = `${confidenceLabel(level)} Güven (${book.confidence_score}/100)`;
+      confBadgeEl.className = `confidence-badge-lg confidence-${level}`;
+      confBadgeEl.classList.remove("hidden");
+    } else {
+      confBadgeEl.classList.add("hidden");
+    }
+  }
 
   // Alan sırası: Kitap Adı → Yazar → Yayınevi → Seri → Durum/Yıl → Puan → ...
   document.getElementById("modal-title").value        = book.title || "";

@@ -201,6 +201,17 @@
               </select>
             </div>
 
+            <!-- ── Adım 3: Güven Skoru Filtresi ─────────────────────────── -->
+            <div class="filter-group">
+              <label class="filter-label">Güven Skoru</label>
+              <div class="filter-chips" id="filter-confidence-chips">
+                <button class="chip active" data-filter="confidence" data-value="">Tümü</button>
+                <button class="chip chip-confidence-high"   data-filter="confidence" data-value="high">Yüksek</button>
+                <button class="chip chip-confidence-medium" data-filter="confidence" data-value="medium">Orta</button>
+                <button class="chip chip-confidence-low"    data-filter="confidence" data-value="low">Düşük</button>
+              </div>
+            </div>
+
             <!-- ── Adım J4: Etiket Filtresi ──────────────────────────── -->
             <div class="filter-group" id="filter-tag-wrap">
               <label class="filter-label">Etiket</label>
@@ -273,6 +284,7 @@
     <div class="modal-box">
       <div class="modal-header">
         <h2 class="modal-heading">Kitap Detayı</h2>
+        <span id="modal-confidence-badge" class="confidence-badge-lg hidden"></span>
         <button id="modal-close" class="modal-close" title="Kapat">✕</button>
       </div>
       <div class="modal-body">

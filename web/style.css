@@ -440,6 +440,46 @@ textarea { resize: vertical; }
 .status-okunuyor  { background: rgba(124,106,247,0.85); color: #fff; }
 .status-okundu    { background: rgba(76,175,130,0.85);  color: #fff; }
 
+/* ── Adım 3: Güven Skoru Rozeti ──────────────────────────────────── */
+/* Kart üzerinde sağ üst köşede küçük, yuvarlak sayı rozeti.        */
+/* Renk anlamı: yeşil=yüksek güven, sarı=orta, kırmızı=düşük güven. */
+.confidence-badge {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  color: #fff;
+  line-height: 1;
+}
+
+.confidence-high   { background: rgba(76,175,130,0.9); }
+.confidence-medium { background: rgba(224,168,74,0.9); }
+.confidence-low    { background: rgba(224,92,92,0.9); }
+
+/* Modal başlığındaki büyük güven skoru rozeti (yazılı etiket).    */
+.confidence-badge-lg {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  color: #fff;
+  white-space: nowrap;
+  margin: 0 0.5rem;
+}
+
+.confidence-badge-lg.confidence-high   { background: var(--success); }
+.confidence-badge-lg.confidence-medium { background: var(--warning); }
+.confidence-badge-lg.confidence-low    { background: var(--danger); }
+/* ── Adım 3 sonu (rozet kısmı) — chip renkleri aşağıda, .chip.active sonrasında ── */
+
 .book-info {
   padding: 0.65rem 0.75rem 0.75rem;
   display: flex;
@@ -538,6 +578,7 @@ textarea { resize: vertical; }
 .modal-heading {
   font-size: 1rem;
   font-weight: 600;
+  flex: 1;   /* ── Adım 3: rozet eklenince başlık alanı esnek kalsın ── */
 }
 
 .modal-close {
@@ -955,6 +996,14 @@ textarea { resize: vertical; }
   border-color: var(--accent);
   color: #fff;
 }
+
+/* ── Adım 3: Güven skoru chip renkleri ────────────────────────────── */
+/* .chip.active kuralından SONRA gelmeli — aynı özgüllükte (2 sınıf)  */
+/* olduğu için CSS'te sırası önemli, yoksa nötr mavi renk üstün gelir. */
+.chip-confidence-high.active   { background: var(--success); border-color: var(--success); color: #fff; }
+.chip-confidence-medium.active { background: var(--warning); border-color: var(--warning); color: #fff; }
+.chip-confidence-low.active    { background: var(--danger);  border-color: var(--danger);  color: #fff; }
+/* ── Adım 3 sonu ──────────────────────────────────────────────────── */
 
 /* Tam genişlik select (panel içinde) */
 .select-full { width: 100%; }
