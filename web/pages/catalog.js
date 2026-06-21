@@ -9,7 +9,7 @@
 
 import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
-import { openModal } from "../ui/modal.js";
+import { openModal, _showPrompt, _showInfo } from "../ui/modal.js";
 import { escapeHtml, statusLabel, confidenceLevel } from "../ui/common.js";
 
 // ── Adım J8: Fuse.js — Fuzzy (bulanık) arama ────────────────────────────────
@@ -164,29 +164,29 @@ function _saveSmartLists(lists) {
 
 // Mevcut filtre + sıralama durumunu yeni bir Akıllı Liste olarak kaydet.
 // İsim çakışması ve limit kontrolü burada yapılır (Soru 2 ve Soru 3 kararları).
-function saveCurrentAsSmartList() {
+// async: window.prompt()/alert() yerine sitenin kendi tema uyumlu dialog'unu
+// (_showPrompt / _showInfo) kullanır, bunlar Promise döndürür.
+async function saveCurrentAsSmartList() {
   const lists = _loadSmartLists();
 
   if (lists.length >= SMART_LIST_LIMIT) {
-    alert(`En fazla ${SMART_LIST_LIMIT} akıllı liste kaydedebilirsiniz. Lütfen önce mevcut listelerden birini silin.`);
+    await _showInfo(`En fazla ${SMART_LIST_LIMIT} akıllı liste kaydedebilirsiniz. Lütfen önce mevcut listelerden birini silin.`);
     return;
   }
 
-  const name = prompt("Bu filtre kombinasyonuna bir isim verin:");
-  if (!name || !name.trim()) return; // kullanıcı iptal etti veya boş isim girdi
-
-  const trimmedName = name.trim();
+  const name = await _showPrompt("Bu filtre kombinasyonuna bir isim verin:");
+  if (!name) return; // kullanıcı iptal etti veya boş isim girdi
 
   // Aynı isim zaten var mı? (büyük/küçük harf duyarsız karşılaştırma)
-  const exists = lists.some((l) => l.name.toLowerCase() === trimmedName.toLowerCase());
+  const exists = lists.some((l) => l.name.toLowerCase() === name.toLowerCase());
   if (exists) {
-    alert(`"${trimmedName}" isimli bir akıllı liste zaten var. Lütfen başka bir isim seçin.`);
+    await _showInfo(`"${name}" isimli bir akıllı liste zaten var. Lütfen başka bir isim seçin.`);
     return;
   }
 
   const newList = {
     id      : `sl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    name    : trimmedName,
+    name    : name,
     // Derin kopya: ileride filtreler değişirse kayıtlı liste etkilenmesin.
     filters : JSON.parse(JSON.stringify(ui.filters)),
     sort    : ui.sort,
