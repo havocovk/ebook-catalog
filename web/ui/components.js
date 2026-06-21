@@ -30,7 +30,11 @@ export function renderStars(rating, interactive = false, bookId = null) {
 // data-id="<kitap id>" yazılır; katalog sayfası tüm karta tek bir olay
 // dinleyici ekleyip (event delegation) tıklananın id'sini okur. Bu yöntem
 // binlerce kartta tek tek dinleyici eklemekten çok daha verimlidir.
-export function createBookCard(book) {
+//
+// isSelected (Adım 18): seçim durumu catalog.js'deki selectedIds Set'inde
+// tutulur (bu modülün dışında); components.js o Set'e erişemez, bu yüzden
+// çağıran taraf (catalog.js) o bilgiyi parametre olarak buraya geçirir.
+export function createBookCard(book, isSelected = false) {
   const card = document.createElement("div");
   card.className = "book-card";
   card.dataset.id = book.$id;
@@ -47,6 +51,18 @@ export function createBookCard(book) {
   const coverHtml = book.cover_url
     ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" loading="lazy" />`
     : `<div class="cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+
+  // ── Adım 18: Toplu işlem seçim checkbox'ı (sol üst köşe) ─────────────────
+  // Format rozeti zaten sol üstte (book-format) — checkbox onun ÜSTÜNE değil,
+  // YANINA/biraz daha sol-üste konumlanacak şekilde CSS'te ayarlanacak.
+  // Gerçek bir <input type="checkbox"> değil, tıklanabilir bir <button> —
+  // favori butonuyla aynı kalıp (event delegation + closest() ile yakalanır).
+  const selectBtnHtml = `
+    <button class="select-btn ${isSelected ? "active" : ""}" title="${isSelected ? "Seçimi kaldır" : "Seç"}">
+      <iconify-icon icon="${isSelected ? "mdi:checkbox-marked" : "mdi:checkbox-blank-outline"}"></iconify-icon>
+    </button>
+  `;
+  // ── Adım 18 sonu ──────────────────────────────────────────────────────────
 
   // ── Adım 17: Favori butonu (sol alt köşe — diğer üç köşe zaten dolu) ────
   // data-id zaten kartın kendisinde var; butona ayrıca eklemeye gerek yok,
@@ -71,6 +87,7 @@ export function createBookCard(book) {
   card.innerHTML = `
     <div class="book-cover">
       ${coverHtml}
+      ${selectBtnHtml}
       <span class="book-format">${book.format || ""}</span>
       ${confBadgeHtml}
       <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>

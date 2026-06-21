@@ -293,6 +293,44 @@
 
           <!-- Sağ: kitap ızgarası + sayfalama -->
           <div class="catalog-main">
+
+            <!-- ── Adım 18: Toplu işlem çubuğu (hiç seçim yokken gizli) ──── -->
+            <div id="bulk-bar" class="bulk-bar hidden">
+              <span id="bulk-count" class="bulk-count">0 kitap seçili</span>
+
+              <div class="bulk-actions">
+                <div class="bulk-status-wrap">
+                  <button id="bulk-status-toggle" class="btn btn-sm">
+                    <iconify-icon icon="lucide:bookmark"></iconify-icon> Durum Değiştir
+                  </button>
+                  <div id="bulk-status-panel" class="bulk-status-panel hidden">
+                    <button data-bulk-status="okunmadi">Okunmadı</button>
+                    <button data-bulk-status="sirada">Sırada</button>
+                    <button data-bulk-status="okunuyor">Okunuyor</button>
+                    <button data-bulk-status="okundu">Okundu</button>
+                  </div>
+                </div>
+
+                <button id="bulk-tag-add" class="btn btn-sm">
+                  <iconify-icon icon="lucide:tag"></iconify-icon> Etiket Ekle
+                </button>
+
+                <button id="bulk-favorite-add" class="btn btn-sm">
+                  <iconify-icon icon="mdi:heart"></iconify-icon> Favorile
+                </button>
+                <button id="bulk-favorite-remove" class="btn btn-sm">
+                  <iconify-icon icon="mdi:heart-outline"></iconify-icon> Favoriden Çıkar
+                </button>
+
+                <button id="bulk-delete" class="btn btn-sm btn-danger">
+                  <iconify-icon icon="lucide:trash-2"></iconify-icon> Sil
+                </button>
+
+                <button id="bulk-clear" class="btn-link">Seçimi Temizle</button>
+              </div>
+            </div>
+            <!-- ── Adım 18 sonu ─────────────────────────────────────────── -->
+
             <div id="books-grid" class="books-grid"></div>
             <div id="pagination" class="pagination"></div>
           </div>

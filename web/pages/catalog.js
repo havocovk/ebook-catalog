@@ -9,9 +9,9 @@
 
 import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
-import { openModal, _showPrompt, _showInfo } from "../ui/modal.js";
+import { openModal, _showPrompt, _showInfo, _showConfirm } from "../ui/modal.js";
 import { escapeHtml, statusLabel, confidenceLevel, showToast } from "../ui/common.js";
-import { updateBookRecord } from "../core/api.js";
+import { updateBookRecord, deleteBookRecord } from "../core/api.js";
 
 // ── Adım J8: Fuse.js — Fuzzy (bulanık) arama ────────────────────────────────
 // CDN'den ES Module olarak yüklenir; yüklenemezse tam eşleşme devreye girer.
@@ -96,6 +96,16 @@ const ui = {
 };
 
 let filtered = [];
+
+// ── Adım 18: Toplu işlem — seçili kitap ID'leri ─────────────────────────────
+// Sayfa içi geçici bir UI durumu (veritabanına yazılmaz). renderBooks() her
+// çağrıldığında kartları sıfırdan oluşturduğu için (grid.innerHTML = ""),
+// seçim durumu kartların kendi DOM'unda SAKLANAMAZ — bu yüzden ayrı bir Set
+// olarak burada tutulur; her kart çizilirken bu Set'e bakılarak checkbox'ın
+// işaretli/işaretsiz olacağı belirlenir (favori durumunun book.favorite'ten
+// okunmasına benzer, ama veritabanı değil sadece sayfa belleği).
+const selectedIds = new Set();
+// ── Adım 18 sonu ─────────────────────────────────────────────────────────────
 
 // ── Adım 4: Kitaplardaki gerçek en eski/en yeni yıl (slider sınırları) ──────
 let yearBounds = { min: 1900, max: new Date().getFullYear() };
@@ -297,6 +307,174 @@ async function toggleFavorite(bookId) {
 }
 // ── Adım 17 sonu ──────────────────────────────────────────────────────────
 
+// ── Adım 18: Toplu işlem (bulk actions) ─────────────────────────────────────
+
+// Bir kitabın seçim durumunu değiştirir, ardından toplu işlem çubuğunu
+// senkronize eder. Veritabanına yazılmaz — sadece selectedIds Set'i (sayfa
+// belleği) güncellenir. render() yeterli (recompute gerekmiyor çünkü seçim
+// hiçbir filtreyi etkilemez, sadece görünümü).
+function toggleSelection(bookId) {
+  if (selectedIds.has(bookId)) {
+    selectedIds.delete(bookId);
+  } else {
+    selectedIds.add(bookId);
+  }
+  render();
+  updateBulkBar();
+}
+
+// Seçimi tamamen temizler (toplu işlem çubuğundaki "Seçimi Temizle" butonu
+// VEYA bir toplu işlem başarıyla tamamlandıktan sonra otomatik çağrılır).
+function clearSelection() {
+  selectedIds.clear();
+  render();
+  updateBulkBar();
+}
+
+// Toplu işlem çubuğunun görünürlüğünü ve "X kitap seçili" sayısını günceller.
+// Hiç seçim yoksa çubuk tamamen gizlenir.
+function updateBulkBar() {
+  const bar   = document.getElementById("bulk-bar");
+  const count = document.getElementById("bulk-count");
+  if (!bar || !count) return;
+
+  const n = selectedIds.size;
+  bar.classList.toggle("hidden", n === 0);
+  count.textContent = `${n} kitap seçili`;
+}
+
+// ── Toplu durum değiştirme ───────────────────────────────────────────────
+// _showPrompt yerine basit bir seçim kullanılır: 4 durumdan birini yazılı
+// olarak istemek hata yapmaya açık olurdu (kullanıcı "okundu" yerine "Okundu"
+// yazabilir). Bunun yerine filter-status-chips'teki AYNI 4 seçenek, küçük
+// bir buton grubu (bulk-status-modal) olarak gösterilir — yazım hatası riski
+// olmadan, mevcut görsel dile (chip) uygun şekilde.
+async function bulkChangeStatus(newStatus) {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
+
+  try {
+    const results = await Promise.allSettled(
+      ids.map((id) => updateBookRecord(id, { status: newStatus }))
+    );
+
+    let ok = 0, fail = 0;
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled") {
+        const book = state.books.find((b) => b.$id === ids[i]);
+        if (book) book.status = newStatus;
+        ok++;
+      } else {
+        fail++;
+      }
+    });
+
+    showToast(`${ok} kitabın durumu güncellendi${fail ? `, ${fail} başarısız` : ""}.`);
+    clearSelection();
+    recompute(false);
+  } catch (err) {
+    showToast("Toplu durum güncelleme hatası: " + (err?.message || err), "error");
+  }
+}
+
+// ── Toplu etiket ekleme ───────────────────────────────────────────────────
+// ÖNEMLİ: var olan etiketlerin ÜZERİNE YAZMAZ — her kitabın mevcut tags
+// dizisine yeni etiketi EKLER (zaten varsa tekrar eklemez, Set ile
+// tekilleştirilir).
+async function bulkAddTag() {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
+
+  const tag = await _showPrompt("Seçili kitaplara eklenecek etiketi yazın:");
+  if (!tag) return; // kullanıcı iptal etti veya boş yazdı
+
+  try {
+    const results = await Promise.allSettled(
+      ids.map((id) => {
+        const book = state.books.find((b) => b.$id === id);
+        if (!book) return Promise.resolve();
+        const currentTags = book.tags || [];
+        if (currentTags.includes(tag)) return Promise.resolve(); // zaten var, tekrar eklemeye gerek yok
+        const newTags = [...currentTags, tag];
+        return updateBookRecord(id, { tags: newTags }).then(() => {
+          book.tags = newTags; // hafızadaki kopyayı güncelle
+        });
+      })
+    );
+
+    const fail = results.filter((r) => r.status === "rejected").length;
+    showToast(`${ids.length - fail} kitaba etiket eklendi${fail ? `, ${fail} başarısız` : ""}.`);
+    clearSelection();
+    recompute(false);
+  } catch (err) {
+    showToast("Toplu etiket ekleme hatası: " + (err?.message || err), "error");
+  }
+}
+
+// ── Toplu favori yap/kaldır ──────────────────────────────────────────────
+// newValue: true (favorile) veya false (favorilerden çıkar) — iki ayrı
+// buton olarak sunulur ("toggle" değil, çünkü seçili kitaplar karışık
+// favori durumunda olabilir; "toggle" o durumda kafa karıştırıcı olurdu).
+async function bulkSetFavorite(newValue) {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
+
+  try {
+    const results = await Promise.allSettled(
+      ids.map((id) => updateBookRecord(id, { favorite: newValue }))
+    );
+
+    let ok = 0, fail = 0;
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled") {
+        const book = state.books.find((b) => b.$id === ids[i]);
+        if (book) book.favorite = newValue;
+        ok++;
+      } else {
+        fail++;
+      }
+    });
+
+    showToast(`${ok} kitap ${newValue ? "favorilere eklendi" : "favorilerden çıkarıldı"}${fail ? `, ${fail} başarısız` : ""}.`);
+    clearSelection();
+    recompute(false);
+  } catch (err) {
+    showToast("Toplu favori güncelleme hatası: " + (err?.message || err), "error");
+  }
+}
+
+// ── Toplu silme (ONAY ZORUNLU — geri alınamaz işlem) ─────────────────────
+async function bulkDelete() {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
+
+  const confirmed = await _showConfirm(
+    `${ids.length} kitabı katalogdan silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`
+  );
+  if (!confirmed) return;
+
+  try {
+    const results = await Promise.allSettled(ids.map((id) => deleteBookRecord(id)));
+
+    let ok = 0, fail = 0;
+    results.forEach((r, i) => {
+      if (r.status === "fulfilled") {
+        state.books = state.books.filter((b) => b.$id !== ids[i]);
+        ok++;
+      } else {
+        fail++;
+      }
+    });
+
+    showToast(`${ok} kitap silindi${fail ? `, ${fail} başarısız` : ""}.`);
+    clearSelection();
+    recompute(false);
+  } catch (err) {
+    showToast("Toplu silme hatası: " + (err?.message || err), "error");
+  }
+}
+// ── Adım 18 sonu ─────────────────────────────────────────────────────────────
+
 // ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderCatalog() {
   _loadPrefs();               // ── Adım J6: kayıtlı tercihleri yükle
@@ -313,6 +491,13 @@ export function renderCatalog() {
   }
   // ── Adım 14 sonu ──────────────────────────────────────────────────────────
 
+  // ── Adım 18: Sayfaya her girişte seçim sıfırlanır ────────────────────────
+  // Kullanıcı başka bir sayfaya gidip Katalog'a geri dönerse, eski seçim
+  // "yapışık" kalmasın — Adım 14'teki pendingCatalogFilter mantığıyla aynı
+  // "temiz başlangıç" prensibi.
+  selectedIds.clear();
+  // ── Adım 18 sonu ──────────────────────────────────────────────────────────
+
   populateSelectOptions();
   populateTagChips();         // ── Adım J4: dinamik etiket chip'leri
   populateCategoryChips();    // ── Adım 11: dinamik kategori chip'leri (çoklu seçim)
@@ -323,6 +508,7 @@ export function renderCatalog() {
   updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle
   renderSmartListChips();     // ── Adım 15: kayıtlı akıllı listeleri çiz
   updateFavoriteOnlyChip();   // ── Adım 17: "Sadece Favoriler" chip görselini senkronize et
+  updateBulkBar();            // ── Adım 18: toplu işlem çubuğunu gizli başlat
   recompute(false);
 }
 
@@ -785,12 +971,15 @@ function renderBooks() {
   const start    = (ui.page - 1) * PER_PAGE;
   const fragment = document.createDocumentFragment();
   filtered.slice(start, start + PER_PAGE).forEach((book) => {
-    fragment.appendChild(ui.view === "list" ? createBookRow(book) : createBookCard(book));
+    const isSelected = selectedIds.has(book.$id);
+    fragment.appendChild(
+      ui.view === "list" ? createBookRow(book, isSelected) : createBookCard(book, isSelected)
+    );
   });
   grid.appendChild(fragment);
 }
 
-function createBookRow(book) {
+function createBookRow(book, isSelected = false) {
   const row = document.createElement("div");
   row.className  = "book-row";
   row.dataset.id = book.$id;
@@ -798,6 +987,14 @@ function createBookRow(book) {
   const coverHtml   = book.cover_url
     ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" loading="lazy" />`
     : `<div class="row-cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+
+  // ── Adım 18: Toplu işlem seçim checkbox'ı (liste görünümü) ───────────────
+  const selectBtnHtml = `
+    <button class="select-btn select-btn-row ${isSelected ? "active" : ""}" title="${isSelected ? "Seçimi kaldır" : "Seç"}">
+      <iconify-icon icon="${isSelected ? "mdi:checkbox-marked" : "mdi:checkbox-blank-outline"}"></iconify-icon>
+    </button>
+  `;
+  // ── Adım 18 sonu ──────────────────────────────────────────────────────────
 
   // ── Adım 17: Favori butonu (liste görünümü) ──────────────────────────────
   // DÜZELTME: lucide:heart sadece çerçeve (stroke) çiziyor, fill desteklemiyor
@@ -813,6 +1010,7 @@ function createBookRow(book) {
   // ── Adım 17 sonu ──────────────────────────────────────────────────────────
 
   row.innerHTML = `
+    ${selectBtnHtml}
     <div class="row-cover">${coverHtml}</div>
     <div class="row-main">
       <span class="row-title">${escapeHtml(book.title  || "Başlıksız")}</span>
@@ -1075,6 +1273,31 @@ export function initCatalog() {
   });
   // ── Adım 17 sonu ──────────────────────────────────────────────────────────
 
+  // ── Adım 18: Toplu işlem çubuğu dinleyicileri ────────────────────────────
+  document.getElementById("bulk-clear")?.addEventListener("click", clearSelection);
+
+  document.getElementById("bulk-delete")?.addEventListener("click", bulkDelete);
+
+  document.getElementById("bulk-favorite-add")?.addEventListener("click", () => bulkSetFavorite(true));
+  document.getElementById("bulk-favorite-remove")?.addEventListener("click", () => bulkSetFavorite(false));
+
+  document.getElementById("bulk-tag-add")?.addEventListener("click", bulkAddTag);
+
+  // "Durum Değiştir" butonu mini paneli açar/kapatır (4 durum seçeneği).
+  // Aynı panel içindeki bir durum butonuna tıklamak hem işlemi başlatır
+  // hem de paneli kapatır.
+  const statusPanel = document.getElementById("bulk-status-panel");
+  document.getElementById("bulk-status-toggle")?.addEventListener("click", () => {
+    statusPanel?.classList.toggle("hidden");
+  });
+  statusPanel?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-bulk-status]");
+    if (!btn) return;
+    statusPanel.classList.add("hidden");
+    bulkChangeStatus(btn.dataset.bulkStatus);
+  });
+  // ── Adım 18 sonu ──────────────────────────────────────────────────────────
+
   document.getElementById("filter-toggle")?.addEventListener("click", openFilterPanel);
   document.getElementById("filter-overlay")?.addEventListener("click", closeFilterPanel);
 
@@ -1091,6 +1314,17 @@ export function initCatalog() {
   });
 
   document.getElementById("books-grid")?.addEventListener("click", (e) => {
+    // ── Adım 18: Seçim checkbox'ı önce kontrol edilir ────────────────────
+    // Aynı mantık: tıklamak modal'ı AÇMAMALI, sadece seçim durumunu
+    // değiştirmeli.
+    const selBtn = e.target.closest(".select-btn");
+    if (selBtn) {
+      const card = selBtn.closest(".book-card, .book-row");
+      if (card?.dataset.id) toggleSelection(card.dataset.id);
+      return;
+    }
+    // ── Adım 18 sonu ──────────────────────────────────────────────────────
+
     // ── Adım 17: Favori butonu önce kontrol edilir ───────────────────────
     // Favori butonuna tıklamak modal'ı AÇMAMALI — sadece favori durumunu
     // değiştirmeli. Bu yüzden closest(".book-card, .book-row") kontrolünden

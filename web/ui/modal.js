@@ -214,7 +214,7 @@ async function applyUpdate(id, updates) {
 //
 // entity-picker.js'te aynı dialog sistemi mevcuttur; burada modal.js'e özgü
 // hafif bir kopyası kullanılır (import bağımlılığı eklememek için).
-function _showConfirm(message) {
+export function _showConfirm(message) {
   return new Promise((resolve) => {
     const overlay  = document.getElementById("custom-dialog-overlay");
     const msgEl    = document.getElementById("custom-dialog-message");
