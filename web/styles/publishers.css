@@ -1,0 +1,146 @@
+/* ═══════════════════════════════════════════════════════════════ */
+/* 5B — Yazar detay görünümü                                       */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Yazar satırı: 5B ile ok ikonu eklendi */
+.author-row {
+  /* position zaten relative değil, sadece flex özelliği yeterli */
+}
+
+.author-row-arrow {
+  color: var(--text-3);
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.author-row:hover .author-row-arrow {
+  color: var(--accent);
+  transform: translateX(3px);
+}
+
+/* ── Detay sayfa başlığı ─────────────────────────────────────── */
+.detail-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 0 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.detail-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.3rem 0;
+  transition: color 0.15s;
+  align-self: flex-start;
+}
+
+.detail-back-btn:hover {
+  color: var(--accent);
+}
+
+.detail-back-btn iconify-icon {
+  font-size: 1.1rem;
+}
+
+.detail-title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.detail-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.detail-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+/* ── Detaydaki kitap ızgarası ────────────────────────────────── */
+/* authors-wrap padding'ini kullanır, ekstra sarmalayıcı gerekmez */
+.author-books-grid {
+  padding: 0;   /* grid-container padding'i devre dışı */
+}
+
+/* ── Mobil ───────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .detail-title { font-size: 1.1rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 6A/6B — Yayınevleri: liste + detay (seriler + bağımsız)        */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Boş sayfa durumu (publisher verisi henüz yoksa) ─────────── */
+.empty-page-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 5rem 1rem;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.empty-page-state iconify-icon {
+  font-size: 3rem;
+  color: var(--text-3);
+}
+
+.empty-page-state p {
+  font-size: 1rem;
+}
+
+.empty-page-hint {
+  font-size: 0.82rem !important;
+  color: var(--text-3);
+  max-width: 380px;
+}
+
+/* ── Detay: alt bölüm (seri grubu veya bağımsız kitaplar) ─────── */
+.detail-sub-section {
+  margin-bottom: 2rem;
+}
+
+.detail-sub-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-sub-title iconify-icon {
+  color: var(--accent);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.detail-sub-count {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-3);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
