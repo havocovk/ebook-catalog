@@ -110,6 +110,13 @@ const _PREFS_KEY = {
   view   : "ec_view",
 };
 
+// ── Adım 15: Akıllı Listeler (kaydedilebilir filtre setleri) ────────────────
+// localStorage'da JSON dizi olarak saklanır. Her kayıt: { id, name, filters, sort }.
+// Sadece filtreler + sıralama kaydedilir — arama metni ve görünüm modu
+// (kart/liste) kasıtlı olarak kaydedilmez (geçici/oturuma özel kabul edilir).
+const SMART_LIST_KEY   = "ec_smart_lists";
+const SMART_LIST_LIMIT = 10;
+
 function _savePref(key, value) {
   try { localStorage.setItem(_PREFS_KEY[key], value); } catch { /* özel mod */ }
 }
@@ -135,6 +142,125 @@ function _loadPrefs() {
 }
 // ── Adım J6 sonu ─────────────────────────────────────────────────────────────
 
+// ── Adım 15: Akıllı Listeler — okuma/yazma/uygulama/silme ───────────────────
+
+// localStorage'dan kayıtlı listeleri oku. Bozuk/eksik veri varsa boş dizi döner.
+function _loadSmartLists() {
+  try {
+    const raw = localStorage.getItem(SMART_LIST_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return []; // bozuk JSON veya özel mod — sessizce boş liste
+  }
+}
+
+// Listeyi localStorage'a yaz.
+function _saveSmartLists(lists) {
+  try {
+    localStorage.setItem(SMART_LIST_KEY, JSON.stringify(lists));
+  } catch { /* özel mod veya kota dolu — sessizce yoksay */ }
+}
+
+// Mevcut filtre + sıralama durumunu yeni bir Akıllı Liste olarak kaydet.
+// İsim çakışması ve limit kontrolü burada yapılır (Soru 2 ve Soru 3 kararları).
+function saveCurrentAsSmartList() {
+  const lists = _loadSmartLists();
+
+  if (lists.length >= SMART_LIST_LIMIT) {
+    alert(`En fazla ${SMART_LIST_LIMIT} akıllı liste kaydedebilirsiniz. Lütfen önce mevcut listelerden birini silin.`);
+    return;
+  }
+
+  const name = prompt("Bu filtre kombinasyonuna bir isim verin:");
+  if (!name || !name.trim()) return; // kullanıcı iptal etti veya boş isim girdi
+
+  const trimmedName = name.trim();
+
+  // Aynı isim zaten var mı? (büyük/küçük harf duyarsız karşılaştırma)
+  const exists = lists.some((l) => l.name.toLowerCase() === trimmedName.toLowerCase());
+  if (exists) {
+    alert(`"${trimmedName}" isimli bir akıllı liste zaten var. Lütfen başka bir isim seçin.`);
+    return;
+  }
+
+  const newList = {
+    id      : `sl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name    : trimmedName,
+    // Derin kopya: ileride filtreler değişirse kayıtlı liste etkilenmesin.
+    filters : JSON.parse(JSON.stringify(ui.filters)),
+    sort    : ui.sort,
+  };
+
+  lists.push(newList);
+  _saveSmartLists(lists);
+  renderSmartListChips();
+}
+
+// Kayıtlı bir Akıllı Liste'yi mevcut filtre durumuna uygula.
+// clearFilters() ile aynı eksiksiz yeniden senkronizasyon zincirini izler:
+// önce ui.filters'ı tamamen değiştir, sonra series/select/chip/slider'ı
+// sırayla güncelle (publisher önce set edilmeli ki updateSeriesOptions
+// series seçimini sıfırlamasın), en son recompute(true) çağrılır.
+function applySmartList(list) {
+  // Eksik alan ihtimaline karşı varsayılanlarla birleştir (eski kayıtlar
+  // ileride yeni bir filtre alanı eklenirse kırılmasın).
+  ui.filters = {
+    format: "", status: "", author: "", publisher: "", series: "",
+    language: [], tag: [], category: [], subcategory: [], topic: [],
+    confidence: "", yearMin: null, yearMax: null, missingField: "",
+    ...JSON.parse(JSON.stringify(list.filters)),
+  };
+  ui.sort = list.sort || "added_at_desc";
+
+  // Sıralama select'ini görsel olarak senkronize et (kaydedilmiyor ama UI tutarlı kalsın).
+  const sortEl = document.getElementById("sort-select");
+  if (sortEl) sortEl.value = ui.sort;
+
+  populateSubcategoryChips(); // Adım 11: alt alan grubu yeni kategoriye göre yeniden çizilir
+  populateTopicChips();       // Adım 11: konu grubu yeni alt alana göre yeniden çizilir
+  populateYearSlider();       // Adım 4: slider tutamaçlarını filtreye göre konumlandır
+  updateSeriesOptions();      // publisher zaten set edildi → series seçimini koruyacak
+  syncChips();                // tüm chip gruplarını aktif/pasif olarak senkronize et
+
+  // Yazar/Yayınevi select'lerini de yeni filtreye göre senkronize et.
+  const authorEl = document.getElementById("filter-author");
+  if (authorEl) authorEl.value = ui.filters.author || "";
+  const publisherEl = document.getElementById("filter-publisher");
+  if (publisherEl) publisherEl.value = ui.filters.publisher || "";
+
+  recompute(true);
+}
+
+// Kayıtlı bir Akıllı Liste'yi sil.
+function deleteSmartList(id) {
+  const lists = _loadSmartLists().filter((l) => l.id !== id);
+  _saveSmartLists(lists);
+  renderSmartListChips();
+}
+
+// Kayıtlı listeleri chip olarak filtre panelinin Akıllı Listeler bölümüne çiz.
+// Her chip tıklanınca uygulanır; yanındaki (×) ikonu tıklanınca silinir.
+function renderSmartListChips() {
+  const container = document.getElementById("smart-list-chips");
+  if (!container) return;
+
+  const lists = _loadSmartLists();
+
+  if (lists.length === 0) {
+    container.innerHTML = `<span class="smart-list-empty">Henüz kayıtlı liste yok.</span>`;
+    return;
+  }
+
+  container.innerHTML = lists.map((l) => `
+    <span class="smart-list-chip" data-id="${l.id}">
+      <button class="smart-list-chip-apply" data-id="${l.id}">${escapeHtml(l.name)}</button>
+      <button class="smart-list-chip-delete" data-id="${l.id}" title="Bu listeyi sil">×</button>
+    </span>
+  `).join("");
+}
+// ── Adım 15 sonu ──────────────────────────────────────────────────────────
+
 // ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderCatalog() {
   _loadPrefs();               // ── Adım J6: kayıtlı tercihleri yükle
@@ -159,6 +285,7 @@ export function renderCatalog() {
   populateYearSlider();       // ── Adım 4: yıl aralığı slider sınırlarını ayarla
   syncChips();
   updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle
+  renderSmartListChips();     // ── Adım 15: kayıtlı akıllı listeleri çiz
   recompute(false);
 }
 
@@ -863,6 +990,23 @@ export function initCatalog() {
   // ── Adım 4 sonu ──────────────────────────────────────────────────────────
 
   document.getElementById("filter-clear")?.addEventListener("click", clearFilters);
+
+  // ── Adım 15: Akıllı Listeler — kaydet / uygula / sil dinleyicileri ────────
+  document.getElementById("smart-list-save")?.addEventListener("click", saveCurrentAsSmartList);
+
+  document.getElementById("smart-list-chips")?.addEventListener("click", (e) => {
+    const deleteBtn = e.target.closest(".smart-list-chip-delete");
+    if (deleteBtn) {
+      deleteSmartList(deleteBtn.dataset.id);
+      return;
+    }
+    const applyBtn = e.target.closest(".smart-list-chip-apply");
+    if (applyBtn) {
+      const list = _loadSmartLists().find((l) => l.id === applyBtn.dataset.id);
+      if (list) applySmartList(list);
+    }
+  });
+  // ── Adım 15 sonu ───────────────────────────────────────────────────────────
 
   document.getElementById("filter-toggle")?.addEventListener("click", openFilterPanel);
   document.getElementById("filter-overlay")?.addEventListener("click", closeFilterPanel);

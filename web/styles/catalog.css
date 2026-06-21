@@ -670,6 +670,67 @@
 .chip-confidence-low.active    { background: var(--danger);  border-color: var(--danger);  color: #fff; }
 /* ── Adım 3 sonu ──────────────────────────────────────────────────── */
 
+/* ── Adım 15: Akıllı Listeler (kaydedilebilir filtre setleri) ────────────── */
+.smart-list-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.smart-list-empty {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* Tek bir kayıtlı liste: isim butonu + sil (x) butonu yan yana, tek bir
+   pill içinde — format/durum chip'leriyle aynı görsel dile sahip ama
+   kendi içinde iki tıklanabilir alana bölünmüş. */
+.smart-list-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 20px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-3);
+  overflow: hidden;
+}
+
+.smart-list-chip-apply {
+  padding: 0.28rem 0.5rem 0.28rem 0.65rem;
+  border: none;
+  background: none;
+  color: var(--text-2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.smart-list-chip-apply:hover { color: var(--accent); }
+
+.smart-list-chip-delete {
+  padding: 0.28rem 0.55rem 0.28rem 0.3rem;
+  border: none;
+  border-left: 1px solid var(--border-2);
+  background: none;
+  color: var(--text-3);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.smart-list-chip-delete:hover { color: #fff; background: var(--danger); }
+
+/* "Akıllı Liste Kaydet" butonu — btn-link'in görünümünü kullanır ama
+   ikon + metin yan yana hizalanması için flex eklenir. */
+.smart-list-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+/* ── Adım 15 sonu ─────────────────────────────────────────────────────────── */
+
 /* Tam genişlik select (panel içinde) */
 .select-full { width: 100%; }
 
