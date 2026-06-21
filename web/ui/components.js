@@ -48,12 +48,25 @@ export function createBookCard(book) {
     ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" loading="lazy" />`
     : `<div class="cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
 
+  // ── Adım 17: Favori butonu (sol alt köşe — diğer üç köşe zaten dolu) ────
+  // data-id zaten kartın kendisinde var; butona ayrıca eklemeye gerek yok,
+  // catalog.js'deki event delegation closest(".favorite-btn") ile kartın
+  // dataset.id'sini okuyacak.
+  const isFavorite = Boolean(book.favorite);
+  const favoriteBtnHtml = `
+    <button class="favorite-btn ${isFavorite ? "active" : ""}" title="${isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"}">
+      <iconify-icon icon="lucide:heart"></iconify-icon>
+    </button>
+  `;
+  // ── Adım 17 sonu ──────────────────────────────────────────────────────────
+
   card.innerHTML = `
     <div class="book-cover">
       ${coverHtml}
       <span class="book-format">${book.format || ""}</span>
       ${confBadgeHtml}
       <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
+      ${favoriteBtnHtml}
     </div>
     <div class="book-info">
       <h3 class="book-title">${escapeHtml(book.title || "Başlıksız")}</h3>

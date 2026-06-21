@@ -177,6 +177,14 @@
               </div>
             </div>
 
+            <!-- ── Adım 17: Sadece Favoriler filtresi ──────────────────────── -->
+            <div class="filter-group">
+              <button id="filter-favorite-only" class="chip filter-favorite-chip">
+                <iconify-icon icon="lucide:heart"></iconify-icon> Sadece Favoriler
+              </button>
+            </div>
+            <!-- ── Adım 17 sonu ─────────────────────────────────────────────── -->
+
             <div class="filter-group">
               <label class="filter-label">Yazar</label>
               <select id="filter-author" class="select select-full">
@@ -538,6 +546,15 @@
               <option value="other">Diğer</option>
             </select>
           </div>
+
+          <!-- ── Adım 17: Favori işareti (is_academic ile aynı kalıp) ────── -->
+          <div class="field field-checkbox">
+            <label>
+              <input type="checkbox" id="modal-favorite" />
+              Favori
+            </label>
+          </div>
+          <!-- ── Adım 17 sonu ─────────────────────────────────────────────── -->
 
           <!-- Puan -->
           <div class="field">

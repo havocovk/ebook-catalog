@@ -10,7 +10,8 @@
 import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
 import { openModal, _showPrompt, _showInfo } from "../ui/modal.js";
-import { escapeHtml, statusLabel, confidenceLevel } from "../ui/common.js";
+import { escapeHtml, statusLabel, confidenceLevel, showToast } from "../ui/common.js";
+import { updateBookRecord } from "../core/api.js";
 
 // ── Adım J8: Fuse.js — Fuzzy (bulanık) arama ────────────────────────────────
 // CDN'den ES Module olarak yüklenir; yüklenemezse tam eşleşme devreye girer.
@@ -88,7 +89,7 @@ const ui = {
   // "year" | "" (filtre yok). İlgili alanı boş/null/undefined olan kitapları
   // gösterir. Diğer filtrelerden farkı: "şu değere eşit olsun" değil,
   // "bu alan eksik olsun" mantığıyla çalışır.
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "" },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -209,6 +210,7 @@ function applySmartList(list) {
     format: "", status: "", author: "", publisher: "", series: "",
     language: [], tag: [], category: [], subcategory: [], topic: [],
     confidence: "", yearMin: null, yearMax: null, missingField: "",
+    favoriteOnly: false,
     ...JSON.parse(JSON.stringify(list.filters)),
   };
   ui.sort = list.sort || "added_at_desc";
@@ -228,6 +230,8 @@ function applySmartList(list) {
   if (authorEl) authorEl.value = ui.filters.author || "";
   const publisherEl = document.getElementById("filter-publisher");
   if (publisherEl) publisherEl.value = ui.filters.publisher || "";
+
+  updateFavoriteOnlyChip(); // ── Adım 17: chip görselini yeni filtre durumuna göre senkronize et
 
   recompute(true);
 }
@@ -261,6 +265,38 @@ function renderSmartListChips() {
 }
 // ── Adım 15 sonu ──────────────────────────────────────────────────────────
 
+// ── Adım 17: Favori durumunu tıkla-kaydet ────────────────────────────────
+// Yıldız puanlama (modal.js'deki applyUpdate) ile aynı mantık: tıklanınca
+// anında Appwrite'a yazılır, hafızadaki (state.books) kopya güncellenir,
+// sayfa yeniden çizilir. Modal açmaya gerek yok — kart/satır üzerinden
+// tek tıkla favori durumu değiştirilebilir.
+// ── Adım 17: "Sadece Favoriler" chip'inin aktif/pasif görselini senkronize et ─
+// syncChipGroup'tan farkı: tek bir buton, dizi değil boolean yönetiyor.
+function updateFavoriteOnlyChip() {
+  const btn = document.getElementById("filter-favorite-only");
+  if (!btn) return;
+  btn.classList.toggle("active", Boolean(ui.filters.favoriteOnly));
+}
+
+async function toggleFavorite(bookId) {
+  const book = state.books.find((b) => b.$id === bookId);
+  if (!book) return;
+
+  const newValue = !book.favorite;
+
+  try {
+    await updateBookRecord(bookId, { favorite: newValue });
+    book.favorite = newValue; // hafızadaki kopyayı güncelle
+    // recompute (render değil): "Sadece Favoriler" filtresi aktifken
+    // favorisi kaldırılan bir kitabın listeden anında kaybolması gerekir.
+    // resetPage=false: kullanıcı hangi sayfadaysa orada kalsın.
+    recompute(false);
+  } catch (err) {
+    showToast("Favori durumu güncellenemedi: " + (err?.message || err), "error");
+  }
+}
+// ── Adım 17 sonu ──────────────────────────────────────────────────────────
+
 // ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderCatalog() {
   _loadPrefs();               // ── Adım J6: kayıtlı tercihleri yükle
@@ -286,6 +322,7 @@ export function renderCatalog() {
   syncChips();
   updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle
   renderSmartListChips();     // ── Adım 15: kayıtlı akıllı listeleri çiz
+  updateFavoriteOnlyChip();   // ── Adım 17: "Sadece Favoriler" chip görselini senkronize et
   recompute(false);
 }
 
@@ -594,6 +631,12 @@ function recompute(resetPage = false) {
   }
   // ── Adım 14 sonu ──────────────────────────────────────────────────────────
 
+  // ── Adım 17: Sadece Favoriler filtresi ───────────────────────────────────
+  if (ui.filters.favoriteOnly) {
+    result = result.filter((b) => Boolean(b.favorite));
+  }
+  // ── Adım 17 sonu ──────────────────────────────────────────────────────────
+
   filtered = sortBooks(result, ui.sort);
   if (resetPage) ui.page = 1;
   clampPage();
@@ -755,6 +798,16 @@ function createBookRow(book) {
   const coverHtml   = book.cover_url
     ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" loading="lazy" />`
     : `<div class="row-cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+
+  // ── Adım 17: Favori butonu (liste görünümü) ──────────────────────────────
+  const isFavorite = Boolean(book.favorite);
+  const favoriteBtnHtml = `
+    <button class="favorite-btn favorite-btn-row ${isFavorite ? "active" : ""}" title="${isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"}">
+      <iconify-icon icon="lucide:heart"></iconify-icon>
+    </button>
+  `;
+  // ── Adım 17 sonu ──────────────────────────────────────────────────────────
+
   row.innerHTML = `
     <div class="row-cover">${coverHtml}</div>
     <div class="row-main">
@@ -763,6 +816,7 @@ function createBookRow(book) {
     </div>
     <span class="badge row-format">${(book.format || "").toUpperCase()}</span>
     <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
+    ${favoriteBtnHtml}
   `;
   return row;
 }
@@ -832,7 +886,7 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false };
   syncChips();
   ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);
@@ -842,6 +896,7 @@ function clearFilters() {
   populateTopicChips();       // ── Adım 11
   populateYearSlider();   // ── Adım 4: slider'ı tam aralığa geri döndür
   updateSeriesOptions(); // seriyi pasif yap
+  updateFavoriteOnlyChip(); // ── Adım 17: "Sadece Favoriler" chip'ini pasif göster
   recompute(true);
 }
 
@@ -1008,6 +1063,14 @@ export function initCatalog() {
   });
   // ── Adım 15 sonu ───────────────────────────────────────────────────────────
 
+  // ── Adım 17: "Sadece Favoriler" filtre chip'i ────────────────────────────
+  document.getElementById("filter-favorite-only")?.addEventListener("click", () => {
+    ui.filters.favoriteOnly = !ui.filters.favoriteOnly;
+    updateFavoriteOnlyChip();
+    recompute(true);
+  });
+  // ── Adım 17 sonu ──────────────────────────────────────────────────────────
+
   document.getElementById("filter-toggle")?.addEventListener("click", openFilterPanel);
   document.getElementById("filter-overlay")?.addEventListener("click", closeFilterPanel);
 
@@ -1024,6 +1087,18 @@ export function initCatalog() {
   });
 
   document.getElementById("books-grid")?.addEventListener("click", (e) => {
+    // ── Adım 17: Favori butonu önce kontrol edilir ───────────────────────
+    // Favori butonuna tıklamak modal'ı AÇMAMALI — sadece favori durumunu
+    // değiştirmeli. Bu yüzden closest(".book-card, .book-row") kontrolünden
+    // önce gelir; eşleşirse fonksiyon burada durur (modal açılmaz).
+    const favBtn = e.target.closest(".favorite-btn");
+    if (favBtn) {
+      const card = favBtn.closest(".book-card, .book-row");
+      if (card?.dataset.id) toggleFavorite(card.dataset.id);
+      return;
+    }
+    // ── Adım 17 sonu ──────────────────────────────────────────────────────
+
     const el = e.target.closest(".book-card, .book-row");
     if (el?.dataset.id) openModal(el.dataset.id);
   });

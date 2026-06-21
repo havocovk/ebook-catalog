@@ -135,6 +135,11 @@ export function openModal(bookId) {
   document.getElementById("modal-language").value      = book.language || "";
   document.getElementById("modal-rating").innerHTML = renderStars(book.rating, true, bookId);
 
+  // ── Adım 17: Favori kutucuğunu doldur ────────────────────────────────────
+  const favoriteEl = document.getElementById("modal-favorite");
+  if (favoriteEl) favoriteEl.checked = Boolean(book.favorite);
+  // ── Adım 17 sonu ──────────────────────────────────────────────────────────
+
   const modal = document.getElementById("book-modal");
   modal.classList.remove("hidden");
   modal.classList.add("visible");
@@ -490,6 +495,16 @@ export function initModal() {
     toggleAcademicFields(e.target.checked);
   });
   // ── Adım 11 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 17: Favori onay kutusu — rating gibi ANINDA kaydedilir ─────────
+  // is_academic'ten farkı: favori başka bir alana bağımlı değil, tek başına
+  // bir tercih. Bu yüzden "Kaydet" butonuna basmayı beklemeden, tıklanır
+  // tıklanmaz applyUpdate ile veritabanına yazılır (rating ile aynı desen).
+  document.getElementById("modal-favorite")?.addEventListener("change", async (e) => {
+    if (!editingId) return;
+    await applyUpdate(editingId, { favorite: e.target.checked });
+  });
+  // ── Adım 17 sonu ──────────────────────────────────────────────────────────
 }
 
 // ── Adım 11: Alt Alan/Konu kutularını göster/gizle ──────────────────────────

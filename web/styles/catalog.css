@@ -128,6 +128,40 @@
 .confidence-badge-lg.confidence-low    { background: var(--danger); }
 /* ── Adım 3 sonu (rozet kısmı) — chip renkleri aşağıda, .chip.active sonrasında ── */
 
+/* ── Adım 17: Favori butonu (kart — sol alt köşe, diğer üç köşe dolu) ──── */
+.favorite-btn {
+  position: absolute;
+  bottom: 0.4rem;
+  left: 0.4rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.favorite-btn:hover  { background: rgba(0,0,0,0.75); transform: scale(1.08); }
+.favorite-btn.active { color: var(--danger); }
+
+/* Liste görünümünde: kartın absolute konumunu sıfırla, normal flex eleman yap. */
+.favorite-btn-row {
+  position: static;
+  width: 1.8rem;
+  height: 1.8rem;
+  background: var(--bg-3);
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.favorite-btn-row:hover  { background: var(--bg); }
+.favorite-btn-row.active { color: var(--danger); }
+/* ── Adım 17 sonu ─────────────────────────────────────────────────────── */
+
 .book-info {
   padding: 0.65rem 0.75rem 0.75rem;
   display: flex;
@@ -669,6 +703,23 @@
 .chip-confidence-medium.active { background: var(--warning); border-color: var(--warning); color: #fff; }
 .chip-confidence-low.active    { background: var(--danger);  border-color: var(--danger);  color: #fff; }
 /* ── Adım 3 sonu ──────────────────────────────────────────────────── */
+
+/* ── Adım 17: "Sadece Favoriler" filtre chip'i ────────────────────── */
+/* .chip.active kuralından SONRA gelmeli (yukarıdaki Adım 3 notuyla aynı
+   sebep) — aksi halde nötr mavi renk üstün gelir. */
+.filter-favorite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  justify-content: center;
+}
+.filter-favorite-chip.active {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+/* ── Adım 17 sonu ─────────────────────────────────────────────────── */
 
 /* ── Adım 15: Akıllı Listeler (kaydedilebilir filtre setleri) ────────────── */
 .smart-list-chips {
