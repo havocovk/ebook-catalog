@@ -9,7 +9,7 @@ import re
 import fitz  # PyMuPDF
 
 from .isbn import _extract_isbn_from_string
-from .ocr import _ocr_pdf_pages
+from .ocr import _ocr_pdf_pages, _OCR_ENGINE
 from .filename_parser import _to_series_index
 from .publisher_validator import _is_software_name
 

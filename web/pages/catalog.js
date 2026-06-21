@@ -83,7 +83,12 @@ const PER_PAGE = 50;
 
 const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null },
+  // ── Adım 14: "missingField" — Dashboard'daki Eksik Bilgi Merkezi'nden
+  // gelen bir filtre isteği. Değerler: "author" | "publisher" | "cover_url" |
+  // "year" | "" (filtre yok). İlgili alanı boş/null/undefined olan kitapları
+  // gösterir. Diğer filtrelerden farkı: "şu değere eşit olsun" değil,
+  // "bu alan eksik olsun" mantığıyla çalışır.
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "" },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -133,6 +138,19 @@ function _loadPrefs() {
 // ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderCatalog() {
   _loadPrefs();               // ── Adım J6: kayıtlı tercihleri yükle
+
+  // ── Adım 14: Dashboard'dan gelen bekleyen filtre isteği var mı? ──────────
+  // Varsa uygula ve hemen temizle — böylece katalog sayfasına normal
+  // şekilde tekrar girildiğinde (menüden tıklayarak) bu filtre "yapışık"
+  // kalmaz, sadece bir kerelik bir yönlendirme olur.
+  if (state.pendingCatalogFilter) {
+    if (state.pendingCatalogFilter.missingField) {
+      ui.filters.missingField = state.pendingCatalogFilter.missingField;
+    }
+    state.pendingCatalogFilter = null;
+  }
+  // ── Adım 14 sonu ──────────────────────────────────────────────────────────
+
   populateSelectOptions();
   populateTagChips();         // ── Adım J4: dinamik etiket chip'leri
   populateCategoryChips();    // ── Adım 11: dinamik kategori chip'leri (çoklu seçim)
@@ -440,6 +458,15 @@ function recompute(resetPage = false) {
   // ── Adım 4 sonu ──────────────────────────────────────────────────────────
   // ── Adım J4 sonu ─────────────────────────────────────────────────────────
 
+  // ── Adım 14: Eksik alan filtresi (Dashboard "Eksik Bilgi Merkezi") ───────
+  // İlgili alanı boş string, null veya undefined olan kitapları gösterir.
+  // Diğer filtrelerin tersine "değere eşit" değil "değer eksik" mantığı.
+  if (ui.filters.missingField) {
+    const field = ui.filters.missingField;
+    result = result.filter((b) => !b[field]);
+  }
+  // ── Adım 14 sonu ──────────────────────────────────────────────────────────
+
   filtered = sortBooks(result, ui.sort);
   if (resetPage) ui.page = 1;
   clampPage();
@@ -678,7 +705,7 @@ function updateViewToggle() {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "" };
   syncChips();
   ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);

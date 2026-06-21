@@ -9,6 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../core/state.js";
+import { navigate } from "../core/router.js";
 import { openModal } from "../ui/modal.js";
 import { escapeHtml } from "../ui/common.js";
 
@@ -45,6 +46,11 @@ function _statsKey(stats) {
     langOther:      stats.langOther,
     recentIds:      stats.recent.map((b) => b.$id),
     readingIds:     stats.reading.map((b) => b.$id),
+    // ── Adım 14: eksik bilgi sayıları değişirse de yeniden çizim tetiklensin
+    missingAuthor:    stats.missingAuthor,
+    missingPublisher: stats.missingPublisher,
+    missingCover:     stats.missingCover,
+    missingYear:      stats.missingYear,
   });
 }
 // ── Adım J9 sonu ─────────────────────────────────────────────────────────────
@@ -103,12 +109,21 @@ function compute() {
 
   const readPct = total > 0 ? Math.round((okundu / total) * 100) : 0;
 
+  // ── Adım 14: Eksik Bilgi Merkezi — hangi alanlardan kaç kitapta eksik ────
+  // Boş string, null veya undefined hepsi "eksik" sayılır.
+  const missingAuthor    = books.filter((b) => !b.author).length;
+  const missingPublisher = books.filter((b) => !b.publisher).length;
+  const missingCover     = books.filter((b) => !b.cover_url).length;
+  const missingYear      = books.filter((b) => !b.year).length;
+  // ── Adım 14 sonu ──────────────────────────────────────────────────────────
+
   return {
     total, epub, pdf,
     okunmadi, sirada, okunuyor, okundu,
     authorCount, publisherCount, seriesCount,
     langTr, langEn, langOther,
     readPct, recent, reading,
+    missingAuthor, missingPublisher, missingCover, missingYear,
   };
 }
 
@@ -136,6 +151,9 @@ function renderLayout(s) {
         ${card("lucide:file-type-2", "PDF",          s.pdf,   "neutral")}
       </div>
     </div>
+
+    <!-- ── Adım 14: Eksik Bilgi Merkezi ── -->
+    ${renderMissingInfoSection(s)}
 
     <!-- ── Okuma Durumu ── -->
     <div class="dash-section">
@@ -195,6 +213,40 @@ function renderLayout(s) {
   `;
 }
 
+// ── Adım 14: "Eksik Bilgi Merkezi" bölümü ───────────────────────────────────
+// Hiçbir alanda eksik yoksa (4 kart da 0) bölüm hiç gösterilmez — katalog
+// tertemizse Dashboard'da gereksiz bir "0, 0, 0, 0" görüntüsü çıkmaz.
+function renderMissingInfoSection(s) {
+  const total = s.missingAuthor + s.missingPublisher + s.missingCover + s.missingYear;
+  if (total === 0) return "";
+
+  return `
+    <div class="dash-section">
+      <h2 class="dash-section-title">
+        <iconify-icon icon="lucide:alert-circle"></iconify-icon> Eksik Bilgi Merkezi
+      </h2>
+      <div class="stat-grid" id="missing-info-grid">
+        ${missingCard("lucide:user-x",      "Yazar Eksik",    s.missingAuthor,    "author")}
+        ${missingCard("lucide:building-2",  "Yayınevi Eksik", s.missingPublisher, "publisher")}
+        ${missingCard("lucide:image-off",   "Kapak Eksik",    s.missingCover,     "cover_url")}
+        ${missingCard("lucide:calendar-x",  "Yıl Eksik",      s.missingYear,      "year")}
+      </div>
+    </div>
+  `;
+}
+
+// Eksik bilgi kartı — tıklanınca katalog sayfasına ilgili filtreyle yönlendirir.
+function missingCard(icon, label, value, field) {
+  return `
+    <div class="stat-card stat-card--missing" data-missing-field="${field}" role="button" tabindex="0">
+      <div class="stat-card-icon"><iconify-icon icon="${icon}"></iconify-icon></div>
+      <div class="stat-card-value">${value}</div>
+      <div class="stat-card-label">${label}</div>
+    </div>
+  `;
+}
+// ── Adım 14 sonu ─────────────────────────────────────────────────────────────
+
 // ─── "Şu An Okunuyor" bölümü ─────────────────────────────────────────────────
 function renderReadingSection(books) {
   const items = books.map((b) => `
@@ -253,6 +305,27 @@ function bindRecentClicks() {
     const item = e.target.closest(".recent-item");
     if (item?.dataset.id) openModal(item.dataset.id);
   });
+  // ── Adım 14: Eksik Bilgi Merkezi kartları ────────────────────────────────
+  // Bir karta tıklanınca (veya Enter/Space ile klavyeden seçilince), ilgili
+  // alanı eksik olan kitapları gösteren bir filtre isteği state'e yazılır
+  // ve katalog sayfasına yönlendirilir. catalog.js bu isteği renderCatalog()
+  // içinde okuyup uygular.
+  const missingGrid = document.getElementById("missing-info-grid");
+  missingGrid?.addEventListener("click", (e) => {
+    const card = e.target.closest(".stat-card--missing");
+    if (!card) return;
+    state.pendingCatalogFilter = { missingField: card.dataset.missingField };
+    navigate("catalog");
+  });
+  missingGrid?.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const card = e.target.closest(".stat-card--missing");
+    if (!card) return;
+    e.preventDefault();
+    state.pendingCatalogFilter = { missingField: card.dataset.missingField };
+    navigate("catalog");
+  });
+  // ── Adım 14 sonu ──────────────────────────────────────────────────────────
 }
 
 // ─── Chart.js CDN'den dinamik yükle ─────────────────────────────────────────

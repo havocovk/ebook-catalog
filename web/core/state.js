@@ -27,4 +27,13 @@ export const state = {
   // Şu an görüntülenen sayfanın adı: "catalog", "dashboard", "authors", ...
   // router.js bunu günceller; bir kayıt değişince "aktif sayfayı yenile" için kullanılır.
   currentPage: null,
+
+  // ── Adım 14: Dashboard'dan katalog'a filtre taşıma ─────────────────────────
+  // Dashboard'daki "Eksik Bilgi Merkezi" kartlarından birine tıklanınca,
+  // burada hangi filtrenin uygulanması istendiği geçici olarak saklanır
+  // (örn. { missingField: "author" }). catalog.js, renderCatalog() içinde
+  // bu alanı kontrol eder, varsa filtreyi uygular ve hemen null'a çevirir —
+  // böylece katalog sayfasına normal şekilde tekrar girildiğinde eski
+  // filtre isteği "yapışık" kalmaz.
+  pendingCatalogFilter: null,
 };

@@ -7,6 +7,7 @@ api.py'den bölündü — Adım 5 (refactoring).
 """
 
 import os
+import re
 import requests
 
 from .client import (

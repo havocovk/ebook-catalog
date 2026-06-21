@@ -97,6 +97,27 @@
 
 .stat-card--neutral .stat-card-icon { color: var(--text-3); }
 
+/* ── Adım 14: Eksik Bilgi Merkezi — tıklanabilir kart ─────────── */
+/* Diğer stat-card varyantlarından farkı: cursor pointer + daha güçlü
+   hover efekti, çünkü bu kartlar tıklanıp katalog sayfasına yönlendirir. */
+.stat-card--missing {
+  cursor: pointer;
+  border-color: rgba(224,92,92,0.25);
+}
+
+.stat-card--missing .stat-card-icon { color: var(--danger); }
+.stat-card--missing .stat-card-value { color: var(--danger); }
+
+.stat-card--missing:hover {
+  border-color: var(--danger);
+  transform: translateY(-2px);
+}
+
+.stat-card--missing:focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+
 /* ── Okuma ilerleme çubuğu ───────────────────────────────────── */
 .progress-bar-wrap {
   display: flex;
@@ -316,4 +337,3 @@
 
   .recent-item { width: 68px; height: 96px; }
 }
-
