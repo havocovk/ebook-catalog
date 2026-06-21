@@ -364,6 +364,8 @@ textarea { resize: vertical; }
   gap: 1rem;
   padding: 5rem 1rem;
   color: var(--text-3);
+  text-align: center;
+}
 .page-placeholder iconify-icon { font-size: 3rem; color: var(--text-3); }
 .page-placeholder p { font-size: 1.1rem; }
 
@@ -413,4 +415,3 @@ textarea { resize: vertical; }
   /* Aksiyon butonlarındaki metinler masaüstünde görünür */
   .btn-label { display: inline; }
 }
-
