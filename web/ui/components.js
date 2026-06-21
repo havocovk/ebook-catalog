@@ -52,10 +52,18 @@ export function createBookCard(book) {
   // data-id zaten kartın kendisinde var; butona ayrıca eklemeye gerek yok,
   // catalog.js'deki event delegation closest(".favorite-btn") ile kartın
   // dataset.id'sini okuyacak.
+  //
+  // DÜZELTME: Lucide'da resmi "dolu kalp" ikonu yok (sadece stroke/çerçeve
+  // çiziyor, fill desteklemiyor — Iconify de CSS ile fill zorlamayı önermiyor
+  // çünkü her ikon seti bunu desteklemez). Bu yüzden dolu/boş ayrımı için
+  // Material Design Icons (mdi) setinden GERÇEKTEN dolu olan bir ikon
+  // kullanılıyor: mdi:heart (dolu) / mdi:heart-outline (boş). Renk hâlâ
+  // CSS'teki .active sınıfıyla (color: var(--danger)) yönetiliyor.
   const isFavorite = Boolean(book.favorite);
+  const heartIcon = isFavorite ? "mdi:heart" : "mdi:heart-outline";
   const favoriteBtnHtml = `
     <button class="favorite-btn ${isFavorite ? "active" : ""}" title="${isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"}">
-      <iconify-icon icon="lucide:heart"></iconify-icon>
+      <iconify-icon icon="${heartIcon}"></iconify-icon>
     </button>
   `;
   // ── Adım 17 sonu ──────────────────────────────────────────────────────────

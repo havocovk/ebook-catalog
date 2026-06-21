@@ -800,10 +800,14 @@ function createBookRow(book) {
     : `<div class="row-cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
 
   // ── Adım 17: Favori butonu (liste görünümü) ──────────────────────────────
+  // DÜZELTME: lucide:heart sadece çerçeve (stroke) çiziyor, fill desteklemiyor
+  // — bu yüzden mdi setinden gerçekten dolu bir ikon kullanılıyor.
+  // (Aynı düzeltme components.js'deki createBookCard'da da yapıldı.)
   const isFavorite = Boolean(book.favorite);
+  const heartIcon = isFavorite ? "mdi:heart" : "mdi:heart-outline";
   const favoriteBtnHtml = `
     <button class="favorite-btn favorite-btn-row ${isFavorite ? "active" : ""}" title="${isFavorite ? "Favorilerden çıkar" : "Favorilere ekle"}">
-      <iconify-icon icon="lucide:heart"></iconify-icon>
+      <iconify-icon icon="${heartIcon}"></iconify-icon>
     </button>
   `;
   // ── Adım 17 sonu ──────────────────────────────────────────────────────────
