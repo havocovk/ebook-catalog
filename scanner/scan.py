@@ -517,10 +517,22 @@ def process_file(
         use_folder_series=False,  # Seri kararı scan.py yönetir
     )
 
-    # Kullanıcı seri adı onayladıysa direkt ata (API'ı ezmez)
-    if forced_series and not metadata.get("series"):
+    # ── DÜZELTME: Kullanıcı klasör seviyesinde seri onayladıysa (forced_series),
+    # bu HER ZAMAN üstün olmalı — dosya adından _parse_filename'in çıkardığı
+    # bir seri tahminini de EZER. Önceki hâli (`not metadata.get("series")`)
+    # sadece dosya adında HİÇ seri kalıbı yoksa devreye giriyordu; bu da "TEK 01
+    # - Yazar - Başlık" gibi dosya adlarında _parse_filename'in "TEK"i seri
+    # adı sanıp metadata["series"]'i doldurmasına, ve kullanıcının klasör
+    # seviyesinde onayladığı GERÇEK seri adının (örn. "Türk Edebiyat
+    # Klasikleri") hiç uygulanmamasına sebep oluyordu.
+    #
+    # Kullanıcı "hayır" derse forced_series None olur, bu blok hiç çalışmaz,
+    # dosya adından gelen seri (varsa) olduğu gibi korunur — eski davranış
+    # o senaryoda DEĞİŞMEDİ.
+    if forced_series:
         metadata["series"] = forced_series
         metadata.setdefault("_sources", {})["series"] = "user"
+    # ── DÜZELTME SONU ────────────────────────────────────────────────────────
 
     print("  → Google Books sorgulanıyor...")
     api_data = enrich_metadata(

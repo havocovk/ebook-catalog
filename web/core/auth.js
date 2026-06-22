@@ -19,37 +19,39 @@ export async function initAuth() {
     showApp();
 
     // ── Adım J2: Paralel başlangıç yüklemesi ──────────────────────────────
-    // Kitaplar, yazarlar ve yayınevleri birbirinden bağımsız Appwrite sorguları
-    // olduğu için aynı anda paralel başlatılır.
     //
-    // ── Adım 19 düzeltmesi: bootstrapCollections İLK paralel gruptan
-    // ÇIKARILDI. Sebep: bootstrapCollections, state.books'u tarayarak
-    // "kitaplarda geçen ama collections tablosunda olmayan isimleri ekle"
-    // mantığı çalıştırır (bootstrapAuthors/Publishers ile aynı desen).
-    // loadBooks ile paralel çalıştığında state.books bazen henüz boş
-    // olabiliyordu (yarış durumu) — bu da yeni eklenen koleksiyon adlarının
-    // (örn. "Tango", "CFD") collections tablosuna hiç eklenmemesine, ve
-    // Koleksiyonlar sayfasındaki yeniden adlandır/sil butonlarının
-    // "koleksiyon bulunamadı" hatası vermesine sebep oluyordu.
+    // ── Adım 19+ düzeltmesi: bootstrapAuthors/Publishers/Collections, ÜÇÜ DE
+    // loadBooks ile aynı paralel gruptan ÇIKARILDI. Sebep: bu üç fonksiyon
+    // da state.books'u tarayarak "kitaplarda geçen ama ilgili tabloda
+    // (authors/publishers/collections) olmayan isimleri ekle" mantığı
+    // çalıştırır. loadBooks ile paralel çalıştıklarında state.books bazen
+    // henüz boş oluyordu (yarış durumu) — bu da büyük taramalar sonrasında
+    // (örn. 91 kitap) yeni yazar/yayınevi isimlerinin authors/publishers
+    // tablolarına HİÇ eklenmemesine sebep oluyordu. Sonuç: kitap kartı
+    // üzerinde doğru isim görünse de (books.publisher/author metin alanı
+    // doğru), modal'daki seri seçici "yayınevi bulunamadı" diyerek devre
+    // dışı kalıyordu (currentPublisherId(), state.publishers içinde isim
+    // eşleşmesi arıyor — tablo boşsa hiçbir eşleşme bulunamaz).
     //
-    // Çözüm: bootstrapCollections artık bootstrapSeries ile aynı konumda —
-    // loadBooks GARANTİ olarak bittikten SONRA çalışır. İkisi de Yazarlar/
-    // Yayınevleri'ne bağımlı olmadığı için birbirleriyle paralel kalabilir
-    // (performans kaybı yok, sadece state.books'a olan bağımlılık güvene alındı).
+    // Bu, Adım 19'da bootstrapCollections için bulunan ve düzeltilen aynı
+    // kök sebep — şimdi authors ve publishers'a da uygulanıyor.
     //
-    // Mevcut sıralama:
-    //   await Promise.all([loadBooks, bootstrapAuthors, bootstrapPublishers])
-    //   await Promise.all([bootstrapCollections, bootstrapSeries])
-    //   Toplam: ~1200ms (iki paralel dalga)
+    // Çözüm: loadBooks artık TEK BAŞINA, garanti tamamlanana kadar beklenir.
+    // Sonra authors/publishers/collections aynı anda (paralel, çünkü
+    // birbirlerine bağımlı değiller) çalışır. Seriler en son — yayınevlerine
+    // bağımlı olduğu için publishers'ın bitmiş olması gerekiyor.
+    //
+    // Sıralama (üç dalga):
+    //   await loadBooks()
+    //   await Promise.all([bootstrapAuthors, bootstrapPublishers, bootstrapCollections])
+    //   await bootstrapSeries()
+    await loadBooks();
     await Promise.all([
-      loadBooks(),
       bootstrapAuthors(),
       bootstrapPublishers(),
+      bootstrapCollections(),
     ]);
-    await Promise.all([
-      bootstrapCollections(),  // state.books'a bağımlı — artık güvenle çalışır
-      bootstrapSeries(),       // Yayınevlerine bağımlı — artık güvenle çalışır
-    ]);
+    await bootstrapSeries();         // Yayınevlerine bağımlı — en son
     // ── Adım J2 sonu ──────────────────────────────────────────────────────
 
     initRouter();                    // Tüm veriler yüklendikten sonra sayfa çizilsin
@@ -104,18 +106,15 @@ async function login() {
     showApp();
 
     // ── Adım J2: Paralel başlangıç yüklemesi (initAuth ile aynı mantık) ───
-    // ── Adım 19 düzeltmesi: bootstrapCollections, loadBooks'tan SONRA
-    // (bootstrapSeries ile birlikte paralel) çalışır — yarış durumunu
-    // önlemek için initAuth'taki ile aynı düzeltme.
+    // ── Adım 19+ düzeltmesi: initAuth'taki ile aynı — loadBooks tek başına
+    // beklenir, sonra authors/publishers/collections paralel, en son series.
+    await loadBooks();
     await Promise.all([
-      loadBooks(),
       bootstrapAuthors(),
       bootstrapPublishers(),
-    ]);
-    await Promise.all([
       bootstrapCollections(),
-      bootstrapSeries(),       // Yayınevlerine bağımlı — artık güvenle çalışır
     ]);
+    await bootstrapSeries();         // Yayınevlerine bağımlı — en son
     // ── Adım J2 sonu ──────────────────────────────────────────────────────
 
     initRouter();
