@@ -16,7 +16,7 @@ import { state } from "./state.js";
 const routes = {};
 
 // Geçerli sayfa adları ve varsayılan (açılışta gidilecek) sayfa.
-const VALID_ROUTES = ["catalog", "dashboard", "authors", "publishers", "series", "dedupe"];
+const VALID_ROUTES = ["catalog", "dashboard", "authors", "publishers", "series", "collections", "dedupe"];
 const DEFAULT_ROUTE = "catalog";
 
 // Olay dinleyicilerini sadece bir kez bağlamak için bayrak.
