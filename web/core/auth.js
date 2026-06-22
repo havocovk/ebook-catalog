@@ -19,38 +19,37 @@ export async function initAuth() {
     showApp();
 
     // ── Adım J2: Paralel başlangıç yüklemesi ──────────────────────────────
-    // Kitaplar, yazarlar, yayınevleri ve koleksiyonlar birbirinden bağımsız
-    // Appwrite sorguları olduğu için aynı anda paralel başlatılır. Seriler
-    // yayınevi ID'lerine bağlı olduğundan yayınevleri yüklendikten sonra
-    // çalıştırılır.
+    // Kitaplar, yazarlar ve yayınevleri birbirinden bağımsız Appwrite sorguları
+    // olduğu için aynı anda paralel başlatılır.
     //
-    // Mevcut (sıralı — yavaş):
-    //   await loadBooks();             // ~800ms
-    //   await bootstrapAuthors();      // ~400ms
-    //   await bootstrapPublishers();   // ~400ms
-    //   await bootstrapCollections();  // ~400ms
-    //   await bootstrapSeries();       // ~400ms
-    //   Toplam: ~2400ms
+    // ── Adım 19 düzeltmesi: bootstrapCollections İLK paralel gruptan
+    // ÇIKARILDI. Sebep: bootstrapCollections, state.books'u tarayarak
+    // "kitaplarda geçen ama collections tablosunda olmayan isimleri ekle"
+    // mantığı çalıştırır (bootstrapAuthors/Publishers ile aynı desen).
+    // loadBooks ile paralel çalıştığında state.books bazen henüz boş
+    // olabiliyordu (yarış durumu) — bu da yeni eklenen koleksiyon adlarının
+    // (örn. "Tango", "CFD") collections tablosuna hiç eklenmemesine, ve
+    // Koleksiyonlar sayfasındaki yeniden adlandır/sil butonlarının
+    // "koleksiyon bulunamadı" hatası vermesine sebep oluyordu.
     //
-    // Yeni (paralel — hızlı):
-    //   await Promise.all([loadBooks, bootstrapAuthors, bootstrapPublishers, bootstrapCollections])
-    //   await bootstrapSeries();
-    //   Toplam: ~800ms (en uzun sürenin kadar)
+    // Çözüm: bootstrapCollections artık bootstrapSeries ile aynı konumda —
+    // loadBooks GARANTİ olarak bittikten SONRA çalışır. İkisi de Yazarlar/
+    // Yayınevleri'ne bağımlı olmadığı için birbirleriyle paralel kalabilir
+    // (performans kaybı yok, sadece state.books'a olan bağımlılık güvene alındı).
     //
-    // ── Adım 19 notu: bootstrapCollections, bootstrapAuthors/Publishers ile
-    // birebir aynı "eksik tamamlama" desenini izler (state.books'u tarar).
-    // Bu paralel grupta state.books henüz loadBooks() tarafından doldurulmamış
-    // olabilir — bu, zaten bootstrapAuthors/Publishers'ın da paylaştığı bilinen
-    // bir davranış (yarış durumu kasıtlı kabul edilmiş, Adım J2'nin parçası).
-    // Sonraki bir sayfa açılışında (loadBooks tamamlandıktan sonra çağrılan
-    // bootstrap fonksiyonları) eksik tamamlama zaten gerçekleşir.
+    // Mevcut sıralama:
+    //   await Promise.all([loadBooks, bootstrapAuthors, bootstrapPublishers])
+    //   await Promise.all([bootstrapCollections, bootstrapSeries])
+    //   Toplam: ~1200ms (iki paralel dalga)
     await Promise.all([
       loadBooks(),
       bootstrapAuthors(),
       bootstrapPublishers(),
-      bootstrapCollections(),
     ]);
-    await bootstrapSeries();         // Yayınevlerine bağlı — en sona kalır
+    await Promise.all([
+      bootstrapCollections(),  // state.books'a bağımlı — artık güvenle çalışır
+      bootstrapSeries(),       // Yayınevlerine bağımlı — artık güvenle çalışır
+    ]);
     // ── Adım J2 sonu ──────────────────────────────────────────────────────
 
     initRouter();                    // Tüm veriler yüklendikten sonra sayfa çizilsin
@@ -105,13 +104,18 @@ async function login() {
     showApp();
 
     // ── Adım J2: Paralel başlangıç yüklemesi (initAuth ile aynı mantık) ───
+    // ── Adım 19 düzeltmesi: bootstrapCollections, loadBooks'tan SONRA
+    // (bootstrapSeries ile birlikte paralel) çalışır — yarış durumunu
+    // önlemek için initAuth'taki ile aynı düzeltme.
     await Promise.all([
       loadBooks(),
       bootstrapAuthors(),
       bootstrapPublishers(),
-      bootstrapCollections(),  // ── Adım 19
     ]);
-    await bootstrapSeries();         // Yayınevlerine bağlı — en sona kalır
+    await Promise.all([
+      bootstrapCollections(),
+      bootstrapSeries(),       // Yayınevlerine bağımlı — artık güvenle çalışır
+    ]);
     // ── Adım J2 sonu ──────────────────────────────────────────────────────
 
     initRouter();

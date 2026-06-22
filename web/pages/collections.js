@@ -205,12 +205,30 @@ function renderCollectionDetail(name) {
 // var, modal içinde bir "düzenle" dropdown'u yok).
 // ═══════════════════════════════════════════════════════════════
 
+// "state.collections içinde bu isim var mı" kontrolü + bulamazsa otomatik
+// tamamlama. Bu gereklidir çünkü bootstrapCollections() ile loadBooks()
+// auth.js'de PARALEL çalışıyor (Adım J2 performans optimizasyonu) — eğer
+// bootstrapCollections, loadBooks tamamlanmadan state.books'u tararsa,
+// henüz hiç kitap yoktur ve o anda kitaplara yazılmış olan koleksiyon
+// adları (örn. modal'da az önce kaydedilen "Tango", "CFD") collections
+// tablosuna eklenmeden atlanmış olabilir. createCollection() çağrısı bu
+// durumu kendiliğinden onarır: isim zaten varsa onu döndürür, yoksa hemen
+// oluşturur — kullanıcı "bulunamadı" hatasıyla karşılaşmaz.
+async function findOrRepairCollection(name) {
+  const existing = state.collections.find((c) => c.name === name);
+  if (existing) return existing;
+  return await createCollection(name);
+}
+
 async function handleRename(name) {
-  const collection = state.collections.find((c) => c.name === name);
-  if (!collection) {
-    showToast("Koleksiyon bulunamadı (henüz veritabanına kaydedilmemiş olabilir).", "error");
+  let collection;
+  try {
+    collection = await findOrRepairCollection(name);
+  } catch (err) {
+    showToast("Koleksiyon bilgisi alınamadı: " + (err?.message || err), "error");
     return;
   }
+  if (!collection) return; // createCollection boş/geçersiz isimde null döner
 
   const newName = await _showPrompt("Yeni koleksiyon adı:", name);
   if (!newName || newName === name) return;
@@ -225,11 +243,14 @@ async function handleRename(name) {
 }
 
 async function handleDelete(name) {
-  const collection = state.collections.find((c) => c.name === name);
-  if (!collection) {
-    showToast("Koleksiyon bulunamadı (henüz veritabanına kaydedilmemiş olabilir).", "error");
+  let collection;
+  try {
+    collection = await findOrRepairCollection(name);
+  } catch (err) {
+    showToast("Koleksiyon bilgisi alınamadı: " + (err?.message || err), "error");
     return;
   }
+  if (!collection) return;
 
   const confirmed = await _showConfirm(
     `"${name}" koleksiyonunu silmek istediğinize emin misiniz? Kitaplar silinmez, sadece bu koleksiyondan çıkarılır.`
