@@ -128,6 +128,11 @@ export function openModal(bookId) {
   document.getElementById("modal-notes").value        = book.notes || "";
   document.getElementById("modal-finished-at").value  = book.finished_at || "";
   document.getElementById("modal-tags").value         = (book.tags || []).join(", ");
+  // ── Adım 19: Koleksiyonlar — modal-tags ile birebir aynı kalıp (serbest
+  // metin, virgülle ayrılmış) — ayrı bir dropdown/seçici kurulmadı, kullanıcı
+  // deneyimi açısından zaten tanıdık bir desen olduğu için.
+  document.getElementById("modal-collections").value  = (book.collections || []).join(", ");
+  // ── Adım 19 sonu ──────────────────────────────────────────────────────────
   document.getElementById("modal-file-path").textContent = book.file_path || "";
   document.getElementById("modal-file-size").textContent = formatFileSize(book.file_size);
   document.getElementById("modal-format").textContent    = (book.format || "").toUpperCase();
@@ -160,6 +165,11 @@ async function saveModal() {
   const tags = document.getElementById("modal-tags").value
     .split(",").map((t) => t.trim()).filter(Boolean);
 
+  // ── Adım 19: Koleksiyonlar — tags ile birebir aynı ayrıştırma mantığı.
+  const collections = document.getElementById("modal-collections").value
+    .split(",").map((c) => c.trim()).filter(Boolean);
+  // ── Adım 19 sonu ──────────────────────────────────────────────────────────
+
   const finishedAt      = document.getElementById("modal-finished-at").value || null;
   const seriesOrderRaw  = document.getElementById("modal-series-order").value;
   const yearRaw         = document.getElementById("modal-year").value;
@@ -185,6 +195,7 @@ async function saveModal() {
     notes:        document.getElementById("modal-notes").value.trim() || null,
     finished_at:  finishedAt,
     tags,
+    collections,  // ── Adım 19
   };
 
   await applyUpdate(editingId, updates);

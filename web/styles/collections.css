@@ -1,0 +1,216 @@
+/* ═══════════════════════════════════════════════════════════════ */
+/* Adım 19 — Koleksiyonlar: liste, popüler kartlar, ilerleme, detay  */
+/* (series.css'in kalıbı temel alındı, yayınevi bağımlılığı yok)    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Bölüm aralığı ───────────────────────────────────────────── */
+.collection-section {
+  margin-bottom: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Popüler Koleksiyonlar ızgarası ──────────────────────────── */
+.collection-popular-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+/* ── Popüler koleksiyon kartı ─────────────────────────────────── */
+.collection-popular-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.collection-popular-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.collection-popular-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.collection-popular-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-3);
+  margin-top: 0.25rem;
+}
+
+.collection-read-label { color: var(--success); }
+
+/* ── İlerleme çubuğu (koleksiyon için) ───────────────────────── */
+.collection-progress-track {
+  height: 5px;
+  background: var(--bg-3);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 0.3rem;
+}
+
+.collection-progress-track--sm {
+  width: 80px;
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.collection-progress-fill {
+  height: 100%;
+  background: var(--success);
+  border-radius: 99px;
+  min-width: 2px;
+  transition: width 0.4s ease;
+}
+
+/* ── Tüm Koleksiyonlar listesi ────────────────────────────────── */
+.collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* ── Koleksiyon listesi satırı ────────────────────────────────── */
+.collection-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.collection-row:hover { background: var(--bg-2); }
+.collection-row:hover .author-row-arrow { color: var(--accent); transform: translateX(3px); }
+
+.collection-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.collection-row-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.collection-row:hover .collection-row-name { color: var(--accent); }
+
+.collection-row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.collection-row-count {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* ── Yeniden adlandır / sil butonları (satır üzerinde) ───────── */
+/* Yazarlar/Yayınevleri'nin aksine, bu butonlar entity-picker.js'de değil
+   doğrudan koleksiyon satırının üzerinde — çünkü Koleksiyonlar'ın kendi
+   sayfası var, modal içinde bir "düzenle" dropdown'u yok. */
+.collection-row-edit,
+.collection-row-delete {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 0.95rem;
+  padding: 0.3rem;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.collection-row:hover .collection-row-edit,
+.collection-row:hover .collection-row-delete {
+  opacity: 1;
+}
+
+.collection-row-edit:hover   { color: var(--accent); background: var(--bg-3); }
+.collection-row-delete:hover { color: var(--danger);  background: var(--bg-3); }
+
+/* ── Detay: kitap ızgarası ────────────────────────────────────── */
+.collection-books-grid {
+  /* books-grid'in genel stilini miras alır (catalog.css), ek bir şey
+     gerekmiyor — sadece isim farkı için ayrı sınıf tutuluyor. */
+}
+
+/* ── Boş durum (hiç koleksiyon yokken) ───────────────────────── */
+.empty-page-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-2);
+}
+
+.empty-page-state iconify-icon {
+  font-size: 2.5rem;
+  color: var(--text-3);
+  margin-bottom: 0.5rem;
+}
+
+.empty-page-hint {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  max-width: 360px;
+}
+
+/* ── Mobil ───────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .collection-popular-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .collection-progress-track--sm { width: 60px; }
+
+  /* Mobilde hover olmadığı için düzenle/sil butonları her zaman görünür. */
+  .collection-row-edit,
+  .collection-row-delete {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 400px) {
+  .collection-popular-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Detay: kitap kartları, normal books-grid stilini (catalog.css) miras
+   alır — series-book-row gibi özel bir satır düzeni kullanılmıyor, çünkü
+   Koleksiyon detayında da Yazarlar detayındaki gibi normal kart ızgarası
+   tercih edildi (sıra numarası gibi seriye özel bir bilgi yok). */

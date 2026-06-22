@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="styles/authors.css" />
   <link rel="stylesheet" href="styles/publishers.css" />
   <link rel="stylesheet" href="styles/series.css" />
+  <link rel="stylesheet" href="styles/collections.css" />
   <link rel="stylesheet" href="styles/dedupe.css" />
   <!-- ── Adım 12 sonu ─────────────────────────────────────────────── -->
   <script src="https://code.iconify.design/iconify-icon/3.0.2/iconify-icon.min.js"></script>
@@ -69,6 +70,9 @@
         </a>
         <a href="#series" data-nav="series" class="nav-link">
           <iconify-icon icon="lucide:layers"></iconify-icon><span>Seriler</span>
+        </a>
+        <a href="#collections" data-nav="collections" class="nav-link">
+          <iconify-icon icon="lucide:folder-heart"></iconify-icon><span>Koleksiyonlar</span>
         </a>
         <a href="#dedupe" data-nav="dedupe" class="nav-link">
           <iconify-icon icon="lucide:copy-x"></iconify-icon><span>Kitap Ayıklayıcı</span>
@@ -370,6 +374,14 @@
         </div>
       </section>
 
+      <!-- ── Koleksiyonlar (Adım 19) ───────────────────────────────── -->
+      <section id="collections-page" class="page hidden">
+        <div class="authors-wrap">
+          <!-- collections.js bu div'in içini doldurur -->
+          <div id="collections-content"></div>
+        </div>
+      </section>
+
       <!-- ── Kitap Ayıklayıcı ───────────────────────────────────────── -->
       <section id="dedupe-page" class="page hidden">
         <div class="authors-wrap">
@@ -626,6 +638,16 @@
             </label>
             <input type="text" id="modal-tags" placeholder="fantastik, klasik, okunacak" />
           </div>
+
+          <!-- ── Adım 19: Koleksiyonlar (etiketlerle birebir aynı kalıp) ─── -->
+          <div class="field">
+            <label>
+              <iconify-icon icon="lucide:folder-heart"></iconify-icon>
+              Koleksiyonlar <span class="hint">(virgülle ayır)</span>
+            </label>
+            <input type="text" id="modal-collections" placeholder="Tango, CFD, 2026 Okuma Listesi" />
+          </div>
+          <!-- ── Adım 19 sonu ─────────────────────────────────────────────── -->
 
           <!-- Dosya bilgisi (sadece okunur) -->
           <div class="file-meta">

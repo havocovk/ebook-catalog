@@ -21,6 +21,16 @@ export const state = {
   publishers: [],
   series: [],
 
+  // ── Adım 19: Kullanıcı tanımlı koleksiyonlar (Tango, CFD, Tarih gibi
+  // serbest gruplamalar). Yazarlar/Yayınevleri/Seriler ile aynı mantık:
+  // ayrı bir Appwrite koleksiyonundan (collections) yüklenir, her eleman
+  // { $id, name }. Farkı: bir kitap BİRDEN FAZLA koleksiyona ait olabilir
+  // (books.collections bir dizi — etiketler gibi), bu yüzden eşleşme
+  // book.author === name gibi tekil değil, book.collections.includes(name)
+  // şeklinde çoklu.
+  collections: [],
+  // ── Adım 19 sonu ─────────────────────────────────────────────────────────
+
   // Giriş yapan kullanıcı (Appwrite account objesi). Oturum yoksa null.
   user: null,
 

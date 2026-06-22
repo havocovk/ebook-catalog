@@ -12,6 +12,12 @@ const BUCKET_ID = "6a2f3f66001896fe7d78";
 const AUTHORS_ID = "authors";
 const PUBLISHERS_ID = "publishers";
 const SERIES_ID = "series";
+// ── Adım 19: Kullanıcı tanımlı koleksiyonlar (Tango, CFD, Tarih gibi
+// serbest gruplamalar). Yazarlar/Yayınevleri ile aynı mantık (ayrı bir
+// "ad listesi" tablosu), ama books.collections bir DİZİ — bir kitap
+// birden fazla koleksiyona ait olabilir (etiketler gibi).
+const COLLECTIONS_ID = "collections";
+// ── Adım 19 sonu ─────────────────────────────────────────────────────────
 
 const client = new Client()
     .setEndpoint(APPWRITE_ENDPOINT)
@@ -36,4 +42,5 @@ export {
   AUTHORS_ID,
   PUBLISHERS_ID,
   SERIES_ID,
+  COLLECTIONS_ID,
 };

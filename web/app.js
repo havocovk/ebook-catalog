@@ -18,6 +18,7 @@ import { renderDashboard } from "./pages/dashboard.js";
 import { renderAuthors, initAuthors } from "./pages/authors.js";
 import { renderPublishers, initPublishers } from "./pages/publishers.js";
 import { renderSeries, initSeries } from "./pages/series.js";
+import { renderCollections, initCollections } from "./pages/collections.js";
 import { renderDedupe, initDedupe } from "./pages/dedupe.js";
 import {
   fetchAllBooks,
@@ -205,6 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
   registerRoute("authors", renderAuthors);
   registerRoute("publishers", renderPublishers);
   registerRoute("series", renderSeries);
+  registerRoute("collections", renderCollections);
   registerRoute("dedupe", renderDedupe);
 
   // 2) Olayları bir kez bağla.
@@ -212,6 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initAuthors();
   initPublishers();
   initSeries();
+  initCollections();
   initDedupe();
   initModal();
   bindBackupRestore();
