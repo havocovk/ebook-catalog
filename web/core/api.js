@@ -88,8 +88,42 @@ export async function updateBookRecord(id, updates) {
   return databases.updateDocument(DATABASE_ID, TABLE_ID, id, updates);
 }
 
+// ─── Kapak URL'inden dosya ID'sini çıkar ────────────────────────────────────
+// cover_url formatı (hem web hem Python tarafında aynı): .../buckets/{BUCKET_ID}
+// /files/{FILE_ID}/view?... — bu fonksiyon /files/ ile bir sonraki / arasındaki
+// segmenti çıkarır. Format eşleşmezse (örn. cover_url boş veya beklenmeyen bir
+// yapıdaysa) null döner — çağıran taraf bunu "silinecek dosya yok" olarak ele alır.
+function extractCoverFileId(coverUrl) {
+  if (!coverUrl) return null;
+  const match = coverUrl.match(/\/files\/([^/]+)\//);
+  return match ? match[1] : null;
+}
+
 // ─── Tek kayıt sil ──────────────────────────────────────────────────────────
+// Kitabı SİLMEDEN ÖNCE, eğer bir kapak resmi varsa storage'dan da siler.
+// Bu olmazsa, silinen kitabın kapak dosyası storage'da "yetim" kalır — hem
+// gereksiz yer kaplar hem de aynı kitap yeniden tarandığında Appwrite tarafı
+// (Python uploader.py, book_id'den deterministik file_id ürettiği için) "A
+// storage file with the requested ID already exists" hatası verir.
+//
+// Kapak silme işlemi BAŞARISIZ olsa bile (örn. dosya zaten storage'da yoksa,
+// network hatası vb.) kitabın kendisinin silinmesi ENGELLENMEZ — kapak silme
+// sessizce loglanır ve devam edilir; kullanıcı bir kitabı silmeye çalışırken
+// "kapak silinemedi" diye takılıp kalmamalı.
 export async function deleteBookRecord(id) {
+  const book = state.books.find((b) => b.$id === id);
+  const fileId = book ? extractCoverFileId(book.cover_url) : null;
+
+  if (fileId) {
+    try {
+      await storage.deleteFile(BUCKET_ID, fileId);
+    } catch (err) {
+      // Dosya zaten yoksa (404) veya başka bir sebeple silinemiyorsa, kitap
+      // silme işlemini bu yüzden durdurmuyoruz — sadece konsola not düşülür.
+      console.warn(`[deleteBookRecord] Kapak dosyası silinemedi (${fileId}):`, err?.message || err);
+    }
+  }
+
   return databases.deleteDocument(DATABASE_ID, TABLE_ID, id);
 }
 
