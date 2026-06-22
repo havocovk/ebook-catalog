@@ -114,6 +114,7 @@ export function openModal(bookId) {
     updateSeriesAvailability(false);   // kayıtlı veri tutarlı; temizleme yok
   }
   document.getElementById("modal-series-order").value = book.series_order ?? "";
+  document.getElementById("modal-edition").value      = book.edition || "";
   document.getElementById("modal-category").value     = book.category || "";   // ── Adım 1
 
   // ── Adım 11: Akademik kutucuğu + Alt Alan/Konu doldur ───────────────────
@@ -180,6 +181,7 @@ async function saveModal() {
     publisher:    document.getElementById("modal-publisher").value.trim() || null,  // YENİ
     series:       document.getElementById("modal-series").value.trim() || null,
     series_order: seriesOrderRaw === "" ? null : parseInt(seriesOrderRaw) || null,
+    edition:      document.getElementById("modal-edition").value.trim() || null,
     category:     document.getElementById("modal-category").value.trim() || null,  // ── Adım 1
     // ── Adım 11: Akademik işareti + Alt Alan/Konu ────────────────────────
     // Akademik kutucuğu işaretsizse Alt Alan/Konu zaten boşaltılmış olur

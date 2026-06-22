@@ -235,6 +235,7 @@ def save_book(metadata: dict, cover_url: str = None) -> bool:
         "title": metadata.get("title"),
         "author": metadata.get("author"),
         "publisher": metadata.get("publisher"),
+        "edition": metadata.get("edition"),   # YENİ: baskı/edition bilgisi
         "language": metadata.get("language"),
         "series": metadata.get("series"),
         "series_order": metadata.get("series_order") or metadata.get("series_index"),

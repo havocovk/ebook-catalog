@@ -4,6 +4,11 @@ EPUB dosyası içi metadata okuma modülü.
 Calibre + EPUB3 seri standartları, dc:subject seri çıkarımı.
 metadata.py'den bölündü — Adım 2 (refactoring).
 
+GÜNCELLEME (Baskı/Edition adımı):
+  EPUB içeriğinden (künye/copyright sayfası) baskı bilgisi çıkarımı eklendi.
+  Bu sadece dosya adından baskı bilgisi BULUNAMADIYSA devreye girer
+  (öncelik sırası core.py'de yönetilir, bu modül sadece veriyi sağlar).
+
 NOT: Bu bölme sırasında orijinal dosyadaki bir hata düzeltildi —
 _find_opf_path fonksiyonunun kayıp 'def' başlığı geri eklendi.
 """
@@ -18,6 +23,7 @@ from .isbn import _extract_isbn_from_string
 
 def _extract_epub_metadata(file_path: str) -> dict:
     result = {}
+    book = None
     try:
         book = epub.read_epub(file_path, options={"ignore_ncx": True})
 
@@ -60,6 +66,15 @@ def _extract_epub_metadata(file_path: str) -> dict:
         subject_entries = book.get_metadata("DC", "subject") or []
         result["_subjects_raw"] = [s[0].strip() for s in subject_entries if s[0].strip()]
 
+        # ── YENİ: Baskı (edition) — künye/copyright sayfasından ─────────────
+        # EPUB standart metadata alanlarında (DC) baskı bilgisi bulunmaz.
+        # Bu yüzden kitabın ilk birkaç bölümünün (spine sırasına göre) düz
+        # metnine bakılır — baskı bilgisi genelde künye sayfasında yazar.
+        page_text = _extract_epub_first_pages_text(book, max_items=5)
+        edition = _extract_edition_from_text(page_text)
+        if edition:
+            result["edition"] = edition
+
     except Exception as e:
         print(f"  [EPUB metadata hatası] {file_path}: {e}")
 
@@ -81,6 +96,76 @@ def _extract_epub_metadata(file_path: str) -> dict:
         result.pop("_subjects_raw", None)  # Seri zaten vardı, temizle
 
     return result
+
+
+def _extract_epub_first_pages_text(book, max_items: int = 5) -> str:
+    """
+    YENİ: EPUB'un spine sırasına göre ilk N HTML bölümünün düz metnini çıkarır.
+
+    Baskı/edition bilgisi genelde kitabın künye (copyright) sayfasında yazar,
+    bu sayfa da spine sırasında (kapak ve içindekiler hariç) ilk bölümlerden
+    biri olur. PDF tarafındaki "ilk 5 sayfayı oku" mantığının EPUB karşılığı.
+
+    HTML etiketleri temizlenip düz metin olarak birleştirilir, böylece
+    PDF'teki regex tabanlı _extract_edition_from_text fonksiyonu aynen
+    kullanılabilir.
+
+    Hatalı/bozuk bölümler sessizce atlanır — tek bir bölümün okunamaması
+    tüm işlemi durdurmaz.
+    """
+    texts = []
+    count = 0
+    try:
+        for spine_item in book.spine:
+            # spine elemanları (idref, linear) tuple olabilir veya sadece idref string'i
+            idref = spine_item[0] if isinstance(spine_item, tuple) else spine_item
+            doc_item = book.get_item_with_id(idref)
+            if doc_item is None:
+                continue
+            if doc_item.get_type() != ebooklib.ITEM_DOCUMENT:
+                continue
+            try:
+                raw_html = doc_item.get_content().decode("utf-8", errors="replace")
+            except Exception:
+                continue
+            text = re.sub(r'<[^>]+>', ' ', raw_html)
+            text = re.sub(r'\s+', ' ', text).strip()
+            if text:
+                texts.append(text)
+                count += 1
+            if count >= max_items:
+                break
+    except Exception as e:
+        print(f"  [EPUB ilk sayfalar okuma hatası] {e}")
+    return "\n".join(texts)
+
+
+def _extract_edition_from_text(text: str) -> str:
+    """
+    YENİ: EPUB içeriğinden baskı/edition bilgisini çıkarır.
+
+    pdf_extractor.py'deki aynı isimli fonksiyonla BİREBİR aynı regex
+    mantığını kullanır — iki format için tutarlı sonuç almak amacıyla
+    bilinçli olarak kopyalanmıştır (modüller birbirine bağımlı olmasın).
+
+    Aranan kalıplar:
+      "1. Baskı", "2. Basım", "3rd Edition", "Second Edition"
+    """
+    if not text:
+        return None
+
+    patterns = [
+        r'(\d+[.\s]*(?:bask[ıi]|bas[ıi]m))',
+        r'(\d+(?:st|nd|rd|th)\s+edition)',
+        r'((?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\s+edition)',
+        r'((?:revised|updated|expanded)\s+edition)',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+
+    return None
 
 
 def _extract_epub_series(file_path: str):
