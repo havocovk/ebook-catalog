@@ -223,6 +223,14 @@ function renderSeriesDetail(seriesName, publisher) {
     `
     : "";
 
+  // YENİ: Eksik kitap numarası tespiti — büyük serilerde (200+ kitap) elle
+  // taramak yorucu olduğu için, 1'den serideki en yüksek numaraya kadar
+  // hangi numaraların hiç bulunmadığı hesaplanır. Bu hesap HER ZAMAN
+  // allBooks üzerinden yapılır (format filtresinden bağımsız) — bir kitabın
+  // sadece PDF kopyası varsa bile o numara "mevcut" sayılır.
+  const missingInfo = computeMissingNumbers(allBooks);
+  const missingGridHtml = renderMissingGrid(missingInfo, allBooks);
+
   container.innerHTML = `
     <div class="detail-header">
       <button class="detail-back-btn" id="series-back-btn">
@@ -246,8 +254,11 @@ function renderSeriesDetail(seriesName, publisher) {
 
     ${formatChipsHtml}
 
-    <div class="series-book-list" id="series-book-list">
-      ${books.map((b) => detailBookRowHtml(b)).join("")}
+    <div class="series-detail-layout">
+      <div class="series-book-list" id="series-book-list">
+        ${books.map((b) => detailBookRowHtml(b)).join("")}
+      </div>
+      ${missingGridHtml}
     </div>
   `;
 
@@ -259,6 +270,91 @@ function renderSeriesDetail(seriesName, publisher) {
   });
 
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// ─── YENİ: Eksik kitap numaralarını hesapla ─────────────────────────────────
+// allBooks: bu seriye ait TÜM kitaplar (format filtresinden bağımsız).
+// Dönüş: { maxOrder, presentMap, missingNumbers }
+//   maxOrder       → seride görülen en yüksek series_order değeri
+//   presentMap     → Map<numara, [o numaraya sahip kitaplar]> (tooltip için)
+//   missingNumbers → 1..maxOrder arasında hiç kitabın sahip olmadığı numaralar
+function computeMissingNumbers(allBooks) {
+  const presentMap = new Map();
+
+  for (const book of allBooks) {
+    const order = book.series_order;
+    if (order === null || order === undefined || order <= 0) continue;
+    if (!presentMap.has(order)) presentMap.set(order, []);
+    presentMap.get(order).push(book);
+  }
+
+  if (presentMap.size === 0) {
+    return { maxOrder: 0, presentMap, missingNumbers: [] };
+  }
+
+  const maxOrder = Math.max(...presentMap.keys());
+  const missingNumbers = [];
+  for (let i = 1; i <= maxOrder; i++) {
+    if (!presentMap.has(i)) missingNumbers.push(i);
+  }
+
+  return { maxOrder, presentMap, missingNumbers };
+}
+
+// ─── YENİ: Eksik kitap grid'i (heat-map) HTML'i ─────────────────────────────
+// 10 sütunlu bir ızgara: 1'den maxOrder'a kadar her numara bir hücre.
+// Mevcut numaralar yeşil, eksik numaralar kırmızı. Üstte özet satırı.
+// Seri numarası hiç kullanılmıyorsa (maxOrder=0) hiçbir şey render edilmez.
+function renderMissingGrid(missingInfo, allBooks) {
+  const { maxOrder, presentMap, missingNumbers } = missingInfo;
+  if (maxOrder === 0) return "";
+
+  const presentCount = maxOrder - missingNumbers.length;
+
+  const summaryHtml = missingNumbers.length === 0
+    ? `
+      <p class="missing-grid-summary missing-grid-summary--ok">
+        <iconify-icon icon="lucide:check-circle"></iconify-icon>
+        ${maxOrder} kitabın tamamı mevcut, eksik yok.
+      </p>
+    `
+    : `
+      <p class="missing-grid-summary missing-grid-summary--warn">
+        <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
+        ${maxOrder} kitaptan ${presentCount}'si mevcut, ${missingNumbers.length} eksik
+        (${missingNumbers.map((n) => `#${n}`).join(", ")})
+      </p>
+    `;
+
+  const cellsHtml = [];
+  for (let i = 1; i <= maxOrder; i++) {
+    const isPresent = presentMap.has(i);
+    if (isPresent) {
+      const booksAtThisNumber = presentMap.get(i);
+      // Birden fazla kitap aynı numarayı paylaşıyorsa (örn. aynı kitabın
+      // PDF+EPUB kopyası) tooltip'te hepsinin başlığı virgülle gösterilir.
+      const titles = booksAtThisNumber.map((b) => b.title || "Başlıksız").join(", ");
+      cellsHtml.push(
+        `<span class="missing-grid-cell missing-grid-cell--present" title="#${i} — ${escAttr(titles)}">${i}</span>`
+      );
+    } else {
+      cellsHtml.push(
+        `<span class="missing-grid-cell missing-grid-cell--missing" title="#${i} — Eksik">${i}</span>`
+      );
+    }
+  }
+
+  return `
+    <div class="series-missing-grid-wrap">
+      <h3 class="missing-grid-title">
+        <iconify-icon icon="lucide:grid-3x3"></iconify-icon> Eksik Kitap Kontrolü
+      </h3>
+      ${summaryHtml}
+      <div class="missing-grid">
+        ${cellsHtml.join("")}
+      </div>
+    </div>
+  `;
 }
 
 // ─── Detay kitap satırı ───────────────────────────────────────────────────────

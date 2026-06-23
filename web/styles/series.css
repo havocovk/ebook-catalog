@@ -240,3 +240,121 @@
   text-overflow: ellipsis;
   margin-top: -0.15rem;
 }
+/* ═══════════════════════════════════════════════════════════════ */
+/* YENİ — Seri detay düzeni: kitap listesi + eksik kontrolü grid'i */
+/* Masaüstünde iki sütun yan yana (liste solda, grid sağda).       */
+/* Mobilde (900px altı) alt alta dizilir.                          */
+/* ═══════════════════════════════════════════════════════════════ */
+.series-detail-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.series-detail-layout .series-book-list {
+  flex: 1.3;       /* kitap listesi biraz daha geniş alan alır */
+  min-width: 0;
+}
+
+.series-missing-grid-wrap {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  position: sticky;
+  top: 72px;   /* header + biraz boşluk — kaydırırken görünür kalsın */
+}
+
+.missing-grid-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.missing-grid-summary {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.missing-grid-summary--ok {
+  color: var(--success, #4caf82);
+}
+
+.missing-grid-summary--warn {
+  color: var(--warning, #e0a84a);
+}
+
+/* ── Grid: 10 sabit sütun, kutucuklar kare ve numaraları ortalanmış ── */
+.missing-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.3rem;
+}
+
+.missing-grid-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: default;
+  transition: transform 0.1s, filter 0.15s;
+}
+
+.missing-grid-cell:hover {
+  transform: scale(1.12);
+  filter: brightness(1.15);
+  z-index: 1;
+}
+
+.missing-grid-cell--present {
+  background: rgba(76, 175, 130, 0.25);
+  color: #4caf82;
+  border: 1px solid rgba(76, 175, 130, 0.4);
+}
+
+.missing-grid-cell--missing {
+  background: rgba(224, 92, 92, 0.25);
+  color: #e05c5c;
+  border: 1px solid rgba(224, 92, 92, 0.5);
+}
+
+/* ── Mobil: iki sütun alt alta dizilir, grid sticky olmaktan çıkar ── */
+@media (max-width: 900px) {
+  .series-detail-layout {
+    flex-direction: column;
+  }
+
+  .series-detail-layout .series-book-list,
+  .series-missing-grid-wrap {
+    flex: 1;
+    width: 100%;
+  }
+
+  .series-missing-grid-wrap {
+    position: static;
+  }
+
+  /* Küçük ekranlarda hücreler biraz büyür, dokunması daha kolay olur */
+  .missing-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .missing-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
