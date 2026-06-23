@@ -554,6 +554,13 @@
 }
 
 /* ── Filtre paneli — masaüstü: kalıcı sol sütun ──────────────── */
+/* DÜZELTME: önceki "min-height" kullanımı, panelin kendi içeriğine göre
+   viewport'tan UZAYABİLMESİNE izin veriyordu — bu durumda overflow-y:auto
+   hiç devreye girmiyordu, çünkü kayacak bir "taşma" hiç oluşmuyordu; panelin
+   kendisi sayfa ile birlikte büyüyüp uzuyordu. "height" + "max-height" ile
+   panel artık HER ZAMAN sabit (viewport'a göre) bir kutu: içerik bu kutudan
+   taşarsa, kutunun kendisi büyümez — sadece içindeki filtreler bu kutunun
+   İÇİNDE dikey kayar. Kitap kartlarının olduğu sağ taraf hiç hareket etmez. */
 .filter-panel {
   width: 210px;
   flex-shrink: 0;
@@ -563,10 +570,28 @@
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
-  min-height: calc(100vh - 110px); /* header + toolbar yüksekliği kadar düş */
+  height: calc(100vh - 56px);       /* tam viewport yüksekliği - header */
+  max-height: calc(100vh - 56px);   /* bu kutu asla bundan büyük olamaz */
   position: sticky;
   top: 56px; /* header yüksekliği */
   overflow-y: auto;
+  scrollbar-width: thin;                              /* Firefox: ince çubuk */
+  scrollbar-color: var(--border-2) transparent;        /* Firefox: renkler */
+}
+
+/* ── Filtre panelinin dikey kaydırma çubuğu (Webkit: Chrome/Edge/Safari) ── */
+.filter-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.filter-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.filter-panel::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 4px;
+}
+.filter-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 .filter-panel-header {
