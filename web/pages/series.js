@@ -223,13 +223,18 @@ function renderSeriesDetail(seriesName, publisher) {
     `
     : "";
 
-  // YENİ: Eksik kitap numarası tespiti — büyük serilerde (200+ kitap) elle
-  // taramak yorucu olduğu için, 1'den serideki en yüksek numaraya kadar
-  // hangi numaraların hiç bulunmadığı hesaplanır. Bu hesap HER ZAMAN
-  // allBooks üzerinden yapılır (format filtresinden bağımsız) — bir kitabın
-  // sadece PDF kopyası varsa bile o numara "mevcut" sayılır.
-  const missingInfo = computeMissingNumbers(allBooks);
-  const missingGridHtml = renderMissingGrid(missingInfo, allBooks);
+  // GÜNCELLEME: Eksik kitap numarası tespiti artık FORMAT FİLTRESİNE göre
+  // hesaplanıyor. "Tümü" seçiliyken serinin tamamına bakılır (bir numaranın
+  // herhangi bir formatta kopyası varsa yeşil). "EPUB" veya "PDF" seçiliyken
+  // ise SADECE o formattaki kopyalar "mevcut" sayılır.
+  //
+  // ÖNEMLİ: Grid'in büyüklüğü (maxOrder) HER ZAMAN allBooks'tan hesaplanır
+  // (computeMissingNumbers'ın 2. parametresi) — serideki en son kitabın
+  // (örn. #30) seçili formatta kopyası olmasa bile, grid yine #30'a kadar
+  // gider ve o numarayı eksik (kırmızı) olarak gösterir. Sadece "mevcut mu"
+  // sorusunun cevabı (1. parametre = books) format filtresine göre değişir.
+  const missingInfo = computeMissingNumbers(books, allBooks);
+  const missingGridHtml = renderMissingGrid(missingInfo, books, activeFormatFilter);
 
   container.innerHTML = `
     <div class="detail-header">
@@ -272,27 +277,36 @@ function renderSeriesDetail(seriesName, publisher) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-// ─── YENİ: Eksik kitap numaralarını hesapla ─────────────────────────────────
-// allBooks: bu seriye ait TÜM kitaplar (format filtresinden bağımsız).
+// ─── GÜNCELLEME: Eksik kitap numaralarını hesapla ───────────────────────────
+// presenceBooks: hangi kitapların "mevcut" sayılacağını belirleyen liste
+//                (format filtresi uygulanmışsa SADECE o formattaki kitaplar).
+// maxOrderBooks: grid'in büyüklüğünü (1..maxOrder) belirleyen liste — bu HER
+//                ZAMAN serinin TAMAMI (allBooks) olmalı. Aksi halde, serideki
+//                en son kitabın (örn. #30) seçili formatta kopyası yoksa,
+//                grid #30'a hiç ulaşmadan kesilir ve o eksiklik gizlenir.
+//                (Bu hata gerçek bir test senaryosunda yakalanıp düzeltildi.)
 // Dönüş: { maxOrder, presentMap, missingNumbers }
-//   maxOrder       → seride görülen en yüksek series_order değeri
-//   presentMap     → Map<numara, [o numaraya sahip kitaplar]> (tooltip için)
-//   missingNumbers → 1..maxOrder arasında hiç kitabın sahip olmadığı numaralar
-function computeMissingNumbers(allBooks) {
+function computeMissingNumbers(presenceBooks, maxOrderBooks) {
   const presentMap = new Map();
 
-  for (const book of allBooks) {
+  for (const book of presenceBooks) {
     const order = book.series_order;
     if (order === null || order === undefined || order <= 0) continue;
     if (!presentMap.has(order)) presentMap.set(order, []);
     presentMap.get(order).push(book);
   }
 
-  if (presentMap.size === 0) {
+  // maxOrder, presenceBooks'tan DEĞİL, serinin tamamından (maxOrderBooks)
+  // hesaplanır — böylece grid her zaman gerçek seri büyüklüğünü gösterir.
+  const allOrders = maxOrderBooks
+    .map((b) => b.series_order)
+    .filter((o) => o !== null && o !== undefined && o > 0);
+
+  if (allOrders.length === 0) {
     return { maxOrder: 0, presentMap, missingNumbers: [] };
   }
 
-  const maxOrder = Math.max(...presentMap.keys());
+  const maxOrder = Math.max(...allOrders);
   const missingNumbers = [];
   for (let i = 1; i <= maxOrder; i++) {
     if (!presentMap.has(i)) missingNumbers.push(i);
@@ -301,27 +315,37 @@ function computeMissingNumbers(allBooks) {
   return { maxOrder, presentMap, missingNumbers };
 }
 
-// ─── YENİ: Eksik kitap grid'i (heat-map) HTML'i ─────────────────────────────
+// ─── GÜNCELLEME: Eksik kitap grid'i (heat-map) HTML'i ──────────────────────
 // 10 sütunlu bir ızgara: 1'den maxOrder'a kadar her numara bir hücre.
 // Mevcut numaralar yeşil, eksik numaralar kırmızı. Üstte özet satırı.
 // Seri numarası hiç kullanılmıyorsa (maxOrder=0) hiçbir şey render edilmez.
-function renderMissingGrid(missingInfo, allBooks) {
+//
+// formatFilter: "" | "epub" | "pdf" — özet metninde hangi formata göre
+// hesaplandığını belirtmek için kullanılır (örn. "EPUB formatında ...").
+function renderMissingGrid(missingInfo, filteredBooks, formatFilter) {
   const { maxOrder, presentMap, missingNumbers } = missingInfo;
   if (maxOrder === 0) return "";
 
   const presentCount = maxOrder - missingNumbers.length;
 
+  // Özet metnindeki format etiketi: "Tümü" seçiliyken hiç belirtilmez
+  // (önceki davranışla aynı kalsın), EPUB/PDF seçiliyken açıkça yazılır —
+  // böylece kullanıcı "neye göre eksik hesaplandığını" karıştırmaz.
+  const formatLabel = formatFilter === "epub" ? "EPUB formatında "
+                     : formatFilter === "pdf"  ? "PDF formatında "
+                     : "";
+
   const summaryHtml = missingNumbers.length === 0
     ? `
       <p class="missing-grid-summary missing-grid-summary--ok">
         <iconify-icon icon="lucide:check-circle"></iconify-icon>
-        ${maxOrder} kitabın tamamı mevcut, eksik yok.
+        ${formatLabel}${maxOrder} kitabın tamamı mevcut, eksik yok.
       </p>
     `
     : `
       <p class="missing-grid-summary missing-grid-summary--warn">
         <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
-        ${maxOrder} kitaptan ${presentCount}'si mevcut, ${missingNumbers.length} eksik
+        ${formatLabel}${maxOrder} kitaptan ${presentCount}'si mevcut, ${missingNumbers.length} eksik
         (${missingNumbers.map((n) => `#${n}`).join(", ")})
       </p>
     `;
