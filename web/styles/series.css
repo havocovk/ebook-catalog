@@ -157,6 +157,17 @@
   margin-bottom: 1.5rem;
 }
 
+/* ── YENİ: Detay — format filtre chip'leri (Tümü / EPUB / PDF) ──────────── */
+/* Aynı kitabın hem PDF hem EPUB kopyası serideyse, kullanıcı bu chip'lerle
+   sadece bir formatı görüp tekrarlı (#1, #1 gibi) görünümü önleyebilir.
+   .chip sınıfının kendisi catalog.css'te tanımlı (renkler, hover, active
+   durumları) — burada sadece grup içindeki yerleşim (flex/gap/margin) var. */
+.series-format-chips {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
 /* ── Detay: kitap satırları ──────────────────────────────────── */
 .series-book-list {
   display: flex;

@@ -17,6 +17,11 @@ const POPULAR_COUNT = 6;
 // { name: string, publisher: string } formatında.
 let activeSeries = null;
 
+// YENİ: Seri detayında seçili format filtresi.
+// "" = Tümü, "epub" = sadece EPUB, "pdf" = sadece PDF.
+// Bir seriye girildiğinde her zaman "" (Tümü) ile başlar.
+let activeFormatFilter = "";
+
 // ─── Dışa açık ──────────────────────────────────────────────────────────────
 export function renderSeries() {
   if (activeSeries) {
@@ -169,7 +174,9 @@ function renderSeriesDetail(seriesName, publisher) {
   if (!container) return;
 
   // Hem seri adı hem yayınevi eşleşmeli — aynı adlı serilerin karışmaması için.
-  const books = state.books
+  // allBooks: bu seriye ait TÜM kitaplar (format filtresi uygulanmadan) —
+  // hangi format chip'lerinin gösterileceğine bunlara göre karar verilir.
+  const allBooks = state.books
     .filter((b) => {
       const nameMatch = b.series === seriesName;
       // Yayınevi boşsa: kitabın da yayınevinin boş olması gerekir.
@@ -183,9 +190,38 @@ function renderSeriesDetail(seriesName, publisher) {
       return (a.title || "").localeCompare(b.title || "", "tr", { sensitivity: "base" });
     });
 
-  const readCount  = books.filter((b) => b.status === "okundu").length;
-  const totalCount = books.length;
+  // YENİ: Bu seride hangi formatlar gerçekten var? (chip'leri buna göre göster)
+  const hasEpub = allBooks.some((b) => (b.format || "").toLowerCase() === "epub");
+  const hasPdf  = allBooks.some((b) => (b.format || "").toLowerCase() === "pdf");
+
+  // Seçili format chip'i artık bu seride yoksa (örn. başka bir seriden
+  // gelindi ve önceki seçim "pdf" kalmıştı ama bu seride PDF yoksa) sıfırla.
+  if (activeFormatFilter === "epub" && !hasEpub) activeFormatFilter = "";
+  if (activeFormatFilter === "pdf"  && !hasPdf)  activeFormatFilter = "";
+
+  // YENİ: Format filtresi uygulanmış liste — ekranda gösterilen budur.
+  const books = activeFormatFilter
+    ? allBooks.filter((b) => (b.format || "").toLowerCase() === activeFormatFilter)
+    : allBooks;
+
+  // İlerleme/okuma sayacı her zaman TÜM seri üzerinden hesaplanır (format
+  // filtresi sadece görünümü değiştirir, serinin genel ilerlemesini değil).
+  const readCount  = allBooks.filter((b) => b.status === "okundu").length;
+  const totalCount = allBooks.length;
   const pct        = totalCount > 0 ? Math.round((readCount / totalCount) * 100) : 0;
+
+  // YENİ: Format chip'leri — sadece seride GERÇEKTEN var olan formatlar
+  // için chip oluşturulur. İkisi de yoksa (olağan dışı durum) hiç chip
+  // grubu render edilmez.
+  const formatChipsHtml = (hasEpub || hasPdf)
+    ? `
+      <div class="series-format-chips" id="series-format-chips">
+        <button class="chip${activeFormatFilter === "" ? " active" : ""}" data-series-format="">Tümü</button>
+        ${hasEpub ? `<button class="chip${activeFormatFilter === "epub" ? " active" : ""}" data-series-format="epub">EPUB</button>` : ""}
+        ${hasPdf  ? `<button class="chip${activeFormatFilter === "pdf"  ? " active" : ""}" data-series-format="pdf">PDF</button>`   : ""}
+      </div>
+    `
+    : "";
 
   container.innerHTML = `
     <div class="detail-header">
@@ -208,6 +244,8 @@ function renderSeriesDetail(seriesName, publisher) {
       <span class="progress-bar-label">${readCount} / ${totalCount} kitap okundu — %${pct}</span>
     </div>
 
+    ${formatChipsHtml}
+
     <div class="series-book-list" id="series-book-list">
       ${books.map((b) => detailBookRowHtml(b)).join("")}
     </div>
@@ -215,6 +253,7 @@ function renderSeriesDetail(seriesName, publisher) {
 
   document.getElementById("series-back-btn")?.addEventListener("click", () => {
     activeSeries = null;
+    activeFormatFilter = "";   // YENİ: seriden çıkınca filtre sıfırlanır
     renderSeriesList();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
@@ -259,6 +298,15 @@ export function initSeries() {
         name      : seriesEl.dataset.series,
         publisher : seriesEl.dataset.publisher || "",
       };
+      activeFormatFilter = "";   // YENİ: her seriye girişte "Tümü" ile başla
+      renderSeriesDetail(activeSeries.name, activeSeries.publisher);
+      return;
+    }
+
+    // YENİ: Format chip'i (Tümü / EPUB / PDF) → listeyi filtrele
+    const formatChip = e.target.closest("[data-series-format]");
+    if (formatChip && activeSeries) {
+      activeFormatFilter = formatChip.dataset.seriesFormat || "";
       renderSeriesDetail(activeSeries.name, activeSeries.publisher);
       return;
     }
