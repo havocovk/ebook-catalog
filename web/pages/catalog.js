@@ -582,15 +582,26 @@ async function bulkDelete() {
     // ulaşamayabilir — yazar yanlışlıkla yetim kalır (silinmez). Sıralı
     // çalıştırarak her silme işlemi öncekinin state.books güncellemesini
     // görür, cascade delete her zaman doğru çalışır.
+    // ── Adım 28: Loglama iyileştirmesi — ÖNCEDEN bu catch bloğu hatayı TAMAMEN
+    // sessizce yutuyordu (sadece fail++ yapıyordu), bu yüzden bir kitap
+    // silinemediğinde GERÇEK SEBEP hiçbir yere yazılmıyordu — ne konsola ne
+    // başka bir yere. Artık her başarısız silme, hangi kitabın (ID + varsa
+    // başlığı) hangi hata mesajıyla başarısız olduğunu console.error ile
+    // açıkça loglar. Bu, davranışı DEĞİŞTİRMEZ (kitap hâlâ "başarısız" sayılır,
+    // işlem hâlâ devam eder) — sadece NEDEN başarısız olduğunu görünür kılar.
     let ok = 0, fail = 0;
     for (const id of ids) {
       try {
         await deleteBookRecord(id);
         ok++;
-      } catch {
+      } catch (err) {
         fail++;
+        const book = state.books.find((b) => b.$id === id);
+        const label = book ? `"${book.title}" (${id})` : id;
+        console.error(`[bulkDelete] Kitap silinemedi — ${label}:`, err?.message || err, err);
       }
     }
+    // ── Adım 28 sonu ─────────────────────────────────────────────────────────────
 
     showToast(`${ok} kitap silindi${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();

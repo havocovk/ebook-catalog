@@ -23,6 +23,7 @@ import {
   createSeries,
   renameSeriesEverywhere,
   deleteSeriesEverywhere,
+  createCollection, // ── Adım 27: koleksiyonların da author/publisher/series gibi anlık oluşturulması için
 } from "../core/api.js";
 import { refreshCurrentPage } from "../core/router.js";
 import { showToast, escapeHtml, formatFileSize, confidenceLevel, confidenceLabel } from "./common.js";
@@ -170,6 +171,24 @@ async function saveModal() {
   const collections = document.getElementById("modal-collections").value
     .split(",").map((c) => c.trim()).filter(Boolean);
   // ── Adım 19 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 27: Yeni koleksiyon adlarını ANLIK olarak collections tablosuna
+  // yaz — author/publisher/series için entity-picker'ın onAdd callback'i
+  // (createAuthor/createPublisher/createSeries) bunu zaten yapıyordu, ama
+  // koleksiyonlar düz bir metin kutusu olduğu için (entity-picker değil) bu
+  // adım eksikti. Eskiden koleksiyonlar SADECE sayfa yenilenince/girişte
+  // çalışan bootstrapCollections() ile (gecikmeli olarak) tamamlanıyordu —
+  // kaydet'e basar basmaz hemen görünmüyordu. createCollection() zaten aynı
+  // isimde bir kayıt varsa onu döndürüp tekrar oluşturmuyor, bu yüzden burada
+  // güvenle her isim için çağrılabilir.
+  for (const name of collections) {
+    try {
+      await createCollection(name);
+    } catch (err) {
+      console.warn(`[saveModal] Koleksiyon oluşturulamadı (${name}):`, err?.message || err);
+    }
+  }
+  // ── Adım 27 sonu ──────────────────────────────────────────────────────────
 
   const finishedAt      = document.getElementById("modal-finished-at").value || null;
   const seriesOrderRaw  = document.getElementById("modal-series-order").value;
@@ -399,6 +418,9 @@ async function deleteCurrentBook() {
     closeModal();
     showToast("Kitap silindi.");
   } catch (err) {
+    // ── Adım 28: bulkDelete ile aynı tutarlılıkta — hata sadece toast'a değil
+    // konsola da yazılır (toast geçici/kaybolan bir bildirim, konsol kalıcı iz).
+    console.error(`[deleteCurrentBook] Kitap silinemedi (${editingId}):`, err?.message || err, err);
     showToast("Silme hatası: " + (err?.message || err), "error");
   }
 }
