@@ -784,3 +784,133 @@ export async function deleteCollectionEverywhere(collectionId, name) {
     showLoading(false);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── Adım 25: YETİM KAYIT TARAYICISI (güvenlik ağı) ──────────────────────────
+//
+// cascadeDeleteOrphans() (yukarıda) bir kitap silinirken ÇALIŞAN, "anlık"
+// bir temizliktir — normal koşullarda yeterlidir. Bu fonksiyon ise BUNUN
+// TAMAMLAYICISIDIR: herhangi bir sebepten (geçmişte oluşmuş eski yetim
+// kayıtlar, ileride eklenecek başka bir silme yolunun cascade'i çağırmayı
+// unutması, Appwrite konsolünden elle yapılan bir silme, vb.) veritabanında
+// kalmış olabilecek yetim author/publisher/series/collection kayıtlarını
+// İSTENİLDİĞİNDE (elle tetiklenerek) tarar ve temizler.
+//
+// "Yetim" tanımı, cascadeDeleteOrphans ile BİREBİR aynı mantığı kullanır:
+// state.books içinde o ada/ID'ye sahip HİÇ kitap kalmamışsa, kayıt yetimdir.
+//
+// ÖNEMLİ: Bu fonksiyon SADECE okuma + silme yapar, kitaplara HİÇ dokunmaz —
+// zaten yetim bir kayıt, tanımı itibarıyla hiçbir kitapla ilişkili değildir.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Dahili: bir varlık listesini (authors/publishers/collections — hepsi
+// "name" alanıyla kitaplarda referans edilir) tarar, kullanılmayanları siler.
+// getUsedNames: state.books'tan o varlığın kullanılan TÜM adlarını çıkaran
+// fonksiyon (author için tekil alan, collections için dizi — bu yüzden
+// çağıran taraf bu farkı kendi içinde halleder).
+async function _pruneOrphanCollection(entityList, collectionId, getUsedNames, stateKey) {
+  const usedNames = getUsedNames();
+  const removed = [];
+
+  for (const entity of entityList) {
+    const name = (entity.name || "").trim();
+    if (name && usedNames.has(name)) continue; // hâlâ kullanılıyor, dokunma
+
+    try {
+      await databases.deleteDocument(DATABASE_ID, collectionId, entity.$id);
+      removed.push(entity.name);
+    } catch (err) {
+      console.warn(`[findAndDeleteOrphans] Silinemedi (${collectionId}, ${entity.name}):`, err?.message || err);
+    }
+  }
+
+  if (removed.length > 0) {
+    const removedIds = new Set(entityList.filter((e) => removed.includes(e.name)).map((e) => e.$id));
+    state[stateKey] = state[stateKey].filter((e) => !removedIds.has(e.$id));
+  }
+
+  return removed;
+}
+
+// ─── Tüm katalogu tara, yetim kalmış author/publisher/series/collection ─────
+// kayıtlarını bul ve sil. Dönüş: { authors, publishers, series, collections }
+// — her biri SİLİNEN kayıtların isimlerini içeren bir dizi (rapor için).
+// Hiçbir parametre almaz — her zaman state.books'un GÜNCEL/o anki hâline
+// göre çalışır (fonksiyon çağrılmadan önce loadBooks() ile veriler taze
+// olmalı; normal kullanımda sayfa zaten açıkken state.books güncel olur).
+export async function findAndDeleteOrphans() {
+  showLoading(true);
+  try {
+    // ── Yazarlar: book.author tekil bir isim ────────────────────────────
+    const usedAuthorNames = new Set(
+      state.books.map((b) => (b.author || "").trim()).filter(Boolean)
+    );
+    const removedAuthors = await _pruneOrphanCollection(
+      state.authors, AUTHORS_ID, () => usedAuthorNames, "authors"
+    );
+
+    // ── Yayınevleri: book.publisher tekil bir isim ──────────────────────
+    const usedPublisherNames = new Set(
+      state.books.map((b) => (b.publisher || "").trim()).filter(Boolean)
+    );
+    const removedPublishers = await _pruneOrphanCollection(
+      state.publishers, PUBLISHERS_ID, () => usedPublisherNames, "publishers"
+    );
+
+    // ── Koleksiyonlar: book.collections bir DİZİ ────────────────────────
+    const usedCollectionNames = new Set();
+    for (const b of state.books) {
+      for (const name of b.collections || []) {
+        const clean = (name || "").trim();
+        if (clean) usedCollectionNames.add(clean);
+      }
+    }
+    const removedCollections = await _pruneOrphanCollection(
+      state.collections, COLLECTIONS_ID, () => usedCollectionNames, "collections"
+    );
+
+    // ── Seriler: (publisher_id, name) ÇİFTİYLE tanımlı — ayrı ele alınır ─
+    // Yazar/yayınevi/koleksiyondan farkı: aynı isimli seri farklı
+    // yayınevlerinde ayrı kayıt olabileceği için, "kullanılıyor mu?"
+    // kontrolü sadece isme değil, (publisher_id, name) çiftine bakar.
+    const usedSeriesKeys = new Set();
+    for (const b of state.books) {
+      const sName = (b.series || "").trim();
+      if (!sName) continue;
+      const pubId = publisherIdByName(b.publisher);
+      usedSeriesKeys.add(`${pubId || ""}|||${sName}`);
+    }
+
+    const removedSeries = [];
+    for (const s of state.series) {
+      const key = `${s.publisher_id || ""}|||${(s.name || "").trim()}`;
+      if (usedSeriesKeys.has(key)) continue; // hâlâ kullanılıyor
+
+      try {
+        await databases.deleteDocument(DATABASE_ID, SERIES_ID, s.$id);
+        removedSeries.push(s.name);
+      } catch (err) {
+        console.warn(`[findAndDeleteOrphans] Seri silinemedi (${s.name}):`, err?.message || err);
+      }
+    }
+    if (removedSeries.length > 0) {
+      const removedIds = new Set(
+        state.series.filter((s) => removedSeries.includes(s.name)).map((s) => s.$id)
+      );
+      state.series = state.series.filter((s) => !removedIds.has(s.$id));
+    }
+
+    return {
+      authors: removedAuthors,
+      publishers: removedPublishers,
+      series: removedSeries,
+      collections: removedCollections,
+    };
+  } catch (err) {
+    showToast("Yetim kayıt taraması başarısız: " + (err?.message || err), "error");
+    throw err;
+  } finally {
+    showLoading(false);
+  }
+}
+// ── Adım 25 sonu ─────────────────────────────────────────────────────────────

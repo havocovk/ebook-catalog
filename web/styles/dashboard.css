@@ -319,6 +319,32 @@
   color: var(--text-3);
 }
 
+/* ── Adım 25: Veritabanı Bakımı (yetim kayıt tarayıcı) ──────────────────── */
+.db-maintenance-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.db-maintenance-desc {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.orphan-scan-result {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  background: var(--bg-3);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.7rem;
+}
+/* ── Adım 25 sonu ─────────────────────────────────────────────────────────── */
+
 /* ── Mobil uyarlamaları ──────────────────────────────────────── */
 @media (max-width: 600px) {
   .reading-status-wrap {

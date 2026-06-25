@@ -11,7 +11,8 @@
 import { state } from "../core/state.js";
 import { navigate } from "../core/router.js";
 import { openModal } from "../ui/modal.js";
-import { escapeHtml } from "../ui/common.js";
+import { escapeHtml, showToast } from "../ui/common.js";
+import { findAndDeleteOrphans } from "../core/api.js"; // ── Adım 25: yetim kayıt tarayıcı
 
 // Chart.js yükleme durumu ve mevcut grafik nesnesi.
 let chartJsReady = false;
@@ -198,6 +199,33 @@ function renderLayout(s) {
       </div>
     </div>
 
+    <!-- ── Adım 25: Veritabanı Bakımı (yetim kayıt tarayıcı) ──────────────── -->
+    <!-- Bu bölüm, bir kitap silindiğinde otomatik çalışan "cascade delete"
+         mantığının TAMAMLAYICISIDIR — herhangi bir sebepten (eski veri,
+         beklenmeyen bir durum) veritabanında kalmış olabilecek, hiçbir
+         kitapla ilişkisi olmayan yazar/yayınevi/seri/koleksiyon kayıtlarını
+         istenildiğinde elle tarayıp temizlemeyi sağlar. Normal kullanımda
+         hiçbir şey bulunmaması beklenir — bu sadece bir güvenlik ağıdır. -->
+    <div class="dash-section">
+      <h2 class="dash-section-title">
+        <iconify-icon icon="lucide:shield-check"></iconify-icon> Veritabanı Bakımı
+      </h2>
+      <div class="db-maintenance-box">
+        <p class="db-maintenance-desc">
+          Bir kitap sildiğinde, o kitaba ait yazar/yayınevi/seri/koleksiyon
+          artık başka hiçbir kitapta kullanılmıyorsa otomatik olarak silinir.
+          Bu araç, her ihtimale karşı, veritabanında öyle bir kalıntı kalıp
+          kalmadığını tarar ve varsa temizler.
+        </p>
+        <button id="scan-orphans-btn" class="btn btn-sm">
+          <iconify-icon icon="lucide:shield-check"></iconify-icon>
+          <span class="btn-label">Yetim Kayıtları Tara ve Temizle</span>
+        </button>
+        <div id="orphan-scan-result" class="orphan-scan-result hidden"></div>
+      </div>
+    </div>
+    <!-- ── Adım 25 sonu ────────────────────────────────────────────────────── -->
+
     <!-- ── Dil ── -->
     <div class="dash-section">
       <h2 class="dash-section-title">
@@ -326,6 +354,51 @@ function bindRecentClicks() {
     navigate("catalog");
   });
   // ── Adım 14 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 25: Yetim Kayıtları Tara ve Temizle butonu ──────────────────────
+  const scanBtn = document.getElementById("scan-orphans-btn");
+  scanBtn?.addEventListener("click", async () => {
+    scanBtn.disabled = true;
+
+    const resultBox = document.getElementById("orphan-scan-result");
+    if (resultBox) {
+      resultBox.classList.remove("hidden");
+      resultBox.textContent = "Taranıyor...";
+    }
+
+    try {
+      const removed = await findAndDeleteOrphans();
+      const totalRemoved =
+        removed.authors.length + removed.publishers.length +
+        removed.series.length + removed.collections.length;
+
+      if (totalRemoved === 0) {
+        showToast("Veritabanı temiz — yetim kayıt bulunamadı.");
+        if (resultBox) resultBox.textContent = "Yetim kayıt bulunamadı. Veritabanı temiz. ✓";
+      } else {
+        const parts = [];
+        if (removed.authors.length)     parts.push(`${removed.authors.length} yazar`);
+        if (removed.publishers.length)  parts.push(`${removed.publishers.length} yayınevi`);
+        if (removed.series.length)      parts.push(`${removed.series.length} seri`);
+        if (removed.collections.length) parts.push(`${removed.collections.length} koleksiyon`);
+
+        showToast(`Temizlendi: ${parts.join(", ")}.`);
+        if (resultBox) {
+          resultBox.textContent = `Temizlenen: ${parts.join(", ")}.`;
+        }
+        // NOT: Dashboard'daki "Çeşitlilik" sayıları (Yazar/Yayınevi/Seri)
+        // state.books'tan hesaplanır (kitaplarda KULLANILAN benzersiz isim
+        // sayısı) — yetim kayıtlar zaten bu sayıma hiç dahil değildi, bu
+        // yüzden temizlik bu rakamları değiştirmez; yeniden çizime gerek yok.
+      }
+    } catch (err) {
+      showToast("Tarama sırasında hata oluştu: " + (err?.message || err), "error");
+      if (resultBox) resultBox.textContent = "Tarama başarısız oldu.";
+    } finally {
+      scanBtn.disabled = false;
+    }
+  });
+  // ── Adım 25 sonu ──────────────────────────────────────────────────────────
 }
 
 // ─── Chart.js CDN'den dinamik yükle ─────────────────────────────────────────

@@ -10,7 +10,7 @@
 import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
 import { openModal, _showPrompt, _showInfo, _showConfirm } from "../ui/modal.js";
-import { escapeHtml, statusLabel, confidenceLevel, showToast } from "../ui/common.js";
+import { escapeHtml, statusLabel, confidenceLevel, showToast, showLoading } from "../ui/common.js";
 import { updateBookRecord, deleteBookRecord } from "../core/api.js";
 
 // ── Adım J8: Fuse.js — Fuzzy (bulanık) arama ────────────────────────────────
@@ -313,7 +313,13 @@ async function toggleFavorite(bookId) {
 // senkronize eder. Veritabanına yazılmaz — sadece selectedIds Set'i (sayfa
 // belleği) güncellenir. render() yeterli (recompute gerekmiyor çünkü seçim
 // hiçbir filtreyi etkilemez, sadece görünümü).
+//
+// ── Adım 25: bir toplu işlem sürerken (örn. 50 kitap siliniyor) seçim
+// değiştirilemez — aksi halde kullanıcı işlem ortasında seçimi değiştirip
+// kafası karışabilir, ya da yarıda kalan bir işlemin üstüne yeni bir seçim
+// binebilir.
 function toggleSelection(bookId) {
+  if (bulkOperationInProgress) return;
   if (selectedIds.has(bookId)) {
     selectedIds.delete(bookId);
   } else {
@@ -352,6 +358,7 @@ function getCurrentPageBooks() {
 // sayfadaki TÜMÜNÜ seçer. Bu, standart "tabloda tümünü seç" checkbox
 // davranışıyla aynıdır (Gmail, Excel vb.).
 function toggleSelectAllOnPage() {
+  if (bulkOperationInProgress) return; // ── Adım 25: işlem sürerken seçim değiştirilemez
   const pageBooks = getCurrentPageBooks();
   if (pageBooks.length === 0) return;
 
@@ -397,6 +404,63 @@ function updateBulkBar() {
   bar.classList.toggle("hidden", n === 0);
   count.textContent = `${n} kitap seçili`;
 }
+
+// ── Adım 25: Toplu işlem KİLİDİ ──────────────────────────────────────────────
+// SORUN: Bir toplu işlem (örn. 50 kitabı sırayla silme) birkaç saniye sürebilir
+// (her kitap için ayrı bir ağ isteği). Bu süre boyunca butonlar hâlâ tıklanabilir
+// durumdaydı — kullanıcı sabırsızlanıp "Sil" butonuna ikinci kez basarsa veya
+// henüz bitmemiş bir işlem üzerine "Tümünü Seç"e tekrar basarsa, İKİ TOPLU İŞLEM
+// AYNI ANDA (iç içe geçmiş şekilde) çalışmaya başlayabilir. Bu da cascade delete
+// mantığının dayandığı "her silme öncekinin sonucunu görür" garantisini bozar —
+// iki ayrı bulkDelete() çağrısı birbirinden habersiz çalışırsa, aynı yazara ait
+// kitaplar farklı çağrılar tarafından işlenir ve hiçbiri "son kitap bu" sonucuna
+// doğru anda ulaşamayabilir; yazar/seri yanlışlıkla yetim kalır.
+//
+// ÇÖZÜM: Tek bir bayrak (bulkOperationInProgress) + tüm ilgili butonları
+// disable eden tek bir fonksiyon (setBulkControlsEnabled). Her toplu işlem
+// fonksiyonu artık runBulkOperation() sarmalayıcısı İÇİNDE çalışır — bu
+// sarmalayıcı işlem başlamadan butonları kilitler, işlem bitince (başarılı
+// veya başarısız, fark etmez) açar. Aynı anda yalnızca BİR toplu işlem
+// çalışabilir; ikinci bir tıklama bayrak true olduğu sürece sessizce yok sayılır.
+let bulkOperationInProgress = false;
+
+// Toplu işlem sırasında tıklanabilecek TÜM kontrolleri devre dışı bırakır/açar:
+//   - Toplu işlem çubuğundaki butonlar (durum, etiket, favori, sil, temizle)
+//   - Toolbar'daki "Sayfadaki Tümünü Seç" butonu
+//   - Kitap kartlarındaki/satırlarındaki tekli seçim checkbox'ları (görsel
+//     olarak devre dışı görünmesi için kart/satır listesi yeniden render
+//     edilmez, ama tıklamalar toggleSelection() içinde bayrak kontrolüyle
+//     engellenir — bkz. aşağıdaki toggleSelection güncellemesi).
+function setBulkControlsEnabled(enabled) {
+  const ids = [
+    "bulk-clear", "bulk-delete", "bulk-favorite-add", "bulk-favorite-remove",
+    "bulk-tag-add", "bulk-status-toggle", "select-all-page",
+  ];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !enabled;
+  });
+
+  const statusPanel = document.getElementById("bulk-status-panel");
+  if (statusPanel) {
+    statusPanel.querySelectorAll("button").forEach((b) => { b.disabled = !enabled; });
+  }
+}
+
+// Toplu işlem fonksiyonlarının (bulkDelete, bulkChangeStatus, bulkAddTag,
+// bulkSetFavorite) ortak sarmalayıcısı. fn, asıl işlemi yapan async fonksiyondur.
+async function runBulkOperation(fn) {
+  if (bulkOperationInProgress) return; // zaten bir işlem sürüyor — yeni tıklama yok sayılır
+  bulkOperationInProgress = true;
+  setBulkControlsEnabled(false);
+  try {
+    await fn();
+  } finally {
+    bulkOperationInProgress = false;
+    setBulkControlsEnabled(true);
+  }
+}
+// ── Adım 25 sonu ─────────────────────────────────────────────────────────────
 
 // ── Toplu durum değiştirme ───────────────────────────────────────────────
 // _showPrompt yerine basit bir seçim kullanılır: 4 durumdan birini yazılı
@@ -1344,12 +1408,15 @@ export function initCatalog() {
   document.getElementById("select-all-page")?.addEventListener("click", toggleSelectAllOnPage);
   // ── Adım 24 sonu ──────────────────────────────────────────────────────────
 
-  document.getElementById("bulk-delete")?.addEventListener("click", bulkDelete);
+  // ── Adım 25: Her toplu işlem artık runBulkOperation() İÇİNDEN çalışıyor —
+  // bu sarmalayıcı işlem süresince ilgili tüm butonları kilitler, böylece
+  // işlem bitmeden ikinci bir tıklama (çift tık, sabırsızlık vb.) araya giremez.
+  document.getElementById("bulk-delete")?.addEventListener("click", () => runBulkOperation(bulkDelete));
 
-  document.getElementById("bulk-favorite-add")?.addEventListener("click", () => bulkSetFavorite(true));
-  document.getElementById("bulk-favorite-remove")?.addEventListener("click", () => bulkSetFavorite(false));
+  document.getElementById("bulk-favorite-add")?.addEventListener("click", () => runBulkOperation(() => bulkSetFavorite(true)));
+  document.getElementById("bulk-favorite-remove")?.addEventListener("click", () => runBulkOperation(() => bulkSetFavorite(false)));
 
-  document.getElementById("bulk-tag-add")?.addEventListener("click", bulkAddTag);
+  document.getElementById("bulk-tag-add")?.addEventListener("click", () => runBulkOperation(bulkAddTag));
 
   // "Durum Değiştir" butonu mini paneli açar/kapatır (4 durum seçeneği).
   // Aynı panel içindeki bir durum butonuna tıklamak hem işlemi başlatır
@@ -1362,7 +1429,7 @@ export function initCatalog() {
     const btn = e.target.closest("[data-bulk-status]");
     if (!btn) return;
     statusPanel.classList.add("hidden");
-    bulkChangeStatus(btn.dataset.bulkStatus);
+    runBulkOperation(() => bulkChangeStatus(btn.dataset.bulkStatus));
   });
   // ── Adım 18 sonu ──────────────────────────────────────────────────────────
 
