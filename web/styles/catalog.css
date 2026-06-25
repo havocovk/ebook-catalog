@@ -968,6 +968,22 @@
   display: none;
 }
 
+/* ── Adım 24: "Sayfadaki Tümünü Seç" toolbar butonu ──────────────────────── */
+/* .btn / .btn-sm temel stilini base.css'ten alır; burada sadece "active"
+   (sayfadaki tüm kitaplar seçiliyken) durumunu ekliyoruz — Adım 18'deki
+   .select-btn.active ile aynı vurgu rengi (--accent) kullanılır, böylece
+   "seçili" durumu tüm uygulamada görsel olarak tutarlı kalır. */
+.select-all-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.select-all-btn.active:hover {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+/* ── Adım 24 sonu ─────────────────────────────────────────────────────────── */
+
 /* ── Adım 18: Toplu işlem çubuğu ──────────────────────────────────────── */
 .bulk-bar {
   display: flex;

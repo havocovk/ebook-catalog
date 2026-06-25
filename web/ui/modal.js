@@ -391,8 +391,10 @@ async function deleteCurrentBook() {
   if (!confirmed) return;
 
   try {
+    // ── Adım 24: deleteBookRecord artık state.books güncellemesini VE
+    // cascade delete (yetim author/publisher/series/collection temizliği)
+    // işlemini kendi içinde yapıyor — burada ekstra bir şey yapmaya gerek yok.
     await deleteBookRecord(editingId);
-    state.books = state.books.filter((b) => b.$id !== editingId);
     refreshCurrentPage();
     closeModal();
     showToast("Kitap silindi.");

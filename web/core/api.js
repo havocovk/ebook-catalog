@@ -110,6 +110,14 @@ function extractCoverFileId(coverUrl) {
 // network hatası vb.) kitabın kendisinin silinmesi ENGELLENMEZ — kapak silme
 // sessizce loglanır ve devam edilir; kullanıcı bir kitabı silmeye çalışırken
 // "kapak silinemedi" diye takılıp kalmamalı.
+//
+// ── Adım 24: Cascade delete (yetim kayıt temizliği) ─────────────────────────
+// NOT: Bu fonksiyon kitabı state.books'tan SİLER (çağıran taraf — modal.js,
+// catalog.js — bunu artık kendisi yapmıyor). Cascade delete kontrolünün
+// DOĞRU çalışması için state.books güncellemesi, Appwrite'tan silme başarılı
+// olur olmaz, cascade kontrolünden ÖNCE yapılmalı — aksi halde "bu yazarın
+// başka kitabı var mı?" kontrolü silinen kitabı da sayar ve yanlışlıkla
+// "hâlâ kitabı var" sonucuna ulaşır.
 export async function deleteBookRecord(id) {
   const book = state.books.find((b) => b.$id === id);
   const fileId = book ? extractCoverFileId(book.cover_url) : null;
@@ -124,8 +132,122 @@ export async function deleteBookRecord(id) {
     }
   }
 
-  return databases.deleteDocument(DATABASE_ID, TABLE_ID, id);
+  await databases.deleteDocument(DATABASE_ID, TABLE_ID, id);
+
+  // Kitap Appwrite'tan silindi — hafızadaki kopyayı da hemen çıkar. Cascade
+  // delete kontrolleri (aşağıda) state.books'a bakarak "başka kitabı var mı"
+  // diye soracağı için, bu satır cascade kontrolünden ÖNCE çalışmalı.
+  state.books = state.books.filter((b) => b.$id !== id);
+
+  if (book) {
+    await cascadeDeleteOrphans(book);
+  }
 }
+
+// ─── Cascade delete: yetim kalan author/publisher/series/collection'ları sil ─
+// Bir kitap silindikten SONRA çağrılır (state.books o kitabı içermeyecek
+// şekilde güncellenmiş olmalı — yukarıdaki deleteBookRecord bunu garanti eder).
+//
+// Mantık her dört varlık için aynıdır: "silinen kitabın sahip olduğu isim/ID,
+// kalan kitaplardan herhangi birinde HÂLÂ geçiyor mu?" Geçmiyorsa, o yazar/
+// yayınevi/seri/koleksiyon artık hiçbir kitapla ilişkili değildir — veritabanı
+// temiz kalsın diye silinir.
+//
+// Tek bir varlığın silinmesi başarısız olursa (network hatası vb.) hata
+// sessizce loglanır ve diğerleri için devam edilir — bir kitabı silme işlemi,
+// arka plandaki temizlik adımlarından biri başarısız olduğu için kullanıcıya
+// "silinemedi" diye görünmemeli; kitabın kendisi zaten silindi.
+async function cascadeDeleteOrphans(deletedBook) {
+  // ── Yazar ──────────────────────────────────────────────────────────────
+  const authorName = (deletedBook.author || "").trim();
+  if (authorName) {
+    const stillUsed = state.books.some((b) => b.author === authorName);
+    if (!stillUsed) {
+      const author = state.authors.find((a) => a.name === authorName);
+      if (author) {
+        try {
+          await databases.deleteDocument(DATABASE_ID, AUTHORS_ID, author.$id);
+          state.authors = state.authors.filter((a) => a.$id !== author.$id);
+        } catch (err) {
+          console.warn(`[cascadeDelete] Yetim yazar silinemedi (${authorName}):`, err?.message || err);
+        }
+      }
+    }
+  }
+
+  // ── Yayınevi ───────────────────────────────────────────────────────────
+  const publisherName = (deletedBook.publisher || "").trim();
+  if (publisherName) {
+    const stillUsed = state.books.some((b) => b.publisher === publisherName);
+    if (!stillUsed) {
+      const publisher = state.publishers.find((p) => p.name === publisherName);
+      if (publisher) {
+        try {
+          await databases.deleteDocument(DATABASE_ID, PUBLISHERS_ID, publisher.$id);
+          state.publishers = state.publishers.filter((p) => p.$id !== publisher.$id);
+        } catch (err) {
+          console.warn(`[cascadeDelete] Yetim yayınevi silinemedi (${publisherName}):`, err?.message || err);
+        }
+      }
+    }
+  }
+
+  // ── Seri ───────────────────────────────────────────────────────────────
+  // Bir seri (publisher_id, name) çiftiyle tanımlanır — aynı isimli seri
+  // farklı yayınevlerinde ayrı kayıt olabilir (bkz. bootstrapSeries). Bu
+  // yüzden "hâlâ kullanılıyor mu?" kontrolü, sadece seri ADINA değil, AYNI
+  // YAYINEVİNE ait kitaplara bakarak yapılır.
+  const seriesName = (deletedBook.series || "").trim();
+  if (seriesName) {
+    const seriesPublisherId = publisherIdByName(deletedBook.publisher);
+    const stillUsed = state.books.some(
+      (b) =>
+        b.series === seriesName &&
+        publisherIdByName(b.publisher) === seriesPublisherId
+    );
+    if (!stillUsed) {
+      const series = state.series.find(
+        (s) => s.name === seriesName && (s.publisher_id || null) === (seriesPublisherId || null)
+      );
+      if (series) {
+        try {
+          // NOT: deleteSeriesEverywhere() KASITLI olarak kullanılmıyor — o
+          // fonksiyon "seriyi sil + ait kitaplardan referansı kaldır" işi
+          // yapar. Burada kitap zaten silinmiş durumda, kitaplara dokunmaya
+          // gerek yok; sadece yetim kalan seri kaydını doğrudan sil.
+          await databases.deleteDocument(DATABASE_ID, SERIES_ID, series.$id);
+          state.series = state.series.filter((s) => s.$id !== series.$id);
+        } catch (err) {
+          console.warn(`[cascadeDelete] Yetim seri silinemedi (${seriesName}):`, err?.message || err);
+        }
+      }
+    }
+  }
+
+  // ── Koleksiyonlar ──────────────────────────────────────────────────────
+  // books.collections bir DİZİdir (bir kitap birden fazla koleksiyona ait
+  // olabilir) — bu yüzden silinen kitabın AİT OLDUĞU HER koleksiyon için
+  // ayrı ayrı "hâlâ kullanılıyor mu?" kontrolü yapılır.
+  const bookCollections = deletedBook.collections || [];
+  for (const collectionName of bookCollections) {
+    const clean = (collectionName || "").trim();
+    if (!clean) continue;
+
+    const stillUsed = state.books.some((b) => (b.collections || []).includes(clean));
+    if (!stillUsed) {
+      const collection = state.collections.find((c) => c.name === clean);
+      if (collection) {
+        try {
+          await databases.deleteDocument(DATABASE_ID, COLLECTIONS_ID, collection.$id);
+          state.collections = state.collections.filter((c) => c.$id !== collection.$id);
+        } catch (err) {
+          console.warn(`[cascadeDelete] Yetim koleksiyon silinemedi (${clean}):`, err?.message || err);
+        }
+      }
+    }
+  }
+}
+// ── Adım 24 sonu ─────────────────────────────────────────────────────────────
 
 // ─── Yeni kayıt oluştur ─────────────────────────────────────────────────────
 // Yedekten geri yükleme için kullanılır. id verilmezse Appwrite kendi üretir.

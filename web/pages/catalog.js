@@ -331,6 +331,61 @@ function clearSelection() {
   updateBulkBar();
 }
 
+// ── Adım 24: Şu an EKRANDA GÖRÜNEN (mevcut sayfadaki, filtrelenmiş) kitap
+// dizisini döndürür. "Sayfadaki Tümünü Seç" hem bu listeyi seçmek hem de
+// "hepsi zaten seçili mi?" diye kontrol etmek için bu fonksiyonu kullanır.
+// renderBooks()'taki "start/slice" mantığıyla BİREBİR aynı olmalı — aksi
+// halde "tümünü seç" ekranda görünenden farklı bir kümeyi seçer.
+function getCurrentPageBooks() {
+  const start = (ui.page - 1) * PER_PAGE;
+  return filtered.slice(start, start + PER_PAGE);
+}
+
+// "Sayfadaki Tümünü Seç" — toolbar'daki tek bir checkbox/buton.
+// Davranış (kullanıcı talebi): en fazla "bir sayfada görünen kitap sayısı"nı
+// seçer (şu an 50) — TÜM filtrelenmiş sonuçları (örn. 267 kitap, 6 sayfa)
+// DEĞİL, sadece o an ekranda görünen kitapları.
+//
+// Toggle mantığı: sayfadaki kitapların HEPSİ zaten seçiliyse → hepsini
+// kaldırır (tekrar tıklayınca "seçimi temizle" gibi çalışsın, kullanıcı
+// şaşırmasın). Hepsi seçili DEĞİLSE (hiç seçili değil VEYA kısmen seçili) →
+// sayfadaki TÜMÜNÜ seçer. Bu, standart "tabloda tümünü seç" checkbox
+// davranışıyla aynıdır (Gmail, Excel vb.).
+function toggleSelectAllOnPage() {
+  const pageBooks = getCurrentPageBooks();
+  if (pageBooks.length === 0) return;
+
+  const allSelected = pageBooks.every((b) => selectedIds.has(b.$id));
+
+  if (allSelected) {
+    pageBooks.forEach((b) => selectedIds.delete(b.$id));
+  } else {
+    pageBooks.forEach((b) => selectedIds.add(b.$id));
+  }
+
+  render();
+  updateBulkBar();
+}
+
+// "Sayfadaki Tümünü Seç" butonunun görsel durumunu senkronize eder:
+//   - Sayfadaki kitapların HEPSİ seçiliyse → buton "active" (dolu kutu)
+//   - HİÇBİRİ veya BİR KISMI seçiliyse → buton pasif (boş kutu)
+// render() her çağrıldığında (sayfa değişimi, filtre değişimi, tekli seçim
+// değişimi) çalıştırılır — böylece buton her zaman gerçek durumu yansıtır.
+function updateSelectAllButton() {
+  const btn = document.getElementById("select-all-page");
+  if (!btn) return;
+
+  const pageBooks = getCurrentPageBooks();
+  const allSelected = pageBooks.length > 0 && pageBooks.every((b) => selectedIds.has(b.$id));
+
+  btn.classList.toggle("active", allSelected);
+  const icon = btn.querySelector("iconify-icon");
+  if (icon) icon.setAttribute("icon", allSelected ? "mdi:checkbox-marked" : "mdi:checkbox-blank-outline");
+  btn.title = allSelected ? "Sayfadaki seçimi kaldır" : "Sayfadaki tümünü seç";
+}
+// ── Adım 24 sonu ─────────────────────────────────────────────────────────────
+
 // Toplu işlem çubuğunun görünürlüğünü ve "X kitap seçili" sayısını günceller.
 // Hiç seçim yoksa çubuk tamamen gizlenir.
 function updateBulkBar() {
@@ -454,17 +509,24 @@ async function bulkDelete() {
   if (!confirmed) return;
 
   try {
-    const results = await Promise.allSettled(ids.map((id) => deleteBookRecord(id)));
-
+    // ── Adım 24: SIRALI (sequential) silme — KASITLI olarak Promise.allSettled
+    // ile paralel YAPILMIYOR. Sebep: deleteBookRecord her çağrıldığında
+    // state.books'a bakarak "bu yazarın/yayınevinin/serinin başka kitabı var
+    // mı?" diye cascade delete kontrolü yapıyor. Eğer aynı yazara ait 3 kitap
+    // PARALEL silinirse, 3 silme işlemi de "henüz silinmemiş" eski
+    // state.books'u aynı anda okuyabilir ve hiçbiri "son kitap bu" sonucuna
+    // ulaşamayabilir — yazar yanlışlıkla yetim kalır (silinmez). Sıralı
+    // çalıştırarak her silme işlemi öncekinin state.books güncellemesini
+    // görür, cascade delete her zaman doğru çalışır.
     let ok = 0, fail = 0;
-    results.forEach((r, i) => {
-      if (r.status === "fulfilled") {
-        state.books = state.books.filter((b) => b.$id !== ids[i]);
+    for (const id of ids) {
+      try {
+        await deleteBookRecord(id);
         ok++;
-      } else {
+      } catch {
         fail++;
       }
-    });
+    }
 
     showToast(`${ok} kitap silindi${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
@@ -509,6 +571,7 @@ export function renderCatalog() {
   renderSmartListChips();     // ── Adım 15: kayıtlı akıllı listeleri çiz
   updateFavoriteOnlyChip();   // ── Adım 17: "Sadece Favoriler" chip görselini senkronize et
   updateBulkBar();            // ── Adım 18: toplu işlem çubuğunu gizli başlat
+  updateSelectAllButton();    // ── Adım 24: "Sayfadaki Tümünü Seç" butonunu sıfır durumda başlat
   recompute(false);
 }
 
@@ -835,6 +898,7 @@ function render() {
   updateResultCount();
   updateViewToggle();
   updateFilterBadge();
+  updateSelectAllButton(); // ── Adım 24: "Sayfadaki Tümünü Seç" butonunu senkronize et
 }
 
 function clampPage() {
@@ -1275,6 +1339,10 @@ export function initCatalog() {
 
   // ── Adım 18: Toplu işlem çubuğu dinleyicileri ────────────────────────────
   document.getElementById("bulk-clear")?.addEventListener("click", clearSelection);
+
+  // ── Adım 24: "Sayfadaki Tümünü Seç" butonu (toolbar) ─────────────────────
+  document.getElementById("select-all-page")?.addEventListener("click", toggleSelectAllOnPage);
+  // ── Adım 24 sonu ──────────────────────────────────────────────────────────
 
   document.getElementById("bulk-delete")?.addEventListener("click", bulkDelete);
 
