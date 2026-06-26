@@ -132,11 +132,38 @@ export async function deleteBookRecord(id) {
     }
   }
 
-  await databases.deleteDocument(DATABASE_ID, TABLE_ID, id);
+  // ── Adım 29: "Doküman zaten yok" (404) hatası BAŞARISIZLIK değil, hedefe
+  // zaten ulaşılmış demektir ─────────────────────────────────────────────────
+  // SORUN: Appwrite'a giden bir DELETE isteği SUNUCU TARAFINDA başarıyla
+  // tamamlanabilir, ama yanıt tarayıcıya dönerken bir network kesintisi/
+  // gecikmesi yaşanırsa, bu fonksiyon "hata oldu" sanıp durur — state.books
+  // güncellenmez, cascade delete hiç çalışmaz. Kitap ekranda "hayalet" olarak
+  // kalır: Appwrite'ta YOK ama arayüzde HÂLÂ VAR görünür. Kullanıcı tekrar
+  // silmeyi denediğinde Appwrite "böyle bir kayıt yok" (404) der — bu da
+  // kafa karıştırıcı bir "silme hatası" olarak görünür, oysa kitap zaten
+  // silinmişti.
+  //
+  // ÇÖZÜM: deleteDocument 404 ("document_not_found") hatasıyla başarısız
+  // olursa, bunu GERÇEK bir hata olarak yukarı fırlatmak yerine "zaten
+  // silinmiş, devam et" olarak ele alıyoruz. Böylece state.books güncellenir
+  // ve cascade delete normal şekilde çalışır — sistem bir önceki başarısız
+  // (ama sunucu tarafında aslında başarılı olmuş) denemeyi kendi kendine
+  // düzeltir. Başka türlü bir hata (network kopması, yetkisiz erişim, vb.)
+  // ise hâlâ olduğu gibi yukarı fırlatılır — sadece "zaten yok" durumu
+  // toleranslı karşılanıyor.
+  try {
+    await databases.deleteDocument(DATABASE_ID, TABLE_ID, id);
+  } catch (err) {
+    const alreadyGone = err?.code === 404;
+    if (!alreadyGone) throw err;
+    console.warn(`[deleteBookRecord] Kitap zaten silinmiş (${id}) — hedefe ulaşıldı, devam ediliyor.`);
+  }
+  // ── Adım 29 sonu ─────────────────────────────────────────────────────────────
 
-  // Kitap Appwrite'tan silindi — hafızadaki kopyayı da hemen çıkar. Cascade
-  // delete kontrolleri (aşağıda) state.books'a bakarak "başka kitabı var mı"
-  // diye soracağı için, bu satır cascade kontrolünden ÖNCE çalışmalı.
+  // Kitap Appwrite'tan silindi (ya da zaten silinmişti) — hafızadaki kopyayı
+  // da hemen çıkar. Cascade delete kontrolleri (aşağıda) state.books'a
+  // bakarak "başka kitabı var mı" diye soracağı için, bu satır cascade
+  // kontrolünden ÖNCE çalışmalı.
   state.books = state.books.filter((b) => b.$id !== id);
 
   if (book) {
