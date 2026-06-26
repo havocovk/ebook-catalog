@@ -573,6 +573,31 @@ async function bulkDelete() {
   if (!confirmed) return;
 
   try {
+    // ── Adım 31: Toplu silme ilerleme göstergesi ───────────────────────────
+    // Tek kitap silerken (modal üzerinden) ekstra bildirime gerek yok — işlem
+    // anlık. Ama 2+ kitaplık toplu silme artık throttle mekanizması (Adım 30)
+    // nedeniyle birkaç dakika sürebiliyor; kullanıcının "sistem donmuş mu yoksa
+    // çalışıyor mu" diye tereddüt etmemesi için kalıcı, kendini güncelleyen
+    // bir ilerleme toast'ı gösteriliyor. Normal showToast() her çağrıldığında
+    // YENİ bir toast açıp 3 saniye sonra kapatıyor — burada istenen davranış
+    // FARKLI (aynı toast'un İÇERİĞİ güncellensin, sürekli yeni toast açılıp
+    // kapanmasın), bu yüzden showToast()'a dokunmadan kendi kalıcı toast
+    // elementini oluşturup yönetiyoruz; CSS sınıfları (toast, toast-success)
+    // mevcut toast stiliyle birebir aynı, görsel tutarlılık korunuyor.
+    const showProgress = ids.length >= 2;
+    let progressToast = null;
+    if (showProgress) {
+      const container = document.getElementById("toast-container");
+      if (container) {
+        progressToast = document.createElement("div");
+        progressToast.className = "toast toast-success";
+        progressToast.textContent = "Silme işlemi başladı.";
+        container.appendChild(progressToast);
+        setTimeout(() => progressToast.classList.add("visible"), 10);
+      }
+    }
+    // ── Adım 31 sonu (devamı aşağıda, döngü içinde ve sonunda) ─────────────
+
     // ── Adım 24: SIRALI (sequential) silme — KASITLI olarak Promise.allSettled
     // ile paralel YAPILMIYOR. Sebep: deleteBookRecord her çağrıldığında
     // state.books'a bakarak "bu yazarın/yayınevinin/serinin başka kitabı var
@@ -600,8 +625,24 @@ async function bulkDelete() {
         const label = book ? `"${book.title}" (${id})` : id;
         console.error(`[bulkDelete] Kitap silinemedi — ${label}:`, err?.message || err, err);
       }
+
+      // ── Adım 31: ilerleme toast'ını güncelle — her kitap denendiğinde
+      // (başarılı ya da başarısız, fark etmez) "X/Y kitap silindi" sayacı
+      // bir artar; kullanıcı sürecin canlı olduğunu ve ne kadar ilerlediğini
+      // görür.
+      if (progressToast) {
+        const done = ok + fail;
+        progressToast.textContent = `${done}/${ids.length} kitap silindi.`;
+      }
     }
     // ── Adım 28 sonu ─────────────────────────────────────────────────────────────
+
+    // ── Adım 31: ilerleme toast'ını kaldır, sonucu normal showToast ile bildir
+    if (progressToast) {
+      progressToast.classList.remove("visible");
+      setTimeout(() => progressToast.remove(), 300);
+    }
+    // ── Adım 31 sonu ─────────────────────────────────────────────────────────────
 
     showToast(`${ok} kitap silindi${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
