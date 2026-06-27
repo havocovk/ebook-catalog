@@ -229,17 +229,35 @@ function applySmartList(list) {
   const sortEl = document.getElementById("sort-select");
   if (sortEl) sortEl.value = ui.sort;
 
-  populateSubcategoryChips(); // Adım 11: alt alan grubu yeni kategoriye göre yeniden çizilir
+  // ── Adım 35: Burada da state.books taranıp opts hazırlanır — aksi halde
+  // populateSubcategoryChips/populateYearSlider artık opts.subcategories /
+  // opts.yearMin gibi alanlar beklediği için "opts undefined" hatası alırlardı.
+  const filterOpts = _collectFilterOptions();
+
+  // ── Adım 36: EKSİK ÇAĞRILAR TAMAMLANDI ───────────────────────────────────
+  // SORUN: Adım 35'te renderCatalog() ve clearFilters() güncellenirken,
+  // applySmartList() YARIM güncellenmişti — populateSelectOptions(),
+  // populateTagChips() ve populateCategoryChips() çağrıları hiç
+  // eklenmemişti. Sonuç: bir Akıllı Liste uygulandığında ui.filters doğru
+  // ayarlanıp recompute(true) kitapları doğru filtreliyordu, AMA Yazar/
+  // Yayınevi dropdown'ları ve Etiket/Kategori chip'leri YENİDEN
+  // ÇİZİLMİYORDU — kullanıcı sonucu kitap listesinde görmeden önce arayüzde
+  // "hiçbir şey değişmedi" sanıyordu.
+  //
+  // populateSelectOptions(filterOpts) eklenince, altındaki "Yazar/Yayınevi
+  // select'lerini elle senkronize et" bloğu da gereksiz hale geldi — onun
+  // yaptığı işi (value ayarlamayı) fillSelect() içeriden zaten yapıyor,
+  // üstelik seçenek listesini de (options) doğru şekilde yeniliyor.
+  populateSelectOptions(filterOpts);    // Adım 11: yazar/yayınevi dropdown'ları
+  populateTagChips(filterOpts);         // Adım J4: etiket chip'leri
+  populateCategoryChips(filterOpts);    // Adım 11: kategori chip'leri
+  // ── Adım 36 sonu ──────────────────────────────────────────────────────────
+
+  populateSubcategoryChips(filterOpts); // Adım 11: alt alan grubu yeni kategoriye göre yeniden çizilir
   populateTopicChips();       // Adım 11: konu grubu yeni alt alana göre yeniden çizilir
-  populateYearSlider();       // Adım 4: slider tutamaçlarını filtreye göre konumlandır
+  populateYearSlider(filterOpts);       // Adım 4: slider tutamaçlarını filtreye göre konumlandır
   updateSeriesOptions();      // publisher zaten set edildi → series seçimini koruyacak
   syncChips();                // tüm chip gruplarını aktif/pasif olarak senkronize et
-
-  // Yazar/Yayınevi select'lerini de yeni filtreye göre senkronize et.
-  const authorEl = document.getElementById("filter-author");
-  if (authorEl) authorEl.value = ui.filters.author || "";
-  const publisherEl = document.getElementById("filter-publisher");
-  if (publisherEl) publisherEl.value = ui.filters.publisher || "";
 
   updateFavoriteOnlyChip(); // ── Adım 17: chip görselini yeni filtre durumuna göre senkronize et
 
@@ -771,14 +789,18 @@ export function renderCatalog() {
   selectedIds.clear();
   // ── Adım 18 sonu ──────────────────────────────────────────────────────────
 
-  populateSelectOptions();
-  populateTagChips();         // ── Adım J4: dinamik etiket chip'leri
-  populateCategoryChips();    // ── Adım 11: dinamik kategori chip'leri (çoklu seçim)
-  populateSubcategoryChips(); // ── Adım 11: alt alan chip'leri (sadece akademik)
-  populateTopicChips();       // ── Adım 11: konu chip'leri (alt alana bağlı)
-  populateYearSlider();       // ── Adım 4: yıl aralığı slider sınırlarını ayarla
+  // ── Adım 35: state.books dizisi BURADA SADECE 1 KEZ taranır. Sonuç,
+  // aşağıdaki 5 fonksiyona (kendileri artık ayrıca taramaz) paylaştırılır.
+  const filterOpts = _collectFilterOptions();
+
+  populateSelectOptions(filterOpts);
+  populateTagChips(filterOpts);         // ── Adım J4: dinamik etiket chip'leri
+  populateCategoryChips(filterOpts);    // ── Adım 11: dinamik kategori chip'leri (çoklu seçim)
+  populateSubcategoryChips(filterOpts); // ── Adım 11: alt alan chip'leri (sadece akademik)
+  populateTopicChips();       // ── Adım 11: konu chip'leri (alt alana bağlı) — ui.filters.subcategory'ye bağımlı, tek-geçişe dahil edilmedi
+  populateYearSlider(filterOpts);       // ── Adım 4: yıl aralığı slider sınırlarını ayarla
   syncChips();
-  updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle
+  updateSeriesOptions();      // yayınevi filtresine göre seri listesini güncelle — ui.filters.publisher'a bağımlı, tek-geçişe dahil edilmedi
   renderSmartListChips();     // ── Adım 15: kayıtlı akıllı listeleri çiz
   updateFavoriteOnlyChip();   // ── Adım 17: "Sadece Favoriler" chip görselini senkronize et
   updateBulkBar();            // ── Adım 18: toplu işlem çubuğunu gizli başlat
@@ -787,14 +809,12 @@ export function renderCatalog() {
 }
 
 // ── Adım J4: Katalogdaki tüm etiketi toplayıp chip olarak doldur ────────────
-function populateTagChips() {
+function populateTagChips(opts) {
   const container = document.getElementById("filter-tag-chips");
   if (!container) return;
 
-  // Tüm kitapların etiketlerini topla, tekrar etmeyenleri al, sırala
-  const allTags = [...new Set(
-    state.books.flatMap((b) => b.tags || []).filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
+  // ── Adım 35: opts.tags, _collectFilterOptions()'tan geliyor (tek geçiş)
+  const allTags = opts.tags;
 
   // Sadece etiket chip'lerini yenile (Tümü butonu HTML'de kalıcı)
   const existing = [...container.querySelectorAll(".chip[data-filter='tag']:not([data-value=''])")];
@@ -816,14 +836,12 @@ function populateTagChips() {
 // ── Adım 11: Katalogdaki tüm kategorileri toplayıp chip olarak doldur ───────
 // (populateTagChips ile birebir aynı mantık — kategori de serbest metin,
 //  kitaplardan otomatik toplanıp tekrarsız + sıralı şekilde chip yapılır.)
-function populateCategoryChips() {
+function populateCategoryChips(opts) {
   const container = document.getElementById("filter-category-chips");
   if (!container) return;
 
-  // Tüm kitapların kategorilerini topla, tekrar etmeyenleri al, sırala
-  const allCategories = [...new Set(
-    state.books.map((b) => b.category).filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
+  // ── Adım 35: opts.categories, _collectFilterOptions()'tan geliyor (tek geçiş)
+  const allCategories = opts.categories;
 
   // Sadece kategori chip'lerini yenile ("Tümü" butonu HTML'de kalıcı)
   const existing = [...container.querySelectorAll(".chip[data-filter='category']:not([data-value=''])")];
@@ -847,24 +865,17 @@ function populateCategoryChips() {
 // — kategori adı "Akademik" yazmasa da is_academic işaretliyse dahil edilir
 // (Seçenek A: category metni ile is_academic checkbox'ı bağımsız).
 // Görünürlük: en az 1 akademik kitap yoksa grup tamamen gizlenir.
-function populateSubcategoryChips() {
+function populateSubcategoryChips(opts) {
   const wrap      = document.getElementById("filter-subcategory-wrap");
   const container = document.getElementById("filter-subcategory-chips");
   if (!wrap || !container) return;
 
-  const academicBooks = state.books.filter((b) => b.is_academic);
+  // ── Adım 35: opts.subcategories, _collectFilterOptions()'tan geliyor
+  // (zaten sadece is_academic === true olan kitaplardan toplanmış).
+  // Liste boşsa, ya hiç akademik kitap yok ya da hiçbirinde subcategory
+  // girilmemiş — her iki durumda da grup gizlenir (eski mantıkla aynı).
+  const allSubcats = opts.subcategories;
 
-  if (academicBooks.length === 0) {
-    wrap.classList.add("hidden");
-    ui.filters.subcategory = [];
-    return;
-  }
-
-  const allSubcats = [...new Set(
-    academicBooks.map((b) => b.subcategory).filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
-
-  // Hiç alt alan girilmemişse (hepsi boş) grup gizlenir.
   if (allSubcats.length === 0) {
     wrap.classList.add("hidden");
     ui.filters.subcategory = [];
@@ -936,10 +947,11 @@ function populateTopicChips() {
 // ── Adım 4: Yıl Aralığı Slider'ı Kur ────────────────────────────────────────
 // Kitaplardaki gerçek en eski/en yeni yılı bulup slider'ın min/max
 // sınırlarını buna göre ayarlar. Hiç yıl bilgisi yoksa 1900-bugün varsayılır.
-function populateYearSlider() {
-  const years = state.books.map((b) => b.year).filter((y) => Number.isFinite(y));
-  if (years.length > 0) {
-    yearBounds = { min: Math.min(...years), max: Math.max(...years) };
+function populateYearSlider(opts) {
+  // ── Adım 35: opts.yearMin/yearMax, _collectFilterOptions()'tan geliyor
+  // (tek geçişte, Math.min/Math.max ile birebir aynı sonucu üretir).
+  if (opts.yearMin !== null && opts.yearMax !== null) {
+    yearBounds = { min: opts.yearMin, max: opts.yearMax };
   }
 
   const minInput = document.getElementById("year-range-min");
@@ -1131,23 +1143,89 @@ function sortBooks(books, key) {
   return s.sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt));
 }
 
+// ── Adım 35: Tek geçişte (single-pass) filtre seçeneklerini topla ───────────
+//
+// SORUN: populateSelectOptions, populateTagChips, populateCategoryChips,
+// populateSubcategoryChips ve populateYearSlider — her biri state.books
+// dizisini KENDİ BAŞINA baştan sona tarıyordu (.map/.filter/.flatMap).
+// Kitap sayısı arttıkça (örn. 2000+), bu 6 ayrı tarama toplamda ciddi bir
+// CPU yükü oluşturuyor ve katalog sayfasının ilk açılışını yavaşlatıyordu.
+//
+// ÇÖZÜM: state.books dizisi SADECE 1 KEZ taranır (klasik for döngüsüyle).
+// Tarama sırasında her kitaptan author/publisher/tag/category/subcategory/
+// year bilgisi AYNI ANDA toplanır. Sonuç, hazır Set'ler içeren tek bir
+// nesne olarak döndürülür — DOM'a yazma işini ÜSTLENMEZ, sadece veriyi
+// hazırlar (sorumluluk ayrımı: toplama burada, DOM yazımı her fonksiyonun
+// kendisinde kalır).
+//
+// NOT: populateTopicChips() ve updateSeriesOptions() bu fonksiyona DAHIL
+// EDİLMEDİ — ikisi de o anki kullanıcı filtresine (ui.filters.subcategory /
+// ui.filters.publisher) göre DARALTILMIŞ bir alt küme üzerinde çalışıyor,
+// "ham/tüm kitaplardan liste çıkarma" mantığına uymuyorlar. Ayrıca ikisi de
+// zaten küçük alt kümeler üzerinde (akademik kitaplar / tek yayınevi)
+// çalıştığı için performans sorunu yaratmıyorlar.
+function _collectFilterOptions() {
+  const authorSet      = new Set();
+  const publisherSet   = new Set();
+  const tagSet         = new Set();
+  const categorySet    = new Set();
+  const subcategorySet = new Set();
+  let yearMin = null;
+  let yearMax = null;
+
+  for (const b of state.books) {
+    if (b.author)    authorSet.add(b.author);
+    if (b.publisher) publisherSet.add(b.publisher);
+    if (b.category)  categorySet.add(b.category);
+
+    if (b.tags) {
+      for (const t of b.tags) if (t) tagSet.add(t);
+    }
+
+    if (b.is_academic && b.subcategory) subcategorySet.add(b.subcategory);
+
+    if (Number.isFinite(b.year)) {
+      if (yearMin === null || b.year < yearMin) yearMin = b.year;
+      if (yearMax === null || b.year > yearMax) yearMax = b.year;
+    }
+  }
+
+  const trCompare = (a, b) => a.localeCompare(b, "tr", { sensitivity: "base" });
+
+  return {
+    authors:       [...authorSet].sort(trCompare),
+    publishers:    [...publisherSet].sort(trCompare),
+    tags:          [...tagSet].sort(trCompare),
+    categories:    [...categorySet].sort(trCompare),
+    subcategories: [...subcategorySet].sort(trCompare),
+    yearMin,
+    yearMax,
+  };
+}
+// ── Adım 35 sonu ─────────────────────────────────────────────────────────────
+
 // ─── Select seçeneklerini doldur ─────────────────────────────────────────────
 
-function populateSelectOptions() {
-  // Yazar listesi
-  const authors = [...new Set(state.books.map((b) => b.author).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
-  fillSelect("filter-author", authors, ui.filters.author);
-
-  // Yayınevi listesi
-  const publishers = [...new Set(state.books.map((b) => b.publisher).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b, "tr", { sensitivity: "base" }));
-  fillSelect("filter-publisher", publishers, ui.filters.publisher);
+function populateSelectOptions(opts) {
+  // ── Adım 35: opts artık _collectFilterOptions()'tan geliyor — kendi
+  // başına state.books'u taramaz, hazır listeyi DOM'a yazar.
+  fillSelect("filter-author", opts.authors, ui.filters.author);
+  fillSelect("filter-publisher", opts.publishers, ui.filters.publisher);
 
   // (Adım 11: Kategori artık dropdown değil, chip — populateCategoryChips() ile doldurulur)
 
-  // Seri listesi (yayınevi filtresine göre)
-  updateSeriesOptions();
+  // ── Adım 33: Seri listesi güncellemesi BURADAN ÇIKARILDI ────────────────
+  // SORUN: updateSeriesOptions() burada çağrılıyordu VE renderCatalog()
+  // içinde (bu fonksiyondan hemen sonra) TEKRAR çağrılıyordu. Sonuç: aynı
+  // render döngüsünde updateSeriesOptions() 2 KEZ çalışıyordu — ikinci
+  // çağrı tamamen gereksizdi (birincisinden farklı bir sonuç üretmiyordu,
+  // çünkü ui.filters.publisher arada değişmiyor).
+  //
+  // ÇÖZÜM: Sorumluluk ayrımı netleştirildi. populateSelectOptions() artık
+  // SADECE Yazar/Yayınevi select'lerini doldurur. Seri listesini güncelleme
+  // görevi tamamen renderCatalog()'a (ve onu çağıran diğer yerlere) bırakıldı
+  // — updateSeriesOptions() hâlâ doğru şekilde çalışır, sadece 1 kez.
+  // ── Adım 33 sonu ──────────────────────────────────────────────────────────
 }
 
 // Seri select'ini seçili yayınevine göre doldur.
@@ -1369,9 +1447,13 @@ function clearFilters() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  populateSubcategoryChips(); // ── Adım 11: alt alan/konu grupları sıfırlanmış filtreyle yeniden çizilir
+  // ── Adım 35: Aynı sebep — populateSubcategoryChips/populateYearSlider
+  // artık opts parametresi bekliyor, burada da hazırlanması gerekiyor.
+  const filterOpts = _collectFilterOptions();
+
+  populateSubcategoryChips(filterOpts); // ── Adım 11: alt alan/konu grupları sıfırlanmış filtreyle yeniden çizilir
   populateTopicChips();       // ── Adım 11
-  populateYearSlider();   // ── Adım 4: slider'ı tam aralığa geri döndür
+  populateYearSlider(filterOpts);   // ── Adım 4: slider'ı tam aralığa geri döndür
   updateSeriesOptions(); // seriyi pasif yap
   updateFavoriteOnlyChip(); // ── Adım 17: "Sadece Favoriler" chip'ini pasif göster
   recompute(true);
