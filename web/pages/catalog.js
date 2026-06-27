@@ -1146,8 +1146,18 @@ function populateSelectOptions() {
 
   // (Adım 11: Kategori artık dropdown değil, chip — populateCategoryChips() ile doldurulur)
 
-  // Seri listesi (yayınevi filtresine göre)
-  updateSeriesOptions();
+  // ── Adım 33: Seri listesi güncellemesi BURADAN ÇIKARILDI ────────────────
+  // SORUN: updateSeriesOptions() burada çağrılıyordu VE renderCatalog()
+  // içinde (bu fonksiyondan hemen sonra) TEKRAR çağrılıyordu. Sonuç: aynı
+  // render döngüsünde updateSeriesOptions() 2 KEZ çalışıyordu — ikinci
+  // çağrı tamamen gereksizdi (birincisinden farklı bir sonuç üretmiyordu,
+  // çünkü ui.filters.publisher arada değişmiyor).
+  //
+  // ÇÖZÜM: Sorumluluk ayrımı netleştirildi. populateSelectOptions() artık
+  // SADECE Yazar/Yayınevi select'lerini doldurur. Seri listesini güncelleme
+  // görevi tamamen renderCatalog()'a (ve onu çağıran diğer yerlere) bırakıldı
+  // — updateSeriesOptions() hâlâ doğru şekilde çalışır, sadece 1 kez.
+  // ── Adım 33 sonu ──────────────────────────────────────────────────────────
 }
 
 // Seri select'ini seçili yayınevine göre doldur.
