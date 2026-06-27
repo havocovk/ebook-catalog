@@ -11,7 +11,7 @@
 
 import { state } from "../core/state.js";
 import {
-  updateBookRecord,
+  updateBookRecordWithCascade, // ── Adım 34: updateBookRecord yerine, kapsayan cascade kontrolüyle
   deleteBookRecord,
   uploadBookCover,
   createAuthor,
@@ -224,14 +224,20 @@ async function saveModal() {
 }
 
 // ─── Ortak güncelleme: veritabanı + hafıza + ekran ──────────────────────────
+// ── Adım 34: updateBookRecord yerine updateBookRecordWithCascade kullanılıyor.
+// Bu, kaydetme sırasında author/publisher/series/collections alanlarından
+// herhangi biri DEĞİŞTİYSE (ör. bir koleksiyon adı kaldırıldıysa, yazar
+// değiştirildiyse), eski değerin artık hiçbir kitapta kullanılmıyorsa
+// otomatik olarak silinmesini sağlar (cascadeDeleteOrphans ile aynı mantık,
+// ama "kitap silinirken" değil "kitap güncellenirken" tetiklenir).
+//
+// state.books güncellemesi artık BURADA YAPILMIYOR — updateBookRecordWithCascade
+// kendi içinde state.books'taki nesneyi (Object.assign ile) günceller, çünkü
+// cascade kontrolünün doğru çalışması için güncellemenin BU fonksiyon
+// İÇİNDE, kontrolden ÖNCE yapılmış olması gerekiyor.
 async function applyUpdate(id, updates) {
   try {
-    await updateBookRecord(id, updates);
-
-    const idx = state.books.findIndex((b) => b.$id === id);
-    if (idx !== -1) {
-      state.books[idx] = { ...state.books[idx], ...updates };
-    }
+    await updateBookRecordWithCascade(id, updates);
 
     refreshCurrentPage();
     showToast("Kaydedildi.");

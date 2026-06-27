@@ -88,6 +88,100 @@ export async function updateBookRecord(id, updates) {
   return databases.updateDocument(DATABASE_ID, TABLE_ID, id, updates);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ── Adım 34: Güncelleme sırasında da yetim kontrolü — updateBookRecordWithCascade
+//
+// SORUN: updateBookRecord (yukarıda) sadece Appwrite'a yazıyor, başka bir şey
+// yapmıyor. Bu, "kitap SİLİNİRKEN" çalışan cascadeDeleteOrphans'ın hiç
+// göremediği bir senaryo açığa çıkardı: kitap silinmeden, sadece bir alanı
+// (author/publisher/series/collections) DEĞİŞTİRİLDİĞİNDE, eski değer
+// hâlâ kullanılıyor mu diye HİÇ kontrol edilmiyordu. Örnek: 4 kitaptan bir
+// koleksiyon adı kart üzerinden kaldırılınca, o koleksiyon collections
+// tablosunda sonsuza dek yetim kalıyordu.
+//
+// ÇÖZÜM: Bu fonksiyon, updateBookRecord'u SARAR — günceller VE ardından,
+// SADECE GERÇEKTEN DEĞİŞEN alanlar için (aynı kalan alanlara dokunmadan,
+// gereksiz kontrol yapmadan) cascadeDeleteOrphans'ı tetikler. "Değişen"
+// tanımı: author/publisher/series için eski metin ile yeni metin BİRBİRİNDEN
+// FARKLIYSA; collections için eski dizide olup yeni dizide OLMAYAN isimler
+// için.
+//
+// staleValues.publisher HER ZAMAN eski (güncelleme öncesi) publisher
+// değeriyle doldurulur — author/collections değişse de publisher değişmese
+// de, seri kontrolü "hangi yayınevine göre bakılacağını" bilmek için bu
+// bilgiye ihtiyaç duyar (bkz. cascadeDeleteOrphans içindeki Adım 26 notu).
+//
+// oldBook: güncellemeden ÖNCEKİ kitap nesnesi (state.books'tan, güncelleme
+//          öncesi okunmalı — çağıran taraf bunu garanti etmeli).
+// newFields: updateBookRecord'a aynen geçirilecek alanlar (örn.
+//          { author: "Yeni Yazar" } veya { collections: [...] }).
+export async function updateBookRecordWithCascade(id, newFields) {
+  const oldBook = state.books.find((b) => b.$id === id);
+  // Eski değerleri (güncellemeden ÖNCEKİ hâliyle) AYRI bir nesneye kopyala —
+  // state.books'taki gerçek nesneye referans TUTMUYORUZ, çünkü o nesne
+  // birazdan Object.assign ile güncellenecek; karşılaştırma için "donmuş"
+  // bir kopyaya ihtiyacımız var.
+  const oldSnapshot = oldBook
+    ? {
+        author: oldBook.author,
+        publisher: oldBook.publisher,
+        series: oldBook.series,
+        collections: [...(oldBook.collections || [])],
+      }
+    : null;
+
+  const result = await updateBookRecord(id, newFields);
+
+  // Hafızadaki kopyayı güncelle — cascade kontrolünün "hâlâ kullanılıyor
+  // mu?" sorgusu state.books'a bakacağı için, bu satır kontrolden ÖNCE
+  // çalışmalı (aksi halde güncellenen kitabın KENDİSİ hâlâ eski değeri
+  // taşıyormuş gibi görünür ve "hâlâ kullanılıyor" sonucuna yanlışlıkla
+  // ulaşılabilir).
+  if (oldBook) {
+    Object.assign(oldBook, newFields);
+  }
+
+  if (!oldSnapshot) return result; // eski veri yoksa (örn. kitap state'te bulunamadıysa) kontrol yapılamaz
+
+  // staleValues.publisher HER ZAMAN eski publisher değeriyle doldurulur —
+  // seri kontrolü "hangi yayınevine göre bakılacağını" bilmek için buna
+  // ihtiyaç duyar, publisher'ın kendisi değişmemiş olsa bile.
+  const staleValues = { publisher: oldSnapshot.publisher };
+  let hasStaleValue = false;
+
+  if ("author" in newFields && newFields.author !== oldSnapshot.author) {
+    staleValues.author = oldSnapshot.author;
+    hasStaleValue = true;
+  }
+
+  if ("publisher" in newFields && newFields.publisher !== oldSnapshot.publisher) {
+    staleValues.publisher = oldSnapshot.publisher; // eski yayınevi, kendisi de kontrol edilecek
+    hasStaleValue = true;
+  }
+
+  if ("series" in newFields && newFields.series !== oldSnapshot.series) {
+    staleValues.series = oldSnapshot.series;
+    hasStaleValue = true;
+  }
+
+  if ("collections" in newFields) {
+    const newCollections = newFields.collections || [];
+    const removedCollections = oldSnapshot.collections.filter((c) => !newCollections.includes(c));
+    if (removedCollections.length > 0) {
+      staleValues.collections = removedCollections;
+      hasStaleValue = true;
+    }
+  }
+
+  if (hasStaleValue) {
+    await cascadeDeleteOrphans(staleValues);
+  }
+
+  return result;
+}
+// ── Adım 34 sonu ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+
 // ─── Kapak URL'inden dosya ID'sini çıkar ────────────────────────────────────
 // cover_url formatı (hem web hem Python tarafında aynı): .../buckets/{BUCKET_ID}
 // /files/{FILE_ID}/view?... — bu fonksiyon /files/ ile bir sonraki / arasındaki
@@ -184,9 +278,35 @@ export async function deleteBookRecord(id) {
 // sessizce loglanır ve diğerleri için devam edilir — bir kitabı silme işlemi,
 // arka plandaki temizlik adımlarından biri başarısız olduğu için kullanıcıya
 // "silinemedi" diye görünmemeli; kitabın kendisi zaten silindi.
-async function cascadeDeleteOrphans(deletedBook) {
+// ═══════════════════════════════════════════════════════════════════════════
+// ── Adım 34: cascadeDeleteOrphans GENELLEŞTİRİLDİ ───────────────────────────
+//
+// ÖNCEDEN: Bu fonksiyon sadece "bir kitap SİLİNDİĞİNDE" çağrılıyordu —
+// parametre olarak "silinen kitabın kendisi" (deletedBook) alıyordu.
+//
+// SORUN (yeni keşfedilen kapsam boşluğu): Bir kitap SİLİNMEDEN, sadece
+// GÜNCELLENDİĞİNDE de (örn. kart üzerinden bir koleksiyon adı kaldırılırsa,
+// ya da yazar/yayınevi/seri değiştirilirse) AYNI "yetim kalma" riski var —
+// eski değer artık hiçbir kitapta kullanılmıyor olabilir, ama bunu kontrol
+// eden hiçbir mekanizma yoktu (applyUpdate/bulkSetCategory/bulkAddCollection
+// sadece updateDocument çağırıp duruyordu, eski değerlere hiç bakmıyordu).
+//
+// ÇÖZÜM: Fonksiyon artık "silinen kitap" değil, "kontrol edilmesi istenen
+// eski değerler" (staleValues: { author, publisher, series, collections })
+// alıyor. İÇ MANTIK DEĞİŞMEDİ (zaten doğru çalıştığını test ettik) — sadece
+// parametre kaynağı genelleşti: silme senaryosunda staleValues = silinen
+// kitabın kendisi; güncelleme senaryosunda staleValues = güncelleme
+// ÖNCESİNDEKİ eski author/publisher/series/collections değerleri (bkz.
+// applyUpdate ve bulkSetCategory/bulkAddCollection'daki yeni çağrılar).
+//
+// staleValues.publisher, seri kontrolü için HÂLÂ GEREKLİ: eğer publisher
+// DEĞİŞMEDİYSE ama series değiştiyse, seri kontrolünün hangi yayınevine
+// göre yapılacağını bilmesi gerekiyor — bu yüzden çağıran taraf, publisher
+// alanı değişmemiş olsa bile staleValues.publisher'a kitabın (güncelleme
+// öncesindeki) yayınevini koymalı.
+async function cascadeDeleteOrphans(staleValues) {
   // ── Yazar ──────────────────────────────────────────────────────────────
-  const authorName = (deletedBook.author || "").trim();
+  const authorName = (staleValues.author || "").trim();
   if (authorName) {
     const stillUsed = state.books.some((b) => b.author === authorName);
     if (!stillUsed) {
@@ -209,17 +329,18 @@ async function cascadeDeleteOrphans(deletedBook) {
   // YAYINEVİNE ait kitaplara bakarak yapılır.
   //
   // ── Adım 26: SIRA ÖNEMLİ — bu blok YAYINEVİ bloğundan ÖNCE çalışmalı. ─────
-  // Seri kontrolü, deletedBook.publisher adından publisherIdByName() ile bir
+  // Seri kontrolü, staleValues.publisher adından publisherIdByName() ile bir
   // ID buluyor — bu arama state.publishers İÇİNDE yapılıyor. Eğer yayınevi
   // bloğu BU bloktan ÖNCE çalışıp yayınevini state.publishers'tan silmiş
-  // olsaydı (silinen kitap o yayınevinin de SON kitabıysa), publisherIdByName
-  // artık o yayınevini BULAMAZ ve null döner — bu da seri kaydının (gerçek
-  // publisher_id'si hâlâ duran) state.series içinde eşleşmemesine, dolayısıyla
-  // YANLIŞLIKLA BULUNAMAMASINA ve silinmemesine yol açardı. Bu yüzden seri
-  // kontrolü, yayınevi state.publishers'ta HÂLÂ DURURKEN yapılmalı.
-  const seriesName = (deletedBook.series || "").trim();
+  // olsaydı (silinen/değişen kitap o yayınevinin de SON kitabıysa),
+  // publisherIdByName artık o yayınevini BULAMAZ ve null döner — bu da seri
+  // kaydının (gerçek publisher_id'si hâlâ duran) state.series içinde
+  // eşleşmemesine, dolayısıyla YANLIŞLIKLA BULUNAMAMASINA ve silinmemesine
+  // yol açardı. Bu yüzden seri kontrolü, yayınevi state.publishers'ta HÂLÂ
+  // DURURKEN yapılmalı.
+  const seriesName = (staleValues.series || "").trim();
   if (seriesName) {
-    const seriesPublisherId = publisherIdByName(deletedBook.publisher);
+    const seriesPublisherId = publisherIdByName(staleValues.publisher);
     const stillUsed = state.books.some(
       (b) =>
         b.series === seriesName &&
@@ -233,8 +354,9 @@ async function cascadeDeleteOrphans(deletedBook) {
         try {
           // NOT: deleteSeriesEverywhere() KASITLI olarak kullanılmıyor — o
           // fonksiyon "seriyi sil + ait kitaplardan referansı kaldır" işi
-          // yapar. Burada kitap zaten silinmiş durumda, kitaplara dokunmaya
-          // gerek yok; sadece yetim kalan seri kaydını doğrudan sil.
+          // yapar. Burada ilgili kitap(lar) zaten güncellenmiş/silinmiş
+          // durumda, kitaplara dokunmaya gerek yok; sadece yetim kalan seri
+          // kaydını doğrudan sil.
           await databases.deleteDocument(DATABASE_ID, SERIES_ID, series.$id);
           state.series = state.series.filter((s) => s.$id !== series.$id);
         } catch (err) {
@@ -247,7 +369,7 @@ async function cascadeDeleteOrphans(deletedBook) {
 
   // ── Yayınevi ───────────────────────────────────────────────────────────
   // NOT: Bu blok SERİ bloğundan SONRA gelmeli (yukarıdaki Adım 26 notuna bak).
-  const publisherName = (deletedBook.publisher || "").trim();
+  const publisherName = (staleValues.publisher || "").trim();
   if (publisherName) {
     const stillUsed = state.books.some((b) => b.publisher === publisherName);
     if (!stillUsed) {
@@ -265,11 +387,11 @@ async function cascadeDeleteOrphans(deletedBook) {
 
   // ── Koleksiyonlar ──────────────────────────────────────────────────────
   // books.collections bir DİZİdir (bir kitap birden fazla koleksiyona ait
-  // olabilir) — bu yüzden silinen kitabın AİT OLDUĞU HER koleksiyon için
+  // olabilir) — bu yüzden staleValues.collections İÇİNDEKİ HER isim için
   // ayrı ayrı "hâlâ kullanılıyor mu?" kontrolü yapılır. Yayınevi/seriden
   // bağımsız olduğu için sıra burada önemli değil.
-  const bookCollections = deletedBook.collections || [];
-  for (const collectionName of bookCollections) {
+  const staleCollections = staleValues.collections || [];
+  for (const collectionName of staleCollections) {
     const clean = (collectionName || "").trim();
     if (!clean) continue;
 
@@ -287,7 +409,8 @@ async function cascadeDeleteOrphans(deletedBook) {
     }
   }
 }
-// ── Adım 24 sonu ─────────────────────────────────────────────────────────────
+// ── Adım 34 sonu ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Yeni kayıt oluştur ─────────────────────────────────────────────────────
 // Yedekten geri yükleme için kullanılır. id verilmezse Appwrite kendi üretir.

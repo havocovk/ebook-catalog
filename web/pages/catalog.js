@@ -11,7 +11,7 @@ import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
 import { openModal, _showPrompt, _showInfo, _showConfirm } from "../ui/modal.js";
 import { escapeHtml, statusLabel, confidenceLevel, showToast, showLoading } from "../ui/common.js";
-import { updateBookRecord, deleteBookRecord, createCollection } from "../core/api.js"; // ── Adım 33: toplu koleksiyon ekleme için createCollection
+import { updateBookRecord, updateBookRecordWithCascade, deleteBookRecord, createCollection } from "../core/api.js"; // ── Adım 33/34
 
 // ── Adım J8: Fuse.js — Fuzzy (bulanık) arama ────────────────────────────────
 // CDN'den ES Module olarak yüklenir; yüklenemezse tam eşleşme devreye girer.
@@ -603,9 +603,15 @@ async function bulkAddCollection() {
         const currentCollections = book.collections || [];
         if (currentCollections.includes(collectionName)) return Promise.resolve(); // zaten var
         const newCollections = [...currentCollections, collectionName];
-        return updateBookRecord(id, { collections: newCollections }).then(() => {
-          book.collections = newCollections; // hafızadaki kopyayı güncelle
-        });
+        // ── Adım 34: updateBookRecord yerine updateBookRecordWithCascade —
+        // bu çağrı sadece YENİ bir koleksiyon EKLEDİĞİ için (var olanları
+        // çıkarmadığı için) burada hiçbir yetim kalma riski yok, ama ileride
+        // bu fonksiyonun "toplu koleksiyon çıkar" gibi bir kardeşi eklenirse
+        // aynı güvenli mekanizmayı kullanması için tutarlılık sağlanıyor.
+        // NOT: book.collections'ı burada elle güncellemiyoruz —
+        // updateBookRecordWithCascade bunu kendi içinde (Object.assign ile)
+        // zaten yapıyor.
+        return updateBookRecordWithCascade(id, { collections: newCollections });
       })
     );
 
