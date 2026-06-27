@@ -11,7 +11,7 @@ import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
 import { openModal, _showPrompt, _showInfo, _showConfirm } from "../ui/modal.js";
 import { escapeHtml, statusLabel, confidenceLevel, showToast, showLoading } from "../ui/common.js";
-import { updateBookRecord, deleteBookRecord } from "../core/api.js";
+import { updateBookRecord, deleteBookRecord, createCollection } from "../core/api.js"; // ── Adım 33: toplu koleksiyon ekleme için createCollection
 
 // ── Adım J8: Fuse.js — Fuzzy (bulanık) arama ────────────────────────────────
 // CDN'den ES Module olarak yüklenir; yüklenemezse tam eşleşme devreye girer.
@@ -435,6 +435,7 @@ function setBulkControlsEnabled(enabled) {
   const ids = [
     "bulk-clear", "bulk-delete", "bulk-favorite-add", "bulk-favorite-remove",
     "bulk-tag-add", "bulk-status-toggle", "select-all-page",
+    "bulk-category-set", "bulk-collection-add", // ── Adım 33
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -529,6 +530,94 @@ async function bulkAddTag() {
     showToast("Toplu etiket ekleme hatası: " + (err?.message || err), "error");
   }
 }
+
+// ── Adım 33: Toplu kategori ata ──────────────────────────────────────────
+// NOT: category, tags/collections gibi bir DİZİ değil — TEK BİR metin
+// alanı (örn. "Roman" ya da serbest yazılmış "Roman, Akademik" gibi tek
+// parça bir ifade). Bu yüzden burada "ekleme" değil "atama/değiştirme"
+// mantığı uygulanır: seçili her kitabın category alanı, yazılan değerle
+// DOĞRUDAN DEĞİŞTİRİLİR (üzerine yazılır) — etiket ekleme gibi var olana
+// dokunmadan üstüne katma değildir, çünkü tek değerli bir alanda "ekleme"
+// kavramı yoktur.
+async function bulkSetCategory() {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
+
+  const category = await _showPrompt("Seçili kitaplara atanacak kategoriyi yazın:");
+  if (!category) return; // kullanıcı iptal etti veya boş yazdı
+
+  try {
+    const results = await Promise.allSettled(
+      ids.map((id) => {
+        const book = state.books.find((b) => b.$id === id);
+        if (!book) return Promise.resolve();
+        if (book.category === category) return Promise.resolve(); // zaten aynı değer, gereksiz yazma yapma
+        return updateBookRecord(id, { category }).then(() => {
+          book.category = category; // hafızadaki kopyayı güncelle
+        });
+      })
+    );
+
+    const fail = results.filter((r) => r.status === "rejected").length;
+    showToast(`${ids.length - fail} kitaba kategori atandı${fail ? `, ${fail} başarısız` : ""}.`);
+    clearSelection();
+    recompute(false);
+  } catch (err) {
+    showToast("Toplu kategori atama hatası: " + (err?.message || err), "error");
+  }
+}
+// ── Adım 33 sonu ─────────────────────────────────────────────────────────────
+
+// ── Adım 33: Toplu koleksiyon ekle ───────────────────────────────────────
+// book.collections bir DİZİdir (bir kitap birden fazla koleksiyona ait
+// olabilir) — bu yüzden mantık bulkAddTag ile BİREBİR aynı: var olan
+// koleksiyon listesinin ÜZERİNE YAZILMAZ, listeye yeni isim EKLENİR (zaten
+// varsa tekrar eklenmez).
+//
+// EK ADIM (tags'ten farkı): collections tablosunda bu isme sahip bir kayıt
+// yoksa, createCollection() ile ANINDA oluşturulur — author/publisher/series
+// entity-picker'ının onAdd callback'i ile yaptığı işin aynısı (bkz. Adım 27,
+// modal.js'deki saveModal()). createCollection() zaten "varsa tekrar
+// oluşturma" kontrolü yaptığı için burada güvenle çağrılabilir.
+async function bulkAddCollection() {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
+
+  const collectionName = await _showPrompt("Seçili kitaplara eklenecek koleksiyonu yazın:");
+  if (!collectionName) return; // kullanıcı iptal etti veya boş yazdı
+
+  try {
+    // Önce koleksiyon kaydının kendisini (collections tablosunda) garantiye
+    // al — author/publisher/series ile aynı tutarlılıkta, modal'dan tek tek
+    // eklerken de aynı şey yapılıyor (Adım 27).
+    try {
+      await createCollection(collectionName);
+    } catch (err) {
+      console.warn(`[bulkAddCollection] Koleksiyon oluşturulamadı (${collectionName}):`, err?.message || err);
+    }
+
+    const results = await Promise.allSettled(
+      ids.map((id) => {
+        const book = state.books.find((b) => b.$id === id);
+        if (!book) return Promise.resolve();
+        const currentCollections = book.collections || [];
+        if (currentCollections.includes(collectionName)) return Promise.resolve(); // zaten var
+        const newCollections = [...currentCollections, collectionName];
+        return updateBookRecord(id, { collections: newCollections }).then(() => {
+          book.collections = newCollections; // hafızadaki kopyayı güncelle
+        });
+      })
+    );
+
+    const fail = results.filter((r) => r.status === "rejected").length;
+    showToast(`${ids.length - fail} kitaba koleksiyon eklendi${fail ? `, ${fail} başarısız` : ""}.`);
+    clearSelection();
+    recompute(false);
+  } catch (err) {
+    showToast("Toplu koleksiyon ekleme hatası: " + (err?.message || err), "error");
+  }
+}
+// ── Adım 33 sonu ─────────────────────────────────────────────────────────────
 
 // ── Toplu favori yap/kaldır ──────────────────────────────────────────────
 // newValue: true (favorile) veya false (favorilerden çıkar) — iki ayrı
@@ -1469,6 +1558,11 @@ export function initCatalog() {
   document.getElementById("bulk-favorite-remove")?.addEventListener("click", () => runBulkOperation(() => bulkSetFavorite(false)));
 
   document.getElementById("bulk-tag-add")?.addEventListener("click", () => runBulkOperation(bulkAddTag));
+
+  // ── Adım 33: Toplu kategori ata + toplu koleksiyon ekle ────────────────
+  document.getElementById("bulk-category-set")?.addEventListener("click", () => runBulkOperation(bulkSetCategory));
+  document.getElementById("bulk-collection-add")?.addEventListener("click", () => runBulkOperation(bulkAddCollection));
+  // ── Adım 33 sonu ────────────────────────────────────────────────────────
 
   // "Durum Değiştir" butonu mini paneli açar/kapatır (4 durum seçeneği).
   // Aynı panel içindeki bir durum butonuna tıklamak hem işlemi başlatır

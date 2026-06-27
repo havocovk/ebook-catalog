@@ -120,17 +120,6 @@
 
           <span id="result-count" class="result-count"></span>
 
-          <!-- ── Adım 24: Sayfadaki Tümünü Seç ────────────────────────────
-               Ekranda o an görünen (filtrelenmiş + mevcut sayfadaki, en
-               fazla 50) kitabın tümünü tek tıkla seçer/seçimi kaldırır.
-               Tüm filtrelenmiş sonuçları (örn. 267 kitap) DEĞİL, sadece
-               görünen sayfayı seçer — kullanıcı talebiyle bilinçli sınır. -->
-          <button id="select-all-page" class="btn btn-sm select-all-btn" title="Sayfadaki tümünü seç">
-            <iconify-icon icon="mdi:checkbox-blank-outline"></iconify-icon>
-            <span class="btn-label">Sayfadaki Tümünü Seç</span>
-          </button>
-          <!-- ── Adım 24 sonu ──────────────────────────────────────────── -->
-
           <div class="view-toggle">
             <button class="view-btn active" data-view="grid" title="Izgara görünüm">
               <iconify-icon icon="lucide:layout-grid"></iconify-icon>
@@ -329,6 +318,16 @@
                 <button id="bulk-tag-add" class="btn btn-sm">
                   <iconify-icon icon="lucide:tag"></iconify-icon> Etiket Ekle
                 </button>
+
+                <!-- ── Adım 33: Toplu kategori ata + toplu koleksiyon ekle ──── -->
+                <button id="bulk-category-set" class="btn btn-sm">
+                  <iconify-icon icon="lucide:folder"></iconify-icon> Kategori Ata
+                </button>
+
+                <button id="bulk-collection-add" class="btn btn-sm">
+                  <iconify-icon icon="lucide:layers"></iconify-icon> Koleksiyon Ekle
+                </button>
+                <!-- ── Adım 33 sonu ──────────────────────────────────────── -->
 
                 <button id="bulk-favorite-add" class="btn btn-sm">
                   <iconify-icon icon="mdi:heart"></iconify-icon> Favorile

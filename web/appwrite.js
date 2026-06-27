@@ -42,15 +42,19 @@ const _rawStorage = new Storage(client);
 // sınırını fazlasıyla aşıyor ve "Rate limit for the current endpoint has
 // been exceeded" (HTTP 429) hatasına yol açıyor.
 //
-// ÇÖZÜM (yama DEĞİL, kök sebep çözümü): Appwrite'a gönderilen HER istek
-// (okuma dahil, güvenlik için) TEK BİR SIRADAN (kuyruktan) geçirilir. Bu
-// kuyruk, ardışık iki istek arasında EN AZ MIN_INTERVAL_MS kadar bir süre
-// olmasını garanti eder — yani kod, Appwrite'ın izin verdiği hızın HİÇBİR
-// ZAMAN üzerine çıkmaz. Bu "hata oluşunca tekrar dene" (reaktif, bypass)
-// değildir — "hataya hiç sebep olmayacak hızda çalış" (proaktif, doğru
-// tasarım) demektir. Sonuç olarak sistem YAVAŞLAR (50 kitaplık bir toplu
-// silme artık birkaç dakika sürebilir) ama 429 hatasına HİÇBİR ZAMAN
-// çarpmaz — çünkü Appwrite'ın koyduğu gerçek kısıtlamaya zaten uyuyoruz.
+// ÇÖZÜM (yama DEĞİL, kök sebep çözümü): Appwrite'a gönderilen HER YAZMA
+// isteği (deleteDocument, createDocument, updateDocument, deleteFile,
+// createFile) TEK BİR SIRADAN (kuyruktan) geçirilir — okuma istekleri
+// (listDocuments, getFile vb.) bu kuyruğa GİRMEZ, çünkü rate limit sorunu
+// sadece yazma uçlarında yaşanıyordu (bkz. Adım 32). Kuyruk, ardışık iki
+// YAZMA isteği arasında EN AZ MIN_INTERVAL_MS kadar bir süre olmasını
+// garanti eder — yani kod, Appwrite'ın izin verdiği hızın HİÇBİR ZAMAN
+// üzerine çıkmaz. Bu "hata oluşunca tekrar dene" (reaktif, bypass) değildir
+// — "hataya hiç sebep olmayacak hızda çalış" (proaktif, doğru tasarım)
+// demektir. Sonuç olarak toplu silme/oluşturma işlemleri YAVAŞLAR (50
+// kitaplık bir toplu silme birkaç dakika sürebilir) ama 429 hatasına HİÇBİR
+// ZAMAN çarpmaz; sayfa açılışı ve okuma işlemleri ise ESKİSİ KADAR HIZLI
+// kalır, çünkü onlar bu kuyruğa hiç girmiyor.
 //
 // MIN_INTERVAL_MS = 1100 — dakikada 60 istek sınırının (1000ms/istek)
 // belirgin şekilde altında, böylece saniye sınırları arasında ufak
@@ -76,20 +80,44 @@ function throttledCall(fn) {
   return run;
 }
 
-// Appwrite SDK nesnelerini (Databases, Storage) bir Proxy ile sarıyoruz —
-// her metod çağrısı (deleteDocument, createDocument, vb.) otomatik olarak
-// throttledCall() üzerinden geçer. api.js'in TEK BİR SATIRINI bile
-// değiştirmeye gerek yok: `databases.deleteDocument(...)` yazıldığı gibi
-// çalışmaya devam eder, ama artık görünmez şekilde kuyruğa giriyor.
+// ── Adım 32: Throttle SADECE yazma (write) metodlarına uygulanır ───────────
+// SORUN (önceki sürümde): throttleSdkObject TÜM metodları (okuma dahil)
+// kuyruğa sokuyordu. Bu, rate limit sorununu çözerken FARKLI bir sorun
+// yarattı: sayfa açılışında çalışan loadBooks/bootstrapAuthors/Publishers/
+// Series/Collections — bunların HEPSİ SADECE OKUMA (listDocuments) yapar —
+// artık birbirini aynı kuyrukta 1.1 saniye aralıklarla BEKLEMEK ZORUNDA
+// kaldı. Kitap sayısı arttıkça (sayfalama nedeniyle daha çok listDocuments
+// çağrısı) bu bekleme zinciri uzadı ve sayfa açılışı YAVAŞLADI.
+//
+// GERÇEK DURUM: Appwrite'ın rate limit sınırı sadece YAZMA uçları için
+// (deleteDocument, createDocument, updateDocument, deleteFile, createFile)
+// geçerli — okuma (listDocuments, getDocument, getFile) için bu sınır
+// sorun yaratmıyordu zaten (bizim hiçbir okuma isteğimiz 429 ALMADI, sadece
+// silme/oluşturma istekleri aldı). Bu yüzden throttle'ı SADECE yazma
+// metodlarına uygulamak hem rate limit sorununu çözüyor HEM DE okumayı
+// hiç yavaşlatmıyor — iki kuş tek taş.
+const THROTTLED_METHODS = new Set([
+  "deleteDocument", "createDocument", "updateDocument",
+  "deleteFile", "createFile",
+]);
+
 function throttleSdkObject(rawObject) {
   return new Proxy(rawObject, {
     get(target, propertyName) {
       const original = target[propertyName];
       if (typeof original !== "function") return original;
+
+      // Yazma metodu değilse (örn. listDocuments, getFile) — hiç kuyruğa
+      // girmeden, doğrudan ve anında çalıştır.
+      if (!THROTTLED_METHODS.has(propertyName)) {
+        return (...args) => original.apply(target, args);
+      }
+
       return (...args) => throttledCall(() => original.apply(target, args));
     },
   });
 }
+// ── Adım 32 sonu ─────────────────────────────────────────────────────────────
 
 const databases = throttleSdkObject(_rawDatabases);
 const storage = throttleSdkObject(_rawStorage);
