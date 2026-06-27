@@ -88,7 +88,7 @@ function renderCoverArea(book) {
   let coverHtml;
   if (book.cover_url) {
     const fileId = extractCoverFileId(book.cover_url);
-    const tooltip = fileId ? `Storage dosya adı: ${fileId}` : "";
+    const tooltip = fileId ? `${fileId}.jpg` : "";
     coverHtml = `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" title="${escapeHtml(tooltip)}" />`;
   } else {
     coverHtml = `<div class="cover-placeholder large">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;

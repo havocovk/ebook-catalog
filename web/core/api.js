@@ -823,8 +823,20 @@ export async function uploadBookCover(bookId, file) {
 
   const fileId = ID.unique(); // Her yüklemede yepyeni, çakışmayan bir ID
 
-  // 1) Yeni dosyayı storage'a yükle.
-  await storage.createFile(BUCKET_ID, fileId, file);
+  // ── Adım 36: Storage'a giden dosyanın GÖRÜNEN ADI (filename), Appwrite
+  // SDK'sı tarafında varsayılan olarak tarayıcının seçtiği orijinal dosya
+  // adından (örn. "tmpmk05f9rz.jpg" gibi rastgele/geçici bir ad) geliyordu —
+  // bu da Storage konsolunda görünen "Name" ile dosyanın gerçek "fileId"sinin
+  // birbiriyle HİÇ ilgisi olmamasına sebep oluyordu (kullanıcı tooltip'teki
+  // ID'yi görüp Storage'da o adı aratamıyordu). Çözüm: dosyayı Appwrite'a
+  // göndermeden önce, içeriğini bozmadan SADECE adını fileId ile aynı yapacak
+  // şekilde yeniden paketliyoruz (File nesnesi içerik/tip korunarak yeniden
+  // oluşturuluyor). Böylece Storage'daki "Name" kolonu = tooltip'teki değer
+  // = birebir aynı string olur, kopyala-yapıştırla aratılabilir.
+  const renamedFile = new File([file], `${fileId}.jpg`, { type: file.type });
+
+  // 1) Yeni dosyayı storage'a yükle (adı artık fileId ile aynı).
+  await storage.createFile(BUCKET_ID, fileId, renamedFile);
 
   // 2) Yeni adresi kitabın kaydına yaz (eski kapak referansının üzerine yazılır).
   const coverUrl = buildPublicCoverUrl(fileId);
