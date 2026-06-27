@@ -187,7 +187,7 @@ export async function updateBookRecordWithCascade(id, newFields) {
 // /files/{FILE_ID}/view?... — bu fonksiyon /files/ ile bir sonraki / arasındaki
 // segmenti çıkarır. Format eşleşmezse (örn. cover_url boş veya beklenmeyen bir
 // yapıdaysa) null döner — çağıran taraf bunu "silinecek dosya yok" olarak ele alır.
-function extractCoverFileId(coverUrl) {
+export function extractCoverFileId(coverUrl) {
   if (!coverUrl) return null;
   const match = coverUrl.match(/\/files\/([^/]+)\//);
   return match ? match[1] : null;

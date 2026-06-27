@@ -14,6 +14,7 @@ import {
   updateBookRecordWithCascade, // ── Adım 34: updateBookRecord yerine, kapsayan cascade kontrolüyle
   deleteBookRecord,
   uploadBookCover,
+  extractCoverFileId, // ── Adım 35: kapak resminin storage dosya ID'sini tooltip'te göstermek için
   createAuthor,
   renameAuthorEverywhere,
   deleteAuthorEverywhere,
@@ -75,10 +76,23 @@ function updateSeriesAvailability(resetIfInvalid) {
 
 // ─── Kapak alanını çiz: resim varsa göster, yoksa yer tutucu göster ────────
 // Hem modal açılışında hem de yeni kapak yüklendikten sonra çağrılır.
+//
+// ── Adım 35: Kapak resminin storage dosya ID'sini "title" attribute'una
+// koyuyoruz — bu, tarayıcının yerleşik davranışıyla, resmin üzerine fare ile
+// gelindiğinde küçük bir araç ipucu (tooltip) olarak görünür. Amaç: birden
+// fazla format (PDF/EPUB) versiyonu olan bir kitapta, kapağı olan versiyonun
+// dosyasını Appwrite Storage konsolunda bulmayı kolaylaştırmak — kullanıcı
+// o ID'yi arayıp aynı resmi kapağı eksik olan diğer versiyona indirip
+// yükleyebilir. Kart/modal üzerinde KALICI olarak görünmez, sadece hover'da.
 function renderCoverArea(book) {
-  const coverHtml = book.cover_url
-    ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" />`
-    : `<div class="cover-placeholder large">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+  let coverHtml;
+  if (book.cover_url) {
+    const fileId = extractCoverFileId(book.cover_url);
+    const tooltip = fileId ? `Dosya ID: ${fileId}` : "";
+    coverHtml = `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" title="${escapeHtml(tooltip)}" />`;
+  } else {
+    coverHtml = `<div class="cover-placeholder large">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+  }
 
   document.getElementById("modal-cover").innerHTML = coverHtml;
 }
