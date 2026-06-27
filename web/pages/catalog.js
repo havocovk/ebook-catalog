@@ -234,17 +234,30 @@ function applySmartList(list) {
   // opts.yearMin gibi alanlar beklediği için "opts undefined" hatası alırlardı.
   const filterOpts = _collectFilterOptions();
 
+  // ── Adım 36: EKSİK ÇAĞRILAR TAMAMLANDI ───────────────────────────────────
+  // SORUN: Adım 35'te renderCatalog() ve clearFilters() güncellenirken,
+  // applySmartList() YARIM güncellenmişti — populateSelectOptions(),
+  // populateTagChips() ve populateCategoryChips() çağrıları hiç
+  // eklenmemişti. Sonuç: bir Akıllı Liste uygulandığında ui.filters doğru
+  // ayarlanıp recompute(true) kitapları doğru filtreliyordu, AMA Yazar/
+  // Yayınevi dropdown'ları ve Etiket/Kategori chip'leri YENİDEN
+  // ÇİZİLMİYORDU — kullanıcı sonucu kitap listesinde görmeden önce arayüzde
+  // "hiçbir şey değişmedi" sanıyordu.
+  //
+  // populateSelectOptions(filterOpts) eklenince, altındaki "Yazar/Yayınevi
+  // select'lerini elle senkronize et" bloğu da gereksiz hale geldi — onun
+  // yaptığı işi (value ayarlamayı) fillSelect() içeriden zaten yapıyor,
+  // üstelik seçenek listesini de (options) doğru şekilde yeniliyor.
+  populateSelectOptions(filterOpts);    // Adım 11: yazar/yayınevi dropdown'ları
+  populateTagChips(filterOpts);         // Adım J4: etiket chip'leri
+  populateCategoryChips(filterOpts);    // Adım 11: kategori chip'leri
+  // ── Adım 36 sonu ──────────────────────────────────────────────────────────
+
   populateSubcategoryChips(filterOpts); // Adım 11: alt alan grubu yeni kategoriye göre yeniden çizilir
   populateTopicChips();       // Adım 11: konu grubu yeni alt alana göre yeniden çizilir
   populateYearSlider(filterOpts);       // Adım 4: slider tutamaçlarını filtreye göre konumlandır
   updateSeriesOptions();      // publisher zaten set edildi → series seçimini koruyacak
   syncChips();                // tüm chip gruplarını aktif/pasif olarak senkronize et
-
-  // Yazar/Yayınevi select'lerini de yeni filtreye göre senkronize et.
-  const authorEl = document.getElementById("filter-author");
-  if (authorEl) authorEl.value = ui.filters.author || "";
-  const publisherEl = document.getElementById("filter-publisher");
-  if (publisherEl) publisherEl.value = ui.filters.publisher || "";
 
   updateFavoriteOnlyChip(); // ── Adım 17: chip görselini yeni filtre durumuna göre senkronize et
 
