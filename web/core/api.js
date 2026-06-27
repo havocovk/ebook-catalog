@@ -785,8 +785,8 @@ export async function deleteSeriesEverywhere(seriesId, name, publisherId) {
 //
 // Tarayıcı kapak resmini dosyadan çıkaramadığında, kullanıcı kendi bulduğu
 // resmi buradan yükleyebilir. Her yükleme YENİ ve BENZERSİZ bir dosya ID'si
-// alır (bkz. uploadBookCover altındaki not — eski dosya kasıtlı olarak
-// silinmez, çünkü silme izni client tarafında yok).
+// alır; varsa ESKİ kapak dosyası yeni yükleme başarılı olduktan SONRA
+// silinmeye çalışılır (bkz. uploadBookCover altındaki not).
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── Storage dosyası için herkese açık görüntüleme adresini kur ────────────
@@ -799,19 +799,28 @@ function buildPublicCoverUrl(fileId) {
 }
 
 // ─── Bir kitabın kapak resmini yükle/değiştir ───────────────────────────────
-// ÖNEMLİ: Eski kapak dosyası SİLİNMEYE ÇALIŞILMAZ. Sebep: Python tarayıcısı
-// kapak dosyalarını server API key ile (izin belirtmeden) yüklüyor; bu da
-// dosyayı sadece o API key'in silebileceği anlamına geliyor. Tarayıcıdan
-// (kullanıcı oturumuyla) o dosyayı silmeye çalışmak HTTP 401 (yetkisiz)
-// hatası verir — bu da yüklemenin tamamını bozar (409 "ID already exists").
+// Her yükleme YENİ ve BENZERSİZ bir dosya ID'si (ID.unique()) ile yapılır —
+// bu, yeni yüklemenin eski dosyanın üzerine yazma denemesinden kaynaklanacak
+// bir "409 ID already exists" riskini ortadan kaldırır.
 //
-// Bu yüzden her yükleme YENİ ve BENZERSİZ bir dosya ID'si (ID.unique()) ile
-// yapılır. Eski dosya storage'da kalır (silinmez) ama kitabın cover_url alanı
-// her zaman en güncel resme işaret eder — yani kullanıcı için kapak değişimi
-// sınırsız sayıda ve sorunsuz çalışır.
+// Yeni dosya başarıyla yüklenip kitabın cover_url alanı güncellendiKTEN SONRA,
+// varsa ESKİ kapak dosyası storage'dan silinmeye çalışılır:
+//   • Kitapta zaten bir kapak YOKSA → silinecek bir şey yok, atlanır.
+//   • Eski kapak Python tarayıcısı tarafından (server API key ile) yüklenmişse
+//     → tarayıcı oturumunun bu dosyayı silme izni olmayabilir (401/403).
+//     Bu durumda hata YUTULUR ve sadece konsola not düşülür — kapak güncellemesi
+//     zaten tamamlanmıştır, eski dosya storage'da yetim kalır ama işlem bozulmaz
+//     (deleteBookRecord'daki "best-effort silme" deseniyle birebir aynı yaklaşım).
+//   • Eski kapak modal'dan (tarayıcı oturumuyla) yüklenmişse → aynı oturum
+//     onu silme iznine de sahiptir, silme normalde başarılı olur ve bucket'ta
+//     yetim resim birikmesi önlenir.
 //
-// Dönüş: yeni cover_url (başarılıysa), hata olursa fırlatır.
+// Dönüş: yeni cover_url (başarılıysa). Yükleme/veritabanı adımı hata verirse
+// fırlatılır; eski dosyanın silinememesi bu fonksiyonu BAŞARISIZ yapmaz.
 export async function uploadBookCover(bookId, file) {
+  const book = state.books.find((b) => b.$id === bookId);
+  const oldFileId = book ? extractCoverFileId(book.cover_url) : null;
+
   const fileId = ID.unique(); // Her yüklemede yepyeni, çakışmayan bir ID
 
   // 1) Yeni dosyayı storage'a yükle.
@@ -824,6 +833,15 @@ export async function uploadBookCover(bookId, file) {
   // Hafızadaki kopyayı da güncelle (sayfa yeniden çekmeden anında görünsün).
   const idx = state.books.findIndex((b) => b.$id === bookId);
   if (idx !== -1) state.books[idx] = { ...state.books[idx], cover_url: coverUrl };
+
+  // 3) Eski kapak dosyası varsa, şimdi silmeyi dene (best-effort — bkz. yukarıdaki not).
+  if (oldFileId && oldFileId !== fileId) {
+    try {
+      await storage.deleteFile(BUCKET_ID, oldFileId);
+    } catch (err) {
+      console.warn(`[uploadBookCover] Eski kapak dosyası silinemedi (${oldFileId}):`, err?.message || err);
+    }
+  }
 
   return coverUrl;
 }
