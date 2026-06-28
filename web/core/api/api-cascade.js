@@ -21,9 +21,9 @@ import {
   PUBLISHERS_ID,
   SERIES_ID,
   COLLECTIONS_ID,
-} from "../appwrite.js";
-import { state } from "./state.js";
-import { showLoading, showToast } from "../ui/common.js";
+} from "../../appwrite.js";
+import { state } from "../state.js";
+import { showLoading, showToast } from "../../ui/common.js";
 import { publisherIdByName } from "./api-shared.js";
 
 // ─── Cascade delete: yetim kalan author/publisher/series/collection'ları sil ─

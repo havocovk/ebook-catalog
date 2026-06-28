@@ -9,9 +9,9 @@
 // değiştirmek/çıkarmak şeklinde çalışır — tüm alanın üzerine yazmaz.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { databases, ID, DATABASE_ID, TABLE_ID, COLLECTIONS_ID } from "../appwrite.js";
-import { state } from "./state.js";
-import { showLoading, showToast } from "../ui/common.js";
+import { databases, ID, DATABASE_ID, TABLE_ID, COLLECTIONS_ID } from "../../appwrite.js";
+import { state } from "../state.js";
+import { showLoading, showToast } from "../../ui/common.js";
 import { fetchAllPaginated } from "./api-shared.js";
 
 // ─── Koleksiyonları yükle + kitaplarla senkronize et ────────────────────────

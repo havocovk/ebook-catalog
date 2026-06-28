@@ -20,9 +20,9 @@ import {
   DATABASE_ID,
   TABLE_ID,
   BUCKET_ID,
-} from "../appwrite.js";
-import { state } from "./state.js";
-import { showLoading, showToast } from "../ui/common.js";
+} from "../../appwrite.js";
+import { state } from "../state.js";
+import { showLoading, showToast } from "../../ui/common.js";
 import { fetchAllPaginated } from "./api-shared.js";
 import { cascadeDeleteOrphans } from "./api-cascade.js";
 

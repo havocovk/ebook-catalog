@@ -5,9 +5,9 @@
 // koleksiyonu yayınevi adlarının ana listesidir. Eşleşme AD üzerinden olur.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { databases, ID, DATABASE_ID, TABLE_ID, PUBLISHERS_ID } from "../appwrite.js";
-import { state } from "./state.js";
-import { showLoading, showToast } from "../ui/common.js";
+import { databases, ID, DATABASE_ID, TABLE_ID, PUBLISHERS_ID } from "../../appwrite.js";
+import { state } from "../state.js";
+import { showLoading, showToast } from "../../ui/common.js";
 import { fetchAllPaginated } from "./api-shared.js";
 
 // ─── Yayınevlerini yükle + kitaplarla senkronize et ─────────────────────────

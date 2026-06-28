@@ -16,9 +16,9 @@
 // önlemek için Adım 1-2'de paylaşılan dosyaya taşındı).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { databases, ID, DATABASE_ID, TABLE_ID, SERIES_ID } from "../appwrite.js";
-import { state } from "./state.js";
-import { showLoading, showToast } from "../ui/common.js";
+import { databases, ID, DATABASE_ID, TABLE_ID, SERIES_ID } from "../../appwrite.js";
+import { state } from "../state.js";
+import { showLoading, showToast } from "../../ui/common.js";
 import { fetchAllPaginated, publisherIdByName } from "./api-shared.js";
 
 // ─── Serileri yükle + kitaplarla senkronize et ──────────────────────────────

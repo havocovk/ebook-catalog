@@ -7,9 +7,9 @@
 // yeniden adlandırılınca o ada sahip tüm kitaplar da güncellenir.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { databases, ID, DATABASE_ID, TABLE_ID, AUTHORS_ID } from "../appwrite.js";
-import { state } from "./state.js";
-import { showLoading, showToast } from "../ui/common.js";
+import { databases, ID, DATABASE_ID, TABLE_ID, AUTHORS_ID } from "../../appwrite.js";
+import { state } from "../state.js";
+import { showLoading, showToast } from "../../ui/common.js";
 import { fetchAllPaginated } from "./api-shared.js";
 
 // ─── Yazarları yükle + kitaplarla senkronize et ────────────────────────────

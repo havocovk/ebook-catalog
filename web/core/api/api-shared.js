@@ -9,8 +9,8 @@
 // için tek bir ortak yere taşındı.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { databases, Query, DATABASE_ID, TABLE_ID } from "../appwrite.js";
-import { state } from "./state.js";
+import { databases, Query, DATABASE_ID, TABLE_ID } from "../../appwrite.js";
+import { state } from "../state.js";
 
 // Appwrite tek bir istekte en fazla 100 kayıt döndürür; bu yüzden sayfa sayfa çekeriz.
 const PAGE_SIZE = 100;
