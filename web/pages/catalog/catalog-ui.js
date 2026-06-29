@@ -91,16 +91,93 @@ function renderBooks() {
     );
   });
   grid.appendChild(fragment);
+
+  // ── Adım 37: Manuel lazy loading başlat ──────────────────────────────────
+  // grid yeniden çizildiği için (innerHTML = "" + yeni fragment) önceki
+  // observer'ın gözlediği eski <img> elemanları artık DOM'da yok — bu yüzden
+  // her renderBooks() çağrısında YENİDEN gözlem başlatılması gerekiyor.
+  observeLazyImages(grid);
+  // ── Adım 37 sonu ──────────────────────────────────────────────────────────
 }
+
+// ─── Adım 37: Manuel lazy loading — Intersection Observer ───────────────────
+//
+// SORUN: Native <img loading="lazy"> tarayıcıya "ben karar veririm, ne zaman
+// indireceğimi sen söyleme" yetkisi verir. Tarayıcı "yakında görünebilir"
+// tahminiyle viewport'un 1-2 ekran ALTINDAKİ resimleri de hemen indirmeye
+// başlıyordu. PER_PAGE=50 olduğu için bir sayfada 50 kart DOM'a basılıyor,
+// tarayıcı bunların çoğunu "yakın" sayıp aynı anda indirmeye kalkışınca
+// (165 eşzamanlı istek, hepsi aynı Appwrite domain'ine, tarayıcının ~6
+// paralel bağlantı sınırında kuyruğa giriyor) sayfa açılışı ~43 saniyeye
+// çıkıyordu (bkz. performans ölçümleri — Network sekmesi, "Queued: 49.82s").
+//
+// ÇÖZÜM: <img> etiketine src YERİNE data-src yazılır (components.js ve
+// createBookRow). Tarayıcı data-src'yi bir resim adresi olarak görmediği
+// için HİÇBİR indirme başlatmaz. Bunun yerine BİZ kontrolü alırız: her
+// kart DOM'a girdiğinde IntersectionObserver ile gözlenir; kart GERÇEKTEN
+// viewport'a (+ küçük bir margin) girdiğinde data-src → src kopyalanır ve
+// resim O ANDA indirilmeye başlar. Sonuç: aynı anda sadece ekranda görünen
+// ~10-15 kartın resmi indirilir, kullanıcı kaydırdıkça yeni kartlar devreye
+// girer — toplam istek sayısı aynı ama ZAMANDA YAYILMIŞ olur.
+//
+// rootMargin: "200px" → kart viewport'a girmeden ~200px ÖNCE yükleme
+// başlar, böylece kullanıcı kaydırdığında resim "aniden belirir" hissi
+// yaşanmaz (küçük bir öngörü payı, ama 50 kartın tamamı değil).
+let _lazyObserver = null;
+
+function _getLazyObserver() {
+  if (_lazyObserver) return _lazyObserver;
+
+  // Tarayıcı IntersectionObserver desteklemiyorsa (çok eski tarayıcı),
+  // gözlem kurmaya çalışmadan tüm resimleri hemen yükle — sayfa çalışmaya
+  // devam etsin, sadece eski tarayıcıda lazy loading avantajı olmaz.
+  if (typeof IntersectionObserver === "undefined") return null;
+
+  _lazyObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const img = entry.target;
+        if (img.dataset.src) {
+          img.src = img.dataset.src;
+          img.removeAttribute("data-src");
+        }
+        _lazyObserver.unobserve(img); // bir kez yüklendi, artık gözlenmesine gerek yok
+      });
+    },
+    { rootMargin: "200px" }
+  );
+
+  return _lazyObserver;
+}
+
+function observeLazyImages(container) {
+  const observer = _getLazyObserver();
+  const lazyImages = container.querySelectorAll("img[data-src]");
+
+  if (!observer) {
+    // Fallback: IntersectionObserver yoksa hepsini hemen yükle.
+    lazyImages.forEach((img) => {
+      img.src = img.dataset.src;
+      img.removeAttribute("data-src");
+    });
+    return;
+  }
+
+  lazyImages.forEach((img) => observer.observe(img));
+}
+// ── Adım 37 sonu ─────────────────────────────────────────────────────────────
 
 function createBookRow(book, isSelected = false) {
   const row = document.createElement("div");
   row.className  = "book-row";
   row.dataset.id = book.$id;
   const statusClass = `status-${book.status || "okunmadi"}`;
+  // ── Adım 37: Manuel lazy loading — bkz. components.js'deki açıklama ──────
   const coverHtml   = book.cover_url
-    ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" loading="lazy" />`
+    ? `<img data-src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" class="lazy-cover" />`
     : `<div class="row-cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+  // ── Adım 37 sonu ──────────────────────────────────────────────────────────
 
   // ── Adım 18: Toplu işlem seçim checkbox'ı (liste görünümü) ───────────────
   const selectBtnHtml = `

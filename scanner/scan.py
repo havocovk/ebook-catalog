@@ -1,4 +1,12 @@
 import argparse
+from dotenv import load_dotenv
+
+# KRİTİK: .env dosyası burada, her şeyden ÖNCE yüklenmeli.
+# Aksi halde scan_processor -> uploader importu, api paketinin
+# load_dotenv() çağrısından ÖNCE çalışır ve uploader.py'deki
+# APPWRITE_PROJECT_ID gibi değerler placeholder ("YOUR_PROJECT_ID")
+# olarak sabitlenir — Appwrite "Project not found" hatası verir.
+load_dotenv()
 
 from scan_cli import check_env
 from scan_processor import scan_folder, DEFAULT_WORKERS

@@ -48,9 +48,16 @@ export function createBookCard(book, isSelected = false) {
     ? `<span class="confidence-badge confidence-${confLevel}" title="Güven Skoru: ${book.confidence_score}/100">${book.confidence_score}</span>`
     : "";
 
+  // ── Adım 37: Manuel lazy loading (Intersection Observer) ────────────────
+  // Native loading="lazy" kaldırıldı — tarayıcı "yakın olabilir" tahminiyle
+  // bir sayfadaki 50 karttan çoğunu aynı anda indirmeye kalkışıyordu (165
+  // eşzamanlı istek, 43s açılış). Bunun yerine src yerine data-src yazılır;
+  // gerçek yükleme catalog-ui.js'deki IntersectionObserver, kart GERÇEKTEN
+  // viewport'a girdiğinde data-src'yi src'ye kopyalayarak başlatır.
   const coverHtml = book.cover_url
-    ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" loading="lazy" />`
+    ? `<img data-src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" class="lazy-cover" />`
     : `<div class="cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+  // ── Adım 37 sonu ──────────────────────────────────────────────────────────
 
   // ── Adım 18: Toplu işlem seçim checkbox'ı (sol üst köşe) ─────────────────
   // Format rozeti zaten sol üstte (book-format) — checkbox onun ÜSTÜNE değil,
