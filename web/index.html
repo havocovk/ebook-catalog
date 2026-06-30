@@ -80,13 +80,6 @@
       </nav>
 
       <div class="header-actions">
-        <button id="backup-btn" class="btn btn-sm" title="Yedekle">
-          <iconify-icon icon="lucide:download"></iconify-icon><span class="btn-label">Yedekle</span>
-        </button>
-        <button id="restore-btn" class="btn btn-sm" title="Yedekten yükle">
-          <iconify-icon icon="lucide:upload"></iconify-icon><span class="btn-label">Yükle</span>
-        </button>
-        <input type="file" id="restore-input" accept=".json" hidden />
         <button id="logout-btn" class="btn btn-sm" title="Çıkış">
           <iconify-icon icon="lucide:log-out"></iconify-icon><span class="btn-label">Çıkış</span>
         </button>
@@ -130,15 +123,6 @@
             <span class="btn-label">Sayfadaki Tümünü Seç</span>
           </button>
           <!-- ── Adım 24 sonu ──────────────────────────────────────────── -->
-
-          <!-- ── Adım 38: Hızlı Kategori Doldurma — sadece "Kategorisi Boş"
-               filtresi aktifken görünür (catalog-ui.js render() içinde
-               updateQuickFillButton tarafından gösterilir/gizlenir). ── -->
-          <button id="quickfill-open-btn" class="btn btn-sm hidden" title="Kategorisi boş kitapları sırayla doldur">
-            <iconify-icon icon="lucide:zap"></iconify-icon>
-            <span class="btn-label">Hızlı Doldur</span>
-          </button>
-          <!-- ── Adım 38 sonu ─────────────────────────────────────────── -->
 
           <div class="view-toggle">
             <button class="view-btn active" data-view="grid" title="Izgara görünüm">
@@ -287,18 +271,6 @@
                 <button class="chip chip-confidence-low"    data-filter="confidence" data-value="low">Düşük</button>
               </div>
             </div>
-
-            <!-- ── Adım 37: Kategori Durumu Filtresi (boş/dolu) ─────────── -->
-            <div class="filter-group">
-              <label class="filter-label">Kategori Durumu</label>
-              <div class="filter-chips" id="filter-categoryStatus-chips">
-                <button class="chip active" data-filter="categoryStatus" data-value="">Tümü</button>
-                <button class="chip" data-filter="categoryStatus" data-value="empty">Kategorisi Boş</button>
-                <button class="chip" data-filter="categoryStatus" data-value="filled">Kategorisi Dolu</button>
-              </div>
-            </div>
-            <!-- ── Adım 37 sonu ─────────────────────────────────────────── -->
-
 
             <!-- ── Adım J4: Etiket Filtresi ──────────────────────────── -->
             <div class="filter-group" id="filter-tag-wrap">
@@ -718,51 +690,6 @@
       </div>
     </div>
   </div>
-
-  <!-- ── Adım 38: Hızlı Kategori Doldurma Modu ─────────────────────────────
-       Mevcut book-modal'dan bağımsız, sade bir pop-up. Sadece kategori
-       girişine odaklanır — kapak, başlık, yazar (salt okunur) + kategori
-       kutusu + ilerleme göstergesi + Kaydet/Atla/Kapat butonları. ── -->
-  <div id="quickfill-modal" class="modal hidden">
-    <div class="modal-box quickfill-box">
-      <div class="modal-header">
-        <h2 class="modal-heading">Hızlı Kategori Doldurma</h2>
-        <span id="quickfill-progress" class="quickfill-progress"></span>
-        <button id="quickfill-close" class="modal-close" title="Kapat">✕</button>
-      </div>
-      <div class="modal-body quickfill-body">
-        <div class="modal-cover-wrap">
-          <div class="modal-cover" id="quickfill-cover"></div>
-        </div>
-
-        <div class="quickfill-fields">
-          <h3 id="quickfill-title" class="quickfill-title"></h3>
-          <p id="quickfill-author" class="quickfill-author"></p>
-
-          <label class="filter-label" for="quickfill-category-input">
-            <iconify-icon icon="lucide:tag"></iconify-icon> Kategori
-          </label>
-          <input
-            type="text"
-            id="quickfill-category-input"
-            class="quickfill-category-input"
-            placeholder="Roman, Akademik, Ders Notları..."
-            autocomplete="off"
-          />
-          <p class="quickfill-hint">Enter: kaydet ve sonraki kitaba geç &nbsp;•&nbsp; Esc: kapat</p>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="quickfill-skip" class="btn btn-sm" title="Bu kitabı boş bırak, sonrakine geç">
-          <iconify-icon icon="lucide:skip-forward"></iconify-icon> Atla
-        </button>
-        <button id="quickfill-save-next" class="btn btn-primary">
-          <iconify-icon icon="lucide:check"></iconify-icon> Kaydet ve Sonraki
-        </button>
-      </div>
-    </div>
-  </div>
-  <!-- ── Adım 38 sonu ─────────────────────────────────────────────────────── -->
 
   <!-- ── Custom Dialog (window.prompt / confirm yerine) ───────────────────── -->
   <div id="custom-dialog-overlay" class="custom-dialog-overlay hidden">
