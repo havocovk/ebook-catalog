@@ -68,7 +68,18 @@ export function render() {
   updateViewToggle();
   updateFilterBadge();
   updateSelectAllButton(); // ── Adım 24: "Sayfadaki Tümünü Seç" butonunu senkronize et
+  updateQuickFillButton(); // ── Adım 38: "Hızlı Doldur" butonunu filtre durumuna göre göster/gizle
 }
+
+// ── Adım 38: "Hızlı Doldur" butonu SADECE "Kategori Durumu: Kategorisi Boş"
+// filtresi aktifken görünür. Diğer tüm durumlarda (filtre yok veya "Dolu"
+// seçili) buton gizlenir — doldurulacak boş kategori yoksa buton mantıksız.
+function updateQuickFillButton() {
+  const btn = document.getElementById("quickfill-open-btn");
+  if (!btn) return;
+  btn.classList.toggle("hidden", ui.filters.categoryStatus !== "empty");
+}
+// ── Adım 38 sonu ──────────────────────────────────────────────────────────
 
 // ─── Kitapları çiz ───────────────────────────────────────────────────────────
 function renderBooks() {

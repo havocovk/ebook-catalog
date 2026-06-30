@@ -376,6 +376,69 @@
   flex-shrink: 0;
 }
 
+/* ── Adım 38: Hızlı Kategori Doldurma Modu ───────────────────────
+   .modal/.modal-box/.modal-header/.modal-cover-wrap/.modal-footer
+   genel modal stilleri yeniden kullanılır; burada SADECE bu modala
+   özel alanlar (başlık/yazar/kategori kutusu/ilerleme göstergesi)
+   tanımlanır. ────────────────────────────────────────────────── */
+.quickfill-box {
+  max-width: 480px;
+}
+
+.quickfill-progress {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.quickfill-body {
+  align-items: flex-start;
+}
+
+.quickfill-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.quickfill-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.quickfill-author {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  margin: 0 0 0.5rem 0;
+}
+
+.quickfill-category-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.quickfill-category-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.quickfill-hint {
+  font-size: 0.75rem;
+  color: var(--text-2);
+  margin: 0;
+}
+/* ── Adım 38 sonu ─────────────────────────────────────────────── */
+
 /* ── File meta ────────────────────────────────────────────────── */
 .file-meta {
   display: flex;

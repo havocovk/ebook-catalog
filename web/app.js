@@ -14,6 +14,8 @@ import { initAuth } from "./core/auth.js";
 import { registerRoute, refreshCurrentPage } from "./core/router.js";
 import { initModal } from "./ui/modal.js";
 import { initCatalog, renderCatalog } from "./pages/catalog.js";
+// ── Adım 38: Hızlı Kategori Doldurma Modu ───────────────────────────────────
+import { initQuickFill, handleQuickFillButtonClick } from "./pages/catalog/catalog-quickfill.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderAuthors, initAuthors } from "./pages/authors.js";
 import { renderPublishers, initPublishers } from "./pages/publishers.js";
@@ -218,6 +220,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initDedupe();
   initModal();
   bindBackupRestore();
+  // ── Adım 38: Hızlı Kategori Doldurma — olayları bağla + toolbar butonunu dinle
+  initQuickFill();
+  document.getElementById("quickfill-open-btn")?.addEventListener("click", handleQuickFillButtonClick);
+  // ── Adım 38 sonu ────────────────────────────────────────────────────────
 
   // 3) Oturumu kontrol et → uygulamayı veya giriş ekranını göster.
   //    (Oturum varsa: kitapları yükler ve router'ı başlatır.)
