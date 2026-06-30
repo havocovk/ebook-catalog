@@ -13,7 +13,6 @@ import { navigate } from "../core/router.js";
 import { openModal } from "../ui/modal.js";
 import { escapeHtml, showToast } from "../ui/common.js";
 import { findAndDeleteOrphans } from "../core/api.js"; // ── Adım 25: yetim kayıt tarayıcı
-import { bindFullBackupPanel } from "./dashboard-backup.js"; // ── Adım 5: Tam Yedekleme paneli
 
 // Chart.js yükleme durumu ve mevcut grafik nesnesi.
 let chartJsReady = false;
@@ -227,41 +226,6 @@ function renderLayout(s) {
     </div>
     <!-- ── Adım 25 sonu ────────────────────────────────────────────────────── -->
 
-    <!-- ── Adım 5: Tam Yedekleme (Veritabanı + Kapaklar) ───────────────────── -->
-    <!-- Eski "Yedekle/Yükle" üst bar butonları (sadece JSON, kapaksız) tamamen
-         kaldırıldı — bu kart onların yerini alır. Scanner CLI'daki
-         --backup-full / --restore-backup ile BİREBİR uyumlu .tar.gz formatı
-         kullanır (web/core/tar-gzip.js), yani burada alınan bir yedek
-         scanner'dan da geri yüklenebilir, scanner'da alınan bir yedek de
-         buradan yüklenebilir. -->
-    <div class="dash-section">
-      <h2 class="dash-section-title">
-        <iconify-icon icon="lucide:archive"></iconify-icon> Tam Yedekleme (Veritabanı + Kapaklar)
-      </h2>
-      <div class="db-maintenance-box">
-        <p class="db-maintenance-desc">
-          Tüm kitap kayıtlarını ve kapak resimlerini tek bir .tar.gz dosyasına
-          indirir veya bu dosyadan geri yükler. Scanner programındaki
-          <code>--backup-full</code> / <code>--restore-backup</code>
-          komutlarıyla aynı formatı kullanır — ikisi birbirinin yerine geçebilir.
-        </p>
-        <div class="full-backup-actions">
-          <button id="full-backup-download-btn" class="btn btn-sm">
-            <iconify-icon icon="lucide:download"></iconify-icon>
-            <span class="btn-label">Tam Yedek İndir (.tar.gz)</span>
-          </button>
-          <button id="full-backup-upload-btn" class="btn btn-sm">
-            <iconify-icon icon="lucide:upload"></iconify-icon>
-            <span class="btn-label">Tam Yedek Yükle (.tar.gz)</span>
-          </button>
-          <input type="file" id="full-backup-upload-input" accept=".tar.gz,.tgz" hidden />
-        </div>
-        <div id="full-backup-progress" class="orphan-scan-result hidden"></div>
-      </div>
-    </div>
-    <!-- ── Adım 5 sonu ──────────────────────────────────────────────────────── -->
-
-
     <!-- ── Dil ── -->
     <div class="dash-section">
       <h2 class="dash-section-title">
@@ -435,10 +399,6 @@ function bindRecentClicks() {
     }
   });
   // ── Adım 25 sonu ──────────────────────────────────────────────────────────
-
-  // ── Adım 5: Tam Yedekleme paneli olaylarını bağla ────────────────────────
-  bindFullBackupPanel();
-  // ── Adım 5 sonu ───────────────────────────────────────────────────────────
 }
 
 // ─── Chart.js CDN'den dinamik yükle ─────────────────────────────────────────

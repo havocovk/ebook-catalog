@@ -169,39 +169,3 @@ def _ask(prompt: str) -> bool:
         if ans in ("h", "hayır", "hayir", "n", "no"):
             return False
         print("   Lütfen 'e' veya 'h' girin.")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Adım 1: --backup-full CLI köprüsü
-# ─────────────────────────────────────────────────────────────────────────────
-
-def run_backup_full(output_path: str):
-    """
-    scan.py'den çağrılır. Asıl yedekleme mantığı backup_full.py'dedir —
-    bu fonksiyon sadece CLI seviyesinde sonucu yorumlayıp çıkış kodunu
-    (exit code) ayarlar.
-    """
-    from backup_full import backup_full
-
-    success = backup_full(output_path)
-    if not success:
-        log.error("--backup-full işlemi hatayla sonuçlandı.")
-        sys.exit(1)
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Adım 2: --restore-backup CLI köprüsü
-# ─────────────────────────────────────────────────────────────────────────────
-
-def run_restore_full(backup_path: str, workers: int):
-    """
-    scan.py'den çağrılır. Asıl geri yükleme mantığı restore_full.py'dedir —
-    bu fonksiyon sadece CLI seviyesinde sonucu yorumlayıp çıkış kodunu
-    ayarlar.
-    """
-    from restore_full import restore_full
-
-    success = restore_full(backup_path, workers=workers)
-    if not success:
-        log.error("--restore-backup işlemi hatayla sonuçlandı.")
-        sys.exit(1)

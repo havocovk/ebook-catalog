@@ -345,14 +345,6 @@
 }
 /* ── Adım 25 sonu ─────────────────────────────────────────────────────────── */
 
-/* ── Adım 5: Tam Yedekleme paneli ─────────────────────────────────────────── */
-.full-backup-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-/* ── Adım 5 sonu ──────────────────────────────────────────────────────────── */
-
 /* ── Mobil uyarlamaları ──────────────────────────────────────── */
 @media (max-width: 600px) {
   .reading-status-wrap {
