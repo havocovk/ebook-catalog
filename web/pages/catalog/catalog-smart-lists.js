@@ -149,7 +149,7 @@ export function applySmartList(list) {
     format: "", status: "", author: "", publisher: "", series: "",
     language: [], tag: [], category: [], subcategory: [], topic: [],
     confidence: "", yearMin: null, yearMax: null, missingField: "",
-    favoriteOnly: false,
+    favoriteOnly: false, categoryStatus: "",
     ...JSON.parse(JSON.stringify(list.filters)),
   };
   ui.sort = list.sort || "added_at_desc";

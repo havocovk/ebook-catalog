@@ -58,7 +58,14 @@ export const ui = {
   // "year" | "" (filtre yok). İlgili alanı boş/null/undefined olan kitapları
   // gösterir. Diğer filtrelerden farkı: "şu değere eşit olsun" değil,
   // "bu alan eksik olsun" mantığıyla çalışır.
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false },
+  // ── Adım 37: "categoryStatus" — kategori alanı dolu/boş durumuna göre filtre.
+  // Değerler: "" (filtre yok) | "empty" (kategorisi boş kitaplar) |
+  // "filled" (kategorisi dolu kitaplar). missingField'den farkı: missingField
+  // tek bir alanı (author/publisher/cover_url/year) Dashboard'dan tek seferlik
+  // yönlendirmeyle filtreler; categoryStatus ise filtre panelinde KALICI bir
+  // chip grubu olarak durur ve diğer filtrelerle (seri, yazar vb.) birlikte
+  // serbestçe kombine edilebilir.
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "" },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -378,6 +385,16 @@ export function recompute(resetPage = false) {
   }
   // ── Adım 14 sonu ──────────────────────────────────────────────────────────
 
+  // ── Adım 37: Kategori Durumu filtresi (boş/dolu) ─────────────────────────
+  // "empty"  → b.category boş string, null veya undefined olan kitaplar
+  // "filled" → b.category'de gerçek bir değer (boş olmayan) olan kitaplar
+  if (ui.filters.categoryStatus === "empty") {
+    result = result.filter((b) => !b.category);
+  } else if (ui.filters.categoryStatus === "filled") {
+    result = result.filter((b) => Boolean(b.category));
+  }
+  // ── Adım 37 sonu ──────────────────────────────────────────────────────────
+
   // ── Adım 17: Sadece Favoriler filtresi ───────────────────────────────────
   if (ui.filters.favoriteOnly) {
     result = result.filter((b) => Boolean(b.favorite));
@@ -560,6 +577,8 @@ export function syncChips() {
   syncChipGroup("filter-category-chips", ui.filters.category);
   syncChipGroup("filter-subcategory-chips", ui.filters.subcategory);
   syncChipGroup("filter-topic-chips", ui.filters.topic);
+  // ── Adım 37: Kategori Durumu (tek seçim) ─────────────────────────────────
+  syncChipGroup("filter-categoryStatus-chips", ui.filters.categoryStatus);
 }
 
 // ── Adım 9: activeValue artık ya tek bir string (Format/Durum/Güven gibi
@@ -579,7 +598,7 @@ export function syncChipGroup(containerId, activeValue) {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 export function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "" };
   syncChips();
   ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);
