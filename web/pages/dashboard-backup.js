@@ -40,6 +40,55 @@ async function loadFflate() {
   return _fflate;
 }
 
+// ─── TAR builder ─────────────────────────────────────────────────────────────
+// fflate ZIP biliyor ama TAR bilmiyor. TAR formatını kendimiz oluşturuyoruz:
+// her dosya için 512 byte ustar header + data + padding. Ardından fflate
+// gzipSync ile sıkıştırıyoruz → gerçek .tar.gz çıktısı.
+function _buildTar(files) {
+  const chunks = [];
+  const enc = new TextEncoder();
+
+  for (const [name, data] of Object.entries(files)) {
+    const header = new Uint8Array(512);
+    // name (0-99)
+    header.set(enc.encode(name).slice(0, 100), 0);
+    // mode
+    header.set(enc.encode("0000644"), 100);
+    // uid / gid
+    header.set(enc.encode("0000000"), 108);
+    header.set(enc.encode("0000000"), 116);
+    // size (octal, 11 digits + null)
+    header.set(enc.encode(data.length.toString(8).padStart(11, "0") + ""), 124);
+    // mtime
+    header.set(enc.encode(Math.floor(Date.now()/1000).toString(8).padStart(11,"0")+""), 136);
+    // checksum placeholder
+    header.set(enc.encode("        "), 148);
+    // type flag: regular file
+    header[156] = 48;
+    // ustar magic
+    header.set(enc.encode("ustar"), 257);
+    header.set(enc.encode("00"), 263);
+
+    // Checksum
+    let sum = 0;
+    for (let i = 0; i < 512; i++) sum += header[i];
+    header.set(enc.encode(sum.toString(8).padStart(6,"0") + " "), 148);
+
+    chunks.push(header, data);
+    const pad = (512 - (data.length % 512)) % 512;
+    if (pad > 0) chunks.push(new Uint8Array(pad));
+  }
+
+  // TAR sonu: 2 × 512 byte sıfır blok
+  chunks.push(new Uint8Array(1024));
+
+  const total = chunks.reduce((s, c) => s + c.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) { out.set(c, offset); offset += c.length; }
+  return out;
+}
+
 // ─── İkon sabitleri (Lucide — Iconify üzerinden) ─────────────────────────────
 const ICON = {
   download:   "lucide:download",
@@ -210,13 +259,9 @@ async function doBackup() {
       tarFiles[`covers/${bookId}.jpg`] = data;
     }
 
-    // fflate ile sıkıştır
-    const tgz = await new Promise((resolve, reject) => {
-      fflate.tgz(tarFiles, {}, (err, data) => {
-        if (err) reject(err);
-        else resolve(data);
-      });
-    });
+    // TAR oluştur + gzip sıkıştır
+    const tarData = _buildTar(tarFiles);
+    const tgz = fflate.gzipSync(tarData, { level: 6 });
 
     // ── İndir ────────────────────────────────────────────────────────────
     const blob = new Blob([tgz], { type: "application/gzip" });
@@ -264,20 +309,9 @@ async function doRestore(file) {
     const arrayBuffer = await file.arrayBuffer();
     const uint8 = new Uint8Array(arrayBuffer);
 
-    const tarFiles = await new Promise((resolve, reject) => {
-      fflate.decompress(uint8, (err, data) => {
-        if (err) reject(err);
-        else {
-          // data: Uint8Array (tar içeriği, sıkıştırması açılmış)
-          // fflate.untar ile dosyaları ayır
-          try {
-            resolve(fflate.untar ? fflate.untar(data) : _manualUntar(data));
-          } catch(e) {
-            reject(e);
-          }
-        }
-      });
-    });
+    // gunzip → TAR içeriğini aç, sonra manuel parse et
+    const tarData = fflate.gunzipSync(uint8);
+    const tarFiles = _manualUntar(tarData);
 
     // ── Tabloları yükle ──────────────────────────────────────────────────
     for (let i = 0; i < TABLES.length; i++) {
