@@ -26,7 +26,7 @@ import {
   COLLECTIONS_ID,
   APPWRITE_ENDPOINT,
   APPWRITE_PROJECT_ID,
-} from "../core/appwrite.js";
+} from "../appwrite.js";
 import { showToast } from "../ui/common.js";
 
 // ─── CDN: fflate (TAR.GZ için) ───────────────────────────────────────────────
