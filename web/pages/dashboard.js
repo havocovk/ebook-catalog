@@ -13,6 +13,7 @@ import { navigate } from "../core/router.js";
 import { openModal } from "../ui/modal.js";
 import { escapeHtml, showToast } from "../ui/common.js";
 import { findAndDeleteOrphans } from "../core/api.js"; // ── Adım 25: yetim kayıt tarayıcı
+import { renderBackupSection, bindBackupSection } from "./dashboard-backup.js"; // ── Adım 5: Tam Yedekleme
 
 // Chart.js yükleme durumu ve mevcut grafik nesnesi.
 let chartJsReady = false;
@@ -238,6 +239,9 @@ function renderLayout(s) {
       </div>
     </div>
 
+    <!-- ── Adım 5: Tam Yedekleme ── -->
+    ${renderBackupSection()}
+
   `;
 }
 
@@ -354,6 +358,10 @@ function bindRecentClicks() {
     navigate("catalog");
   });
   // ── Adım 14 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 5: Tam Yedekleme butonları ─────────────────────────────────────
+  bindBackupSection();
+  // ── Adım 5 sonu ───────────────────────────────────────────────────────────
 
   // ── Adım 25: Yetim Kayıtları Tara ve Temizle butonu ──────────────────────
   const scanBtn = document.getElementById("scan-orphans-btn");
