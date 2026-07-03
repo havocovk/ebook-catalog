@@ -65,7 +65,7 @@ export const ui = {
   // yönlendirmeyle filtreler; categoryStatus ise filtre panelinde KALICI bir
   // chip grubu olarak durur ve diğer filtrelerle (seri, yazar vb.) birlikte
   // serbestçe kombine edilebilir.
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "" },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", coverStatus: "" },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -395,6 +395,16 @@ export function recompute(resetPage = false) {
   }
   // ── Adım 37 sonu ──────────────────────────────────────────────────────────
 
+  // ── Kapak Resmi Durumu filtresi (boş/dolu) ───────────────────────────────
+  // "empty"  → cover_url boş string, null veya undefined olan kitaplar (kapak yok)
+  // "filled" → cover_url dolu olan kitaplar (kapak var)
+  if (ui.filters.coverStatus === "empty") {
+    result = result.filter((b) => !b.cover_url);
+  } else if (ui.filters.coverStatus === "filled") {
+    result = result.filter((b) => Boolean(b.cover_url));
+  }
+  // ── Kapak Resmi Durumu sonu ───────────────────────────────────────────────
+
   // ── Adım 17: Sadece Favoriler filtresi ───────────────────────────────────
   if (ui.filters.favoriteOnly) {
     result = result.filter((b) => Boolean(b.favorite));
@@ -579,6 +589,8 @@ export function syncChips() {
   syncChipGroup("filter-topic-chips", ui.filters.topic);
   // ── Adım 37: Kategori Durumu (tek seçim) ─────────────────────────────────
   syncChipGroup("filter-categoryStatus-chips", ui.filters.categoryStatus);
+  // ── Kapak Resmi Durumu (tek seçim) ───────────────────────────────────────
+  syncChipGroup("filter-coverStatus-chips", ui.filters.coverStatus);
 }
 
 // ── Adım 9: activeValue artık ya tek bir string (Format/Durum/Güven gibi
@@ -598,7 +610,7 @@ export function syncChipGroup(containerId, activeValue) {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 export function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", coverStatus: "" };
   syncChips();
   ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);
