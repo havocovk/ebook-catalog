@@ -44,6 +44,7 @@ export {
 // butonu bunu kullanıyor).
 export {
   findAndDeleteOrphans,
+  findAndDeleteOrphanCovers,
 } from "./api/api-cascade.js";
 
 // ── Yazarlar ─────────────────────────────────────────────────────────────────

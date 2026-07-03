@@ -94,9 +94,7 @@ def process_file(
 
         if cover_extracted and os.path.getsize(tmp_path) > 0:
             cover_url = upload_cover(tmp_path, book_id)
-        elif api_data.get("cover_url_api"):
-            print("  → Dosyadan kapak alınamadı, API'dan deneniyor...")
-            cover_url = upload_cover_from_url(api_data["cover_url_api"], book_id)
+        # Dosyadan kapak alınamazsa API'dan arama yapılmaz — boş bırakılır.
     finally:
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)

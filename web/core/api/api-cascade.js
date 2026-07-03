@@ -16,7 +16,10 @@
 
 import {
   databases,
+  storage,
+  Query,
   DATABASE_ID,
+  BUCKET_ID,
   AUTHORS_ID,
   PUBLISHERS_ID,
   SERIES_ID,
@@ -312,3 +315,63 @@ export async function findAndDeleteOrphans() {
   }
 }
 // ── Adım 25 sonu ─────────────────────────────────────────────────────────────
+
+// ─── Yardımcı: cover_url'den file ID çıkar (api-books.js ile aynı regex) ────
+// Döngüsel import önlemek için burada lokally tanımlandı.
+function _extractCoverFileId(coverUrl) {
+  if (!coverUrl) return null;
+  const match = coverUrl.match(/\/files\/([^/]+)\//);
+  return match ? match[1] : null;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── FAZLA KAPAK TEMİZLİĞİ (Orphan Cover Scanner) ────────────────────────────
+//
+// Bucket'taki dosya sayısı books tablosundaki kayıt sayısını aşarsa (örn.
+// bir kitap silinirken kapak dosyası silinemezse ya da beklenmeyen bir
+// durumda fazla dosya kalırsa), bu fonksiyon bucket'taki TÜM dosya ID'lerini
+// listeler, books tablosundaki cover_url alanlarından geçerli ID'leri çıkarır,
+// ve hiçbir kitaba ait olmayan dosyaları siler.
+//
+// Silme işlemi throttle kuyruğundan geçer (storage.deleteFile zaten
+// throttled) — Appwrite rate limit'e çarpmaz.
+// ═══════════════════════════════════════════════════════════════════════════
+export async function findAndDeleteOrphanCovers() {
+  // 1) Bucket'taki tüm dosya ID'lerini listele (sayfa sayfa)
+  const bucketFileIds = new Set();
+  let offset = 0;
+  const PAGE = 100;
+
+  while (true) {
+    const res = await storage.listFiles(BUCKET_ID, [
+      Query.limit(PAGE),
+      Query.offset(offset),
+    ]);
+    for (const f of res.files) bucketFileIds.add(f.$id);
+    if (res.files.length < PAGE) break;
+    offset += PAGE;
+  }
+
+  // 2) books tablosundaki tüm cover_url'lerden geçerli file ID'lerini çıkar
+  const usedFileIds = new Set();
+  for (const book of state.books) {
+    const fileId = _extractCoverFileId(book.cover_url);
+    if (fileId) usedFileIds.add(fileId);
+  }
+
+  // 3) Bucket'ta olup hiçbir kitaba ait olmayan dosyaları sil
+  const orphanIds = [...bucketFileIds].filter((id) => !usedFileIds.has(id));
+  const deleted = [];
+
+  for (const fileId of orphanIds) {
+    try {
+      await storage.deleteFile(BUCKET_ID, fileId);
+      deleted.push(fileId);
+    } catch (err) {
+      console.warn(`[findAndDeleteOrphanCovers] Dosya silinemedi (${fileId}):`, err?.message || err);
+    }
+  }
+
+  return { total: bucketFileIds.size, used: usedFileIds.size, deleted };
+}
+// ── Fazla Kapak Temizliği sonu ────────────────────────────────────────────────

@@ -12,7 +12,7 @@ import { state } from "../core/state.js";
 import { navigate } from "../core/router.js";
 import { openModal } from "../ui/modal.js";
 import { escapeHtml, showToast } from "../ui/common.js";
-import { findAndDeleteOrphans } from "../core/api.js"; // ── Adım 25: yetim kayıt tarayıcı
+import { findAndDeleteOrphans, findAndDeleteOrphanCovers } from "../core/api.js"; // ── Adım 25 + fazla kapak tarayıcı
 import { renderBackupSection, bindBackupSection } from "./dashboard-backup.js"; // ── Adım 5: Tam Yedekleme
 
 // Chart.js yükleme durumu ve mevcut grafik nesnesi.
@@ -218,11 +218,18 @@ function renderLayout(s) {
           Bu araç, her ihtimale karşı, veritabanında öyle bir kalıntı kalıp
           kalmadığını tarar ve varsa temizler.
         </p>
-        <button id="scan-orphans-btn" class="btn btn-sm">
-          <iconify-icon icon="lucide:shield-check"></iconify-icon>
-          <span class="btn-label">Yetim Kayıtları Tara ve Temizle</span>
-        </button>
+        <div class="db-maintenance-actions">
+          <button id="scan-orphans-btn" class="btn btn-sm">
+            <iconify-icon icon="lucide:shield-check"></iconify-icon>
+            <span class="btn-label">Yetim Kayıtları Tara ve Temizle</span>
+          </button>
+          <button id="scan-orphan-covers-btn" class="btn btn-sm">
+            <iconify-icon icon="lucide:image-off"></iconify-icon>
+            <span class="btn-label">Fazla Kapakları Tara ve Temizle</span>
+          </button>
+        </div>
         <div id="orphan-scan-result" class="orphan-scan-result hidden"></div>
+        <div id="orphan-covers-result" class="orphan-scan-result hidden"></div>
       </div>
     </div>
     <!-- ── Adım 25 sonu ────────────────────────────────────────────────────── -->
@@ -407,6 +414,38 @@ function bindRecentClicks() {
     }
   });
   // ── Adım 25 sonu ──────────────────────────────────────────────────────────
+
+  // ── Fazla Kapak Tarayıcı butonu ───────────────────────────────────────────
+  const scanCoversBtn = document.getElementById("scan-orphan-covers-btn");
+  scanCoversBtn?.addEventListener("click", async () => {
+    scanCoversBtn.disabled = true;
+
+    const resultBox = document.getElementById("orphan-covers-result");
+    if (resultBox) {
+      resultBox.classList.remove("hidden");
+      resultBox.textContent = "Taranıyor...";
+    }
+
+    try {
+      const { total, used, deleted } = await findAndDeleteOrphanCovers();
+
+      if (deleted.length === 0) {
+        showToast("Kapak deposu temiz — fazla dosya bulunamadı.");
+        if (resultBox) resultBox.textContent = `Kapak deposu temiz. Toplam: ${total}, Kullanılan: ${used}. ✓`;
+      } else {
+        showToast(`${deleted.length} fazla kapak dosyası silindi.`);
+        if (resultBox) {
+          resultBox.textContent = `Silinen: ${deleted.length} dosya. Toplam: ${total}, Kullanılan: ${used}.`;
+        }
+      }
+    } catch (err) {
+      showToast("Tarama sırasında hata oluştu: " + (err?.message || err), "error");
+      if (resultBox) resultBox.textContent = "Tarama başarısız oldu.";
+    } finally {
+      scanCoversBtn.disabled = false;
+    }
+  });
+  // ── Fazla Kapak Tarayıcı sonu ─────────────────────────────────────────────
 }
 
 // ─── Chart.js CDN'den dinamik yükle ─────────────────────────────────────────
