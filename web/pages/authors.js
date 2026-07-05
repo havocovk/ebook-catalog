@@ -18,6 +18,7 @@ import { createBookCard } from "../ui/components.js";
 import { openModal } from "../ui/modal.js";
 import { escapeHtmlBasic as esc } from "../ui/common.js";
 import { groupByLetter, renderAlphaBar, renderGroups, scrollToGroup } from "../ui/alpha-list.js";
+import { observeLazyImages } from "./catalog/catalog-ui.js";
 
 const ID_PREFIX = "author";
 
@@ -84,6 +85,8 @@ function renderAuthorDetail(authorName) {
     const fragment = document.createDocumentFragment();
     books.forEach((b) => fragment.appendChild(createBookCard(b)));
     grid.appendChild(fragment);
+    // Adım 37: data-src → src dönüşümünü tetikle (lazy loading)
+    observeLazyImages(grid);
   } else if (grid) {
     grid.innerHTML = `<div class="empty-state">Bu yazara ait kitap bulunamadı.</div>`;
   }

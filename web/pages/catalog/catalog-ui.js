@@ -162,7 +162,7 @@ function _getLazyObserver() {
   return _lazyObserver;
 }
 
-function observeLazyImages(container) {
+export function observeLazyImages(container) {
   const observer = _getLazyObserver();
   const lazyImages = container.querySelectorAll("img[data-src]");
 

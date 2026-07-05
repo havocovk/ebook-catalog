@@ -27,6 +27,7 @@
 import { state } from "../core/state.js";
 import { createBookCard } from "../ui/components.js";
 import { openModal } from "../ui/modal.js";
+import { observeLazyImages } from "./catalog/catalog-ui.js";
 
 // ─── Karşılaştırma için anahtar üret: küçük harfe çevir + baş/son boşluğu sil ─
 function normalizeKey(str) {
@@ -145,6 +146,8 @@ function runScanAndRender() {
     group.books.forEach((book) => {
       cardsRow.appendChild(createBookCard(book));
     });
+    // Adım 37: data-src → src dönüşümünü tetikle (lazy loading)
+    observeLazyImages(cardsRow);
     groupBox.appendChild(cardsRow);
 
     listEl.appendChild(groupBox);
