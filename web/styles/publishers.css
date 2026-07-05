@@ -27,6 +27,11 @@
   padding: 1.25rem 0 1rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 1.25rem;
+  /* Sayfa kaydırılınca başlık kaybolmasın: app header'ın hemen altına yapış */
+  position: sticky;
+  top: 56px;        /* .header yüksekliği (base.css) */
+  z-index: 40;      /* header(50) altında, diğer içeriklerin(30) üstünde */
+  background: var(--bg);
 }
 
 .detail-back-btn {
