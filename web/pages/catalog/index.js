@@ -66,6 +66,7 @@ import {
   bulkChangeStatus,
   bulkAddTag,
   bulkSetCategory,
+  bulkSetGenre,
   bulkAddCollection,
   bulkSetFavorite,
   setRenderCallback,
@@ -308,6 +309,10 @@ export function initCatalog() {
   document.getElementById("bulk-category-set")?.addEventListener("click", () => runBulkOperation(bulkSetCategory));
   document.getElementById("bulk-collection-add")?.addEventListener("click", () => runBulkOperation(bulkAddCollection));
   // ── Adım 33 sonu ────────────────────────────────────────────────────────
+
+  // ── Bölüm 2: Toplu tür ata ──────────────────────────────────────────────
+  document.getElementById("bulk-genre-set")?.addEventListener("click", () => runBulkOperation(bulkSetGenre));
+  // ── Bölüm 2 sonu ────────────────────────────────────────────────────────
 
   // "Durum Değiştir" butonu mini paneli açar/kapatır (4 durum seçeneği).
   // Aynı panel içindeki bir durum butonuna tıklamak hem işlemi başlatır

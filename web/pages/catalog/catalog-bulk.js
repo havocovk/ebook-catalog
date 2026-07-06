@@ -179,6 +179,7 @@ function setBulkControlsEnabled(enabled) {
     "bulk-clear", "bulk-delete", "bulk-favorite-add", "bulk-favorite-remove",
     "bulk-tag-add", "bulk-status-toggle", "select-all-page",
     "bulk-category-set", "bulk-collection-add", // ── Adım 33
+    "bulk-genre-set", // ── Bölüm 2: Tür Ata
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -310,6 +311,38 @@ export async function bulkSetCategory() {
   }
 }
 // ── Adım 33 sonu ─────────────────────────────────────────────────────────────
+
+// ── Bölüm 2: Toplu tür ata ───────────────────────────────────────────────
+// genre, category gibi TEK BİR metin alanıdır (dizi değil). Seçili her
+// kitabın genre alanı yazılan değerle DOĞRUDAN DEĞİŞTİRİLİR.
+export async function bulkSetGenre() {
+  const ids = [...selectedIds];
+  if (ids.length === 0) return;
+
+  const genre = await _showPrompt("Seçili kitaplara atanacak türü yazın:");
+  if (!genre) return; // kullanıcı iptal etti veya boş yazdı
+
+  try {
+    const results = await Promise.allSettled(
+      ids.map((id) => {
+        const book = state.books.find((b) => b.$id === id);
+        if (!book) return Promise.resolve();
+        if (book.genre === genre) return Promise.resolve(); // zaten aynı değer
+        return updateBookRecord(id, { genre }).then(() => {
+          book.genre = genre; // hafızadaki kopyayı güncelle
+        });
+      })
+    );
+
+    const fail = results.filter((r) => r.status === "rejected").length;
+    showToast(`${ids.length - fail} kitaba tür atandı${fail ? `, ${fail} başarısız` : ""}.`);
+    clearSelection();
+    recompute(false);
+  } catch (err) {
+    showToast("Toplu tür atama hatası: " + (err?.message || err), "error");
+  }
+}
+// ── Bölüm 2 sonu ─────────────────────────────────────────────────────────────
 
 // ── Adım 33: Toplu koleksiyon ekle ───────────────────────────────────────
 // book.collections bir DİZİdir (bir kitap birden fazla koleksiyona ait
