@@ -65,7 +65,7 @@ export const ui = {
   // yönlendirmeyle filtreler; categoryStatus ise filtre panelinde KALICI bir
   // chip grubu olarak durur ve diğer filtrelerle (seri, yazar vb.) birlikte
   // serbestçe kombine edilebilir.
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", coverStatus: "" },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], genre: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", coverStatus: "" },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,
@@ -142,6 +142,33 @@ export function populateCategoryChips(opts) {
   // Seçili kategorileri senkronize et (dizi, çoklu seçim)
   syncChipGroup("filter-category-chips", ui.filters.category);
 }
+
+// ── Bölüm 2: Tür (genre) chip'lerini doldur ─────────────────────────────────
+// populateCategoryChips ile birebir aynı mantık — kitaplardan otomatik
+// toplanıp tekrarsız + sıralı şekilde chip yapılır. Çoklu seçim (VEYA mantığı).
+export function populateGenreChips(opts) {
+  const container = document.getElementById("filter-genre-chips");
+  if (!container) return;
+
+  const allGenres = opts.genres;
+
+  // Sadece tür chip'lerini yenile ("Tümü" butonu HTML'de kalıcı)
+  const existing = [...container.querySelectorAll(".chip[data-filter='genre']:not([data-value=''])")];
+  existing.forEach((c) => c.remove());
+
+  allGenres.forEach((genre) => {
+    const btn = document.createElement("button");
+    btn.className      = "chip";
+    btn.dataset.filter = "genre";
+    btn.dataset.value  = genre;
+    btn.textContent    = genre;
+    container.appendChild(btn);
+  });
+
+  // Seçili türleri senkronize et (dizi, çoklu seçim)
+  syncChipGroup("filter-genre-chips", ui.filters.genre);
+}
+// ── Bölüm 2 sonu ─────────────────────────────────────────────────────────────
 
 // ── Adım 11: Alt Alan chip'lerini doldur (sadece akademik kitaplardan) ──────
 // Ağacın 2. seviyesi. Sadece b.is_academic === true olan kitaplardan toplanır
@@ -348,6 +375,15 @@ export function recompute(resetPage = false) {
   }
   // ── Adım 11 sonu ──────────────────────────────────────────────────────────
 
+  // ── Bölüm 2: Tür (genre) filtresi (çoklu seçim, VEYA mantığı) ───────────
+  // Kategori filtresiyle birebir aynı mantık: bir kitabın TEK türü var
+  // (book.genre), o yüzden "VEYA" doğru — seçilen türlerden HERHANGİ BİRİYLE
+  // eşleşen kitaplar gösterilir.
+  if (ui.filters.genre.length > 0) {
+    result = result.filter((b) => ui.filters.genre.includes(b.genre));
+  }
+  // ── Bölüm 2 sonu ──────────────────────────────────────────────────────────
+
   // ── Adım 11: Alt Alan ve Konu filtreleri (ağacın 2. ve 3. seviyesi) ──────
   // Her ikisi de VEYA mantığıyla çoklu seçim — bir kitabın tek bir alt alanı
   // ve tek bir konusu olur (book.subcategory / book.topic tekil değer).
@@ -465,6 +501,7 @@ export function _collectFilterOptions() {
   const tagSet         = new Set();
   const categorySet    = new Set();
   const subcategorySet = new Set();
+  const genreSet       = new Set();
   let yearMin = null;
   let yearMax = null;
 
@@ -472,6 +509,7 @@ export function _collectFilterOptions() {
     if (b.author)    authorSet.add(b.author);
     if (b.publisher) publisherSet.add(b.publisher);
     if (b.category)  categorySet.add(b.category);
+    if (b.genre)     genreSet.add(b.genre);
 
     if (b.tags) {
       for (const t of b.tags) if (t) tagSet.add(t);
@@ -493,6 +531,7 @@ export function _collectFilterOptions() {
     tags:          [...tagSet].sort(trCompare),
     categories:    [...categorySet].sort(trCompare),
     subcategories: [...subcategorySet].sort(trCompare),
+    genres:        [...genreSet].sort(trCompare),
     yearMin,
     yearMax,
   };
@@ -587,6 +626,8 @@ export function syncChips() {
   syncChipGroup("filter-category-chips", ui.filters.category);
   syncChipGroup("filter-subcategory-chips", ui.filters.subcategory);
   syncChipGroup("filter-topic-chips", ui.filters.topic);
+  // ── Bölüm 2: Tür (çoklu seçim) ───────────────────────────────────────────
+  syncChipGroup("filter-genre-chips", ui.filters.genre);
   // ── Adım 37: Kategori Durumu (tek seçim) ─────────────────────────────────
   syncChipGroup("filter-categoryStatus-chips", ui.filters.categoryStatus);
   // ── Kapak Resmi Durumu (tek seçim) ───────────────────────────────────────
@@ -610,7 +651,7 @@ export function syncChipGroup(containerId, activeValue) {
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 export function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", coverStatus: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], genre: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", coverStatus: "" };
   syncChips();
   ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);

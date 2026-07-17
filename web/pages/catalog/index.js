@@ -38,6 +38,7 @@ import {
   populateSelectOptions,
   populateTagChips,
   populateCategoryChips,
+  populateGenreChips,
   populateSubcategoryChips,
   populateTopicChips,
   populateYearSlider,
@@ -115,6 +116,7 @@ export function renderCatalog() {
   populateSelectOptions(filterOpts);
   populateTagChips(filterOpts);         // ── Adım J4: dinamik etiket chip'leri
   populateCategoryChips(filterOpts);    // ── Adım 11: dinamik kategori chip'leri (çoklu seçim)
+  populateGenreChips(filterOpts);       // ── Bölüm 2: dinamik tür chip'leri (çoklu seçim)
   populateSubcategoryChips(filterOpts); // ── Adım 11: alt alan chip'leri (sadece akademik)
   populateTopicChips();       // ── Adım 11: konu chip'leri (alt alana bağlı) — ui.filters.subcategory'ye bağımlı, tek-geçişe dahil edilmedi
   populateYearSlider(filterOpts);       // ── Adım 4: yıl aralığı slider sınırlarını ayarla
@@ -167,7 +169,7 @@ export function initCatalog() {
   // chip aynı anda aktif olabilir. Diğer tüm filtreler (Format, Durum, Güven
   // Skoru vb.) eskisi gibi TEK seçimli kalır — bu liste dışındaki her
   // filterKey için davranış hiç değişmedi.
-  const MULTI_SELECT_FILTERS = new Set(["language", "tag", "category", "subcategory", "topic"]);
+  const MULTI_SELECT_FILTERS = new Set(["language", "tag", "category", "subcategory", "topic", "genre"]);
 
   document.getElementById("filter-panel")?.addEventListener("click", (e) => {
     const chip = e.target.closest(".chip");

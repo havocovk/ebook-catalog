@@ -270,6 +270,16 @@
             </div>
             <!-- ── Adım 11 sonu ─────────────────────────────────────────── -->
 
+            <!-- ── Bölüm 2: Tür Filtresi ──────────────────────────────────── -->
+            <div class="filter-group" id="filter-genre-wrap">
+              <label class="filter-label">Tür <span class="filter-hint">(çoklu seçim)</span></label>
+              <div class="filter-chips" id="filter-genre-chips">
+                <button class="chip active" data-filter="genre" data-value="">Tümü</button>
+                <!-- Dinamik chip'ler catalog.js tarafından doldurulur -->
+              </div>
+            </div>
+            <!-- ── Bölüm 2 sonu ───────────────────────────────────────────── -->
+
             <!-- ── Adım 3: Güven Skoru Filtresi ─────────────────────────── -->
             <div class="filter-group">
               <label class="filter-label">Güven Skoru</label>
@@ -589,15 +599,6 @@
             </label>
             <input type="text" id="modal-category" placeholder="Roman, Akademik, Ders Notları..." />
           </div>
-
-          <!-- ── Bölüm 2: Tür / Genre (serbest metin) ─────────────────── -->
-          <div class="field">
-            <label>
-              <iconify-icon icon="lucide:library"></iconify-icon> Tür
-            </label>
-            <input type="text" id="modal-genre" placeholder="Polisiye, Bilim Kurgu, Tarih..." />
-          </div>
-          <!-- ── Bölüm 2 sonu ──────────────────────────────────────────── -->
 
           <!-- ── Adım 11 (genişletilmiş): Akademik işareti + Alt Alan/Konu ── -->
           <div class="field field-checkbox">
