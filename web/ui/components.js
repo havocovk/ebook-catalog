@@ -108,6 +108,7 @@ export function createBookCard(book, isSelected = false) {
           ? `<p class="book-series">${escapeHtml(book.series)}${book.series_order ? " #" + book.series_order : ""}</p>`
           : ""
       }
+      ${book.genre ? `<p class="book-genre">${escapeHtml(book.genre)}</p>` : ""}
       <div class="book-rating">${ratingHtml}</div>
     </div>
   `;

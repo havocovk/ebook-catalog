@@ -240,6 +240,16 @@
   text-overflow: ellipsis;
 }
 
+/* ── Bölüm 2: Tür rozeti (kart alt bilgi alanı) ─────────────────── */
+.book-genre {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* ── Bölüm 2 sonu ─────────────────────────────────────────────────── */
+
 .book-rating { margin-top: 0.25rem; }
 
 /* ── Stars ────────────────────────────────────────────────────── */
