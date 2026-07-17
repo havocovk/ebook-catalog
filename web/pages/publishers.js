@@ -183,6 +183,7 @@ function cardHtml(book) {
         ${book.series
           ? `<p class="book-series">${esc(book.series)}${book.series_order ? " #" + book.series_order : ""}</p>`
           : ""}
+        ${book.genre ? `<p class="book-genre">${esc(book.genre)}</p>` : ""}
       </div>
     </div>
   `;
