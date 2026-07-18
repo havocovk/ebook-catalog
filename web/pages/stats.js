@@ -803,8 +803,25 @@ function computeAuthors() {
     (a) => a.books.every((b) => b.status === "okunmadi" || b.status === "sirada")
   );
 
+  // En fazla toplam sayfası olan yazar (page_count dolu kitaplar üzerinden)
+  const authorPageTotals = authors
+    .map((a) => ({
+      name:  a.name,
+      pages: a.books.reduce((s, b) => s + (b.page_count || 0), 0),
+    }))
+    .filter((a) => a.pages > 0)
+    .sort((a, b) => b.pages - a.pages);
+  const topPageAuthor = authorPageTotals[0] || null;
+
   // ── Author Universe (bubble chart) ───────────────────────────────────────
-  // Her yazar bir kabarcık: x=kitap sayısı, y=ort.puan, r=kitap sayısı*3
+  // Kabarcık boyutu (r): page_count toplamı varsa ona göre ölçeklenir,
+  // yoksa eski yöntem (kitap sayısı * 2.5) kullanılır.
+  const allPageTotals = authors
+    .filter((a) => a.books.length >= 2)
+    .map((a) => a.books.reduce((s, b) => s + (b.page_count || 0), 0));
+  const maxPageTotal  = Math.max(...allPageTotals, 1);
+  const usePageRadius = allPageTotals.some((p) => p > 0);
+
   const bubbleData = authors
     .filter((a) => a.books.length >= 2)
     .map((a) => {
@@ -815,16 +832,21 @@ function computeAuthors() {
       const finishedPct = Math.round(
         (a.books.filter((b) => b.status === "okundu").length / a.books.length) * 100
       );
+      const totalPages = a.books.reduce((s, b) => s + (b.page_count || 0), 0);
+      const r = usePageRadius
+        ? Math.max(5, Math.min((totalPages / maxPageTotal) * 40, 35))
+        : Math.max(5, Math.min(a.books.length * 2.5, 30));
       return {
         label: a.name,
         x: a.books.length,
         y: avgRating,
-        r: Math.max(5, Math.min(a.books.length * 2.5, 30)),
+        r,
         finishedPct,
+        totalPages,
       };
     });
 
-  // Renk: tamamlanma yüzdesi → yeşil (100%) - sarı (50%) - kırmızı (0%)
+  // Renk: tamamlanma yüzdesi → yeşil (100%) - sarı (50%) - mor (0%)
   const bubbleColors = bubbleData.map((d) => {
     if (d.finishedPct >= 70) return "rgba(76,175,130,0.75)";
     if (d.finishedPct >= 30) return "rgba(224,168,74,0.75)";
@@ -835,6 +857,7 @@ function computeAuthors() {
     top15Data, topAuthor, avgBooksPerAuthor,
     topRated, topBacklog, topVersatile,
     unreadAuthorCount: unreadAuthors.length,
+    topPageAuthor, usePageRadius,
     bubbleData, bubbleColors,
   };
 }
@@ -854,13 +877,14 @@ export async function renderAuthorsSection() {
         <iconify-icon icon="lucide:users"></iconify-icon> Yazar Analizi
       </h2>
 
-      <!-- 5 özet kart -->
+      <!-- 5+1 özet kart -->
       <div class="stats-author-cards">
         ${authorCard("lucide:crown",        "En Çok Kitap",       a.topAuthor ? `${a.topAuthor.name} (${a.topAuthor.books.length})` : "—", "accent")}
         ${authorCard("lucide:star",         "En Yüksek Puan",     a.topRated  ? `${a.topRated.name} (${a.topRated.avg}★)` : "—",          "warning")}
         ${authorCard("lucide:inbox",        "En Büyük Backlog",   a.topBacklog ? `${a.topBacklog.name} (${a.topBacklog.backlog})` : "—",    "neutral")}
         ${authorCard("lucide:library",      "Most Versatile",     a.topVersatile ? `${a.topVersatile.name} (${a.topVersatile.genres} tür)` : "—", "success")}
         ${authorCard("lucide:book-x",       "Hiç Okunmamış",      `${a.unreadAuthorCount} yazar`,                                           "neutral")}
+        ${a.topPageAuthor ? authorCard("lucide:book-open", "En Hacimli Yazar", `${a.topPageAuthor.name} (${a.topPageAuthor.pages.toLocaleString("tr-TR")} s.)`, "success") : ""}
       </div>
 
       <!-- Top 15 Yazar — Stacked bar -->
@@ -885,7 +909,7 @@ export async function renderAuthorsSection() {
 
       <!-- Author Universe — Bubble -->
       <h3 class="stats-subsection-title">Author Universe
-        <span class="stats-section-sub">kabarcık büyüklüğü = kitap sayısı &nbsp;·&nbsp; renk = tamamlanma oranı</span>
+        <span class="stats-section-sub">kabarcık büyüklüğü = ${a.usePageRadius ? "toplam sayfa sayısı" : "kitap sayısı"} &nbsp;·&nbsp; renk = tamamlanma oranı</span>
       </h3>
       <div class="stats-bar-chart-wrap stats-bubble-wrap">
         <canvas id="chart-bubble"></canvas>
@@ -989,8 +1013,12 @@ function _drawBubble(a) {
         tooltip: {
           callbacks: {
             label: (ctx) => {
-              const d = ctx.raw;
-              return ` ${ctx.dataset.label} — ${d.x} kitap, ${d.y > 0 ? d.y + "★" : "puan yok"}`;
+              const d    = ctx.raw;
+              const bd   = a.bubbleData[ctx.datasetIndex];
+              const pageStr = bd && bd.totalPages > 0
+                ? `, ${bd.totalPages.toLocaleString("tr-TR")} sayfa`
+                : "";
+              return ` ${ctx.dataset.label} — ${d.x} kitap${pageStr}, ${d.y > 0 ? d.y + "★" : "puan yok"}`;
             },
           },
         },
