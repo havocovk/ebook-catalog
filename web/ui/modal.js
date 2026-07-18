@@ -131,7 +131,6 @@ export function openModal(bookId) {
   document.getElementById("modal-series-order").value = book.series_order ?? "";
   document.getElementById("modal-edition").value      = book.edition || "";
   document.getElementById("modal-category").value     = book.category || "";   // ── Adım 1
-  document.getElementById("modal-genre").value         = book.genre    || "";   // ── Bölüm 2
 
   // ── Adım 11: Akademik kutucuğu + Alt Alan/Konu doldur ───────────────────
   const isAcademic = Boolean(book.is_academic);
@@ -161,6 +160,11 @@ export function openModal(bookId) {
   const favoriteEl = document.getElementById("modal-favorite");
   if (favoriteEl) favoriteEl.checked = Boolean(book.favorite);
   // ── Adım 17 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 39: Fiziksel kopya kutucuğunu doldur ────────────────────────────
+  const physicalEl = document.getElementById("modal-physical-copy");
+  if (physicalEl) physicalEl.checked = Boolean(book.has_physical_copy);
+  // ── Adım 39 sonu ──────────────────────────────────────────────────────────
 
   const modal = document.getElementById("book-modal");
   modal.classList.remove("hidden");
@@ -217,7 +221,6 @@ async function saveModal() {
     series_order: seriesOrderRaw === "" ? null : parseInt(seriesOrderRaw) || null,
     edition:      document.getElementById("modal-edition").value.trim() || null,
     category:     document.getElementById("modal-category").value.trim() || null,  // ── Adım 1
-    genre:        document.getElementById("modal-genre").value.trim()    || null,  // ── Bölüm 2
     // ── Adım 11: Akademik işareti + Alt Alan/Konu ────────────────────────
     // Akademik kutucuğu işaretsizse Alt Alan/Konu zaten boşaltılmış olur
     // (toggleAcademicFields tarafından) — burada tekrar null'a zorlamaya
@@ -564,6 +567,14 @@ export function initModal() {
     await applyUpdate(editingId, { favorite: e.target.checked });
   });
   // ── Adım 17 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 39: Fiziksel kopya onay kutusu — favori ile aynı kalıp ──────────
+  // Tıklanır tıklanmaz anında Appwrite'a yazılır; "Kaydet" beklenmez.
+  document.getElementById("modal-physical-copy")?.addEventListener("change", async (e) => {
+    if (!editingId) return;
+    await applyUpdate(editingId, { has_physical_copy: e.target.checked });
+  });
+  // ── Adım 39 sonu ──────────────────────────────────────────────────────────
 }
 
 // ── Adım 11: Alt Alan/Konu kutularını göster/gizle ──────────────────────────
