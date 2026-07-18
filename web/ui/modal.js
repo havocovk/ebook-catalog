@@ -721,6 +721,7 @@ function _buildLockedView(book) {
     { icon: "lucide:languages",   label: "Dil",      val: langLabels[book.language] || book.language },
     { icon: "lucide:tags",        label: "Kategori", val: book.category  },
     { icon: "lucide:library",     label: "Tür",      val: book.genre     },
+    { icon: "lucide:book-open",   label: "Sayfa",    val: book.page_count ? `${book.page_count} sayfa` : null },
   ].filter((i) => i.val);
 
   const infoGridHtml = infoItems.length
