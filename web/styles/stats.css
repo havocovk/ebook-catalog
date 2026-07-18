@@ -279,3 +279,17 @@
   .stats-mini-grid { grid-template-columns: repeat(2, 1fr); }
   .stats-bar-chart-wrap { height: 200px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Adım 9 — Reading Journey                                        */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.stats-line-chart-wrap {
+  height: 280px;
+}
+
+.stats-journey-legend {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
