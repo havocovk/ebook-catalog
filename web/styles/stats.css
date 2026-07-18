@@ -293,3 +293,69 @@
   flex-wrap: wrap;
   gap: 1rem;
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Adım 10 — Top Yazarlar + Author Universe                        */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* 5 yazar özet kartı */
+.stats-author-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.65rem;
+}
+
+.stats-author-card {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.8rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  transition: border-color 0.2s;
+}
+.stats-author-card:hover { border-color: var(--border-2); }
+
+.stats-author-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+/* Alt başlık (Top 15, Author Universe) */
+.stats-subsection-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* Top 15 yazar grafik yüksekliği */
+.stats-top-authors-wrap {
+  height: 360px;
+}
+
+/* Bubble chart yüksekliği */
+.stats-bubble-wrap {
+  height: 320px;
+}
+
+/* Mobil */
+@media (max-width: 768px) {
+  .stats-author-cards { grid-template-columns: repeat(2, 1fr); }
+  .stats-top-authors-wrap { height: 280px; }
+  .stats-bubble-wrap { height: 260px; }
+}
+
+@media (max-width: 480px) {
+  .stats-author-cards { grid-template-columns: 1fr; }
+}
