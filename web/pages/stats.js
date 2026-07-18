@@ -189,6 +189,10 @@ export async function renderStats() {
   // ── Adım 10: Yazar Analizi bölümünü ekle ─────────────────────────────────
   await renderAuthorsSection();
   // ── Adım 10 sonu ──────────────────────────────────────────────────────────
+
+  // ── Adım 11: Yayın Trendi bölümünü ekle ─────────────────────────────────
+  await renderTrendSection();
+  // ── Adım 11 sonu ─────────────────────────────────────────────────────────
 }
 
 // ─── Pasta / Halka grafik çiz ─────────────────────────────────────────────────
@@ -983,4 +987,174 @@ function authorCard(icon, label, value, variant) {
       <div class="stats-mini-label">${label}</div>
     </div>
   `;
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Adım 11 — Publication Trend
+// ═════════════════════════════════════════════════════════════════════════════
+
+function computeTrend() {
+  const books = state.books;
+  const withYear = books.filter((b) => b.year && b.year > 0);
+  if (withYear.length === 0) return null;
+
+  const years = withYear.map((b) => b.year);
+
+  // Yıl → kitap sayısı haritası
+  const yearMap = {};
+  years.forEach((y) => { yearMap[y] = (yearMap[y] || 0) + 1; });
+
+  // Sıralı yıl listesi
+  const sortedYears  = Object.keys(yearMap).map(Number).sort((a, b) => a - b);
+  const sortedCounts = sortedYears.map((y) => yearMap[y]);
+
+  const total        = withYear.length;
+  const uniqueYears  = sortedYears.length;
+
+  // Zirve yıl
+  const peakEntry    = Object.entries(yearMap).sort((a, b) => b[1] - a[1])[0];
+  const peakYear     = peakEntry ? Number(peakEntry[0]) : null;
+  const peakCount    = peakEntry ? peakEntry[1] : 0;
+
+  // Son 10 yıl oranı
+  const cutoff10     = new Date().getFullYear() - 10;
+  const last10Count  = years.filter((y) => y >= cutoff10).length;
+  const last10Pct    = Math.round((last10Count / total) * 100);
+
+  // Yıl başına ortalama
+  const avgPerYear   = uniqueYears > 0 ? (total / uniqueYears).toFixed(1) : 0;
+
+  // En iyi 5 yıllık dönem (sliding window)
+  let best5Start = sortedYears[0], best5Count = 0;
+  for (let i = 0; i < sortedYears.length; i++) {
+    const windowEnd = sortedYears[i] + 4;
+    const cnt = years.filter((y) => y >= sortedYears[i] && y <= windowEnd).length;
+    if (cnt > best5Count) { best5Count = cnt; best5Start = sortedYears[i]; }
+  }
+
+  // Kapsanan yıl sayısı
+  const span         = sortedYears.length > 1 ? sortedYears[sortedYears.length - 1] - sortedYears[0] + 1 : 1;
+
+  // 21. yüzyıl oranı
+  const modernCount  = years.filter((y) => y >= 2000).length;
+  const modernPct    = Math.round((modernCount / total) * 100);
+
+  // Klasik oranı
+  const classicCount = years.filter((y) => y < 1970).length;
+  const classicPct   = Math.round((classicCount / total) * 100);
+
+  return {
+    sortedYears, sortedCounts, total, uniqueYears,
+    peakYear, peakCount, last10Pct, avgPerYear,
+    best5Start, best5Count, span, modernPct, classicPct,
+  };
+}
+
+export async function renderTrendSection() {
+  const wrap = document.querySelector(".stats-wrap");
+  if (!wrap) return;
+
+  const t = computeTrend();
+
+  const sectionEl = document.createElement("div");
+  sectionEl.id = "stats-trend-section";
+
+  if (!t) {
+    sectionEl.innerHTML = `
+      <div class="stats-section-box">
+        <h2 class="stats-section-title">
+          <iconify-icon icon="lucide:trending-up"></iconify-icon> Yayın Trendi
+        </h2>
+        <p class="stats-empty">Yıl bilgisi olan kitap bulunamadı.</p>
+      </div>`;
+    wrap.appendChild(sectionEl);
+    return;
+  }
+
+  sectionEl.innerHTML = `
+    <div class="stats-section-box">
+      <h2 class="stats-section-title">
+        <iconify-icon icon="lucide:trending-up"></iconify-icon> Yayın Trendi
+        <span class="stats-section-sub">${t.total} kitap · ${t.uniqueYears} farklı yıl</span>
+      </h2>
+
+      <!-- 8 özet kart -->
+      <div class="stats-mini-grid">
+        ${miniCard("lucide:trophy",          "Zirve Yıl",           t.peakYear ? `${t.peakYear} (${t.peakCount} kitap)` : "—", "warning")}
+        ${miniCard("lucide:calendar-check",  "Son 10 Yıl Oranı",    `%${t.last10Pct}`,                                         "accent")}
+        ${miniCard("lucide:calculator",      "Yıl Başına Ort.",      `${t.avgPerYear} kitap`,                                   "neutral")}
+        ${miniCard("lucide:flame",           "En İyi 5 Yıl",        `${t.best5Start}–${t.best5Start + 4} (${t.best5Count})`,   "success")}
+        ${miniCard("lucide:move-horizontal", "Kapsanan Süre",        `${t.span} yıl`,                                           "neutral")}
+        ${miniCard("lucide:zap",             "21. Yüzyıl",           `%${t.modernPct}`,                                         "accent")}
+        ${miniCard("lucide:clock",           "Klasik Oranı",         `%${t.classicPct}`,                                        "neutral")}
+        ${miniCard("lucide:hash",            "Benzersiz Yıl",        t.uniqueYears,                                             "neutral")}
+      </div>
+
+      <!-- Alan çizgi grafik -->
+      <div class="stats-bar-chart-wrap stats-trend-wrap">
+        <canvas id="chart-trend"></canvas>
+      </div>
+    </div>
+  `;
+
+  wrap.appendChild(sectionEl);
+
+  try {
+    await _loadChartJs();
+    _drawTrend(t);
+  } catch (err) {
+    console.error("[Stats] Trend grafik hatası:", err);
+  }
+}
+
+function _drawTrend(t) {
+  const canvas = document.getElementById("chart-trend");
+  if (!canvas || typeof window.Chart === "undefined") return;
+
+  _activeCharts["chart-trend"] = new window.Chart(canvas, {
+    type: "line",
+    data: {
+      labels: t.sortedYears,
+      datasets: [{
+        label: "Kitap Sayısı",
+        data:  t.sortedCounts,
+        borderColor:     "rgba(124,106,247,0.9)",
+        backgroundColor: "rgba(124,106,247,0.15)",
+        borderWidth: 2,
+        pointRadius: t.sortedYears.length > 40 ? 0 : 3,
+        pointHoverRadius: 5,
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.parsed.y} kitap`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: "#9195a8",
+            font: { size: 11 },
+            maxTicksLimit: 15,
+            maxRotation: 45,
+          },
+          grid: { color: "rgba(46,50,64,0.4)" },
+        },
+        y: {
+          ticks: { color: "#9195a8", font: { size: 11 } },
+          grid:  { color: "rgba(46,50,64,0.6)" },
+          beginAtZero: true,
+        },
+      },
+      animation: { duration: 400 },
+    },
+  });
 }

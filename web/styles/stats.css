@@ -359,3 +359,15 @@
 @media (max-width: 480px) {
   .stats-author-cards { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Adım 11 — Publication Trend                                     */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.stats-trend-wrap {
+  height: 280px;
+}
+
+@media (max-width: 480px) {
+  .stats-trend-wrap { height: 200px; }
+}
