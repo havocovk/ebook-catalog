@@ -1065,12 +1065,24 @@ function computeTrend() {
   const years = withYear.map((b) => b.year);
 
   // Yıl → kitap sayısı haritası
-  const yearMap = {};
-  years.forEach((y) => { yearMap[y] = (yearMap[y] || 0) + 1; });
+  const yearMap     = {};
+  const yearPageMap = {};
+  withYear.forEach((b) => {
+    yearMap[b.year]     = (yearMap[b.year]     || 0) + 1;
+    yearPageMap[b.year] = (yearPageMap[b.year] || 0) + (b.page_count || 0);
+  });
 
   // Sıralı yıl listesi
   const sortedYears  = Object.keys(yearMap).map(Number).sort((a, b) => a - b);
   const sortedCounts = sortedYears.map((y) => yearMap[y]);
+  const sortedPages  = sortedYears.map((y) => yearPageMap[y] || 0);
+
+  // En çok sayfalı yıl
+  const peakPageEntry = Object.entries(yearPageMap)
+    .filter(([, v]) => v > 0)
+    .sort((a, b) => b[1] - a[1])[0] || null;
+  const peakPageYear  = peakPageEntry ? Number(peakPageEntry[0]) : null;
+  const peakPageCount = peakPageEntry ? peakPageEntry[1] : 0;
 
   const total        = withYear.length;
   const uniqueYears  = sortedYears.length;
@@ -1108,9 +1120,10 @@ function computeTrend() {
   const classicPct   = Math.round((classicCount / total) * 100);
 
   return {
-    sortedYears, sortedCounts, total, uniqueYears,
+    sortedYears, sortedCounts, sortedPages, total, uniqueYears,
     peakYear, peakCount, last10Pct, avgPerYear,
     best5Start, best5Count, span, modernPct, classicPct,
+    peakPageYear, peakPageCount,
   };
 }
 
@@ -1152,6 +1165,7 @@ export async function renderTrendSection() {
         ${miniCard("lucide:zap",             "21. Yüzyıl",           `%${t.modernPct}`,                                         "accent")}
         ${miniCard("lucide:clock",           "Klasik Oranı",         `%${t.classicPct}`,                                        "neutral")}
         ${miniCard("lucide:hash",            "Benzersiz Yıl",        t.uniqueYears,                                             "neutral")}
+        ${t.peakPageYear ? miniCard("lucide:book-marked", "En Hacimli Yıl", `${t.peakPageYear} (${t.peakPageCount.toLocaleString("tr-TR")} s.)`, "success") : ""}
       </div>
 
       <!-- Alan çizgi grafik -->
@@ -1198,7 +1212,11 @@ function _drawTrend(t) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => ` ${ctx.parsed.y} kitap`,
+            label: (ctx) => {
+              const pages = t.sortedPages[ctx.dataIndex];
+              const pageStr = pages > 0 ? ` · ${pages.toLocaleString("tr-TR")} sayfa` : "";
+              return ` ${ctx.parsed.y} kitap${pageStr}`;
+            },
           },
         },
       },
