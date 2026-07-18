@@ -37,7 +37,18 @@ let editingId = null;
 // ── Adım 4 (V5): Kilit durumu — kitap başına Map<bookId, boolean>.
 // Aynı kitabın modalı kapatılıp yeniden açılınca kilit durumu korunur.
 // Farklı kitaplarda kilit durumu birbirinden bağımsızdır.
-const _lockState = new Map();
+// ── Adım 4 (V5): Kilit durumu localStorage'da saklanır — sayfa yenilenince korunur.
+const _LOCK_KEY = "ebook_modal_locks";
+
+function _getLocks() {
+  try { return JSON.parse(localStorage.getItem(_LOCK_KEY) || "{}"); } catch { return {}; }
+}
+function _getLock(bookId)          { return _getLocks()[bookId] ?? false; }
+function _setLock(bookId, locked)  {
+  const locks = _getLocks();
+  if (locked) { locks[bookId] = true; } else { delete locks[bookId]; }
+  localStorage.setItem(_LOCK_KEY, JSON.stringify(locks));
+}
 
 // Açılır menüler (initModal'da bir kez kurulur).
 let authorPicker = null;
@@ -174,7 +185,7 @@ export function openModal(bookId) {
 
   // ── Adım 4 (V5): Kitabın önceki kilit durumunu geri yükle ───────────────
   // Aynı kitap daha önce kilitlenmişse Map'ten true gelir, yoksa false.
-  const locked = _lockState.get(bookId) ?? false;
+  const locked = _getLock(bookId);
   _buildLockedView(book);
   _applyLockState(locked);
   // ── Adım 4 (V5) sonu ──────────────────────────────────────────────────────
@@ -540,9 +551,9 @@ export function initModal() {
   // ── Adım 4 (V5): Kilitle / Kilidi Aç butonu ──────────────────────────────
   document.getElementById("modal-lock-btn")?.addEventListener("click", () => {
     if (!editingId) return;
-    const wasLocked = _lockState.get(editingId) ?? false;
+    const wasLocked = _getLock(editingId);
     const nowLocked = !wasLocked;
-    _lockState.set(editingId, nowLocked);
+    _setLock(editingId, nowLocked);
     // Kilitlenince kilitli view'ı güncel kitap verisiyle yeniden oluştur
     // (kullanıcı form'da bir şey değiştirmiş olabilir ama kaydetmemişse
     // kilitli view state.books'taki SON KAYDEDILMIŞ veriyi gösterir).
