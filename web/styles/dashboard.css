@@ -1,270 +1,263 @@
 /* ═══════════════════════════════════════════════════════════════ */
 /* Dashboard — Panel sayfası stilleri                              */
-/* Adım 5 (V5): Koleksiyon/Okuma Durumu/Çeşitlilik/Dil bölümleri */
-/* kaldırıldı → İstatistikler sayfasına taşındı.                  */
-/* Yeni: Rastgele Öneri bölümü eklendi.                           */
+/* Adım 5 (V5) revizyon: Grimmory tarzı çerçeveli container'lar, */
+/* büyük dikey kapak kartları, renkli bakım/yedekleme bölümleri.  */
 /* ═══════════════════════════════════════════════════════════════ */
 
 /* ── Sayfa sarmalayıcı ───────────────────────────────────────── */
 .dashboard-wrap {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
-/* ── Bölüm ───────────────────────────────────────────────────── */
-.dash-section {
+/* ═══════════════════════════════════════════════════════════════ */
+/* Çerçeveli bölüm container'ı (Grimmory tarzı)                   */
+/* ═══════════════════════════════════════════════════════════════ */
+.dash-container {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
-/* Bölüm başlığı + sağ buton yan yana */
-.dash-section-header {
+/* Container başlık satırı: başlık solda, buton sağda */
+.dash-container-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.dash-section-title {
-  font-size: 0.78rem;
+.dash-container-title {
+  font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text-3);
+  color: var(--text-2);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
+  margin: 0;
 }
 
-.dash-section-title iconify-icon {
+.dash-container-title iconify-icon {
   font-size: 1rem;
-  color: var(--text-3);
+  color: var(--accent);
 }
 
-.dash-section-sub {
+.dash-container-sub {
   font-size: 0.7rem;
   font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
   color: var(--text-3);
-  opacity: 0.7;
+  margin-left: 0.2rem;
 }
 
-/* ── Kart ızgarası (Eksik Bilgi Merkezi) ─────────────────────── */
-.stat-grid {
+/* ── Container renk varyantları ──────────────────────────────── */
+.dash-container--warning {
+  border-color: rgba(224,92,92,0.3);
+}
+.dash-container--warning .dash-container-title iconify-icon {
+  color: var(--danger);
+}
+.dash-container--warning .dash-container-header {
+  border-bottom-color: rgba(224,92,92,0.2);
+}
+
+.dash-container--maintenance {
+  border-color: rgba(124,106,247,0.3);
+  background: linear-gradient(135deg, var(--bg-2) 0%, rgba(124,106,247,0.04) 100%);
+}
+.dash-container--maintenance .dash-container-title iconify-icon {
+  color: var(--accent);
+}
+.dash-container--maintenance .dash-container-header {
+  border-bottom-color: rgba(124,106,247,0.2);
+}
+
+.dash-container--backup {
+  border-color: rgba(76,175,130,0.3);
+  background: linear-gradient(135deg, var(--bg-2) 0%, rgba(76,175,130,0.04) 100%);
+}
+.dash-container--backup .dash-container-title iconify-icon {
+  color: var(--success);
+}
+.dash-container--backup .dash-container-header {
+  border-bottom-color: rgba(76,175,130,0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Büyük dikey kapak kartı — tüm bölümlerde ortak                 */
+/* ═══════════════════════════════════════════════════════════════ */
+.dash-book-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-}
-
-/* ── İstatistik kartı ────────────────────────────────────────── */
-.stat-card {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 1.1rem 1rem 0.9rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.35rem;
-  transition: border-color 0.2s, transform 0.15s;
-}
-
-.stat-card:hover {
-  border-color: var(--border-2);
-  transform: translateY(-1px);
-}
-
-.stat-card-icon { font-size: 1.15rem; line-height: 1; margin-bottom: 0.1rem; }
-.stat-card-value { font-size: 1.9rem; font-weight: 700; line-height: 1; letter-spacing: -0.5px; color: var(--text); }
-.stat-card-label { font-size: 0.75rem; color: var(--text-2); font-weight: 500; }
-
-/* ── Eksik Bilgi Merkezi kartı ───────────────────────────────── */
-.stat-card--missing {
-  cursor: pointer;
-  border-color: rgba(224,92,92,0.25);
-}
-.stat-card--missing .stat-card-icon  { color: var(--danger); }
-.stat-card--missing .stat-card-value { color: var(--danger); }
-.stat-card--missing:hover { border-color: var(--danger); transform: translateY(-2px); }
-.stat-card--missing:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
-
-/* ── Şu An Okunuyor ──────────────────────────────────────────── */
-.reading-cards {
-  display: flex;
-  flex-wrap: wrap;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 0.85rem;
 }
 
-.reading-card {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 0.6rem 0.9rem 0.6rem 0.6rem;
-  cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s;
-  max-width: 260px;
-}
-.reading-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-
-.reading-card-cover {
-  width: 44px; height: 60px;
-  flex-shrink: 0;
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--bg-3);
-}
-.reading-card-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.reading-card-cover .cover-placeholder {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem; font-weight: 700; color: var(--text-3);
-}
-
-.reading-card-info { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
-.reading-card-title {
-  font-size: 0.82rem; font-weight: 600; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;
-}
-.reading-card-author {
-  font-size: 0.73rem; color: var(--text-2);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;
-}
-
-/* ── Adım 5 (V5): Rastgele Öneri ────────────────────────────── */
-.suggest-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.75rem;
-}
-
-.suggest-item {
+.dash-card {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
   cursor: pointer;
   transition: transform 0.15s;
 }
-.suggest-item:hover { transform: translateY(-3px); }
+.dash-card:hover { transform: translateY(-3px); }
 
-.suggest-cover {
-  position: relative;
+.dash-card-cover {
   width: 100%;
   aspect-ratio: 2/3;
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--bg-3);
   border: 1px solid var(--border);
+  transition: border-color 0.2s;
 }
-.suggest-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dash-card:hover .dash-card-cover { border-color: var(--accent); }
 
-.suggest-placeholder {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 2rem; font-weight: 700; color: var(--text-3);
+.dash-card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-/* Durum rozeti — kapak üstünde sol alt köşe */
-.suggest-status {
-  position: absolute;
-  bottom: 0.3rem;
-  left: 0.3rem;
-  font-size: 0.6rem;
-  font-weight: 600;
-  padding: 0.15rem 0.4rem;
-  border-radius: 4px;
-  color: #fff;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+.dash-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-3);
 }
-.suggest-status--okunmadi { background: rgba(92,95,114,0.9); }
-.suggest-status--sirada   { background: rgba(224,168,74,0.9); }
 
-.suggest-info {
+.dash-card-info {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
 }
-.suggest-title {
-  font-size: 0.72rem; font-weight: 600; color: var(--text);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+
+.dash-card-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   line-height: 1.3;
 }
-.suggest-author {
-  font-size: 0.65rem; color: var(--text-2);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-/* ── Rastgele Öneri sonu ─────────────────────────────────────── */
 
-/* ── Son Eklenenler: yatay kaydırılabilir kapak şeridi ───────── */
-.recent-strip {
-  display: flex;
-  gap: 0.65rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-2) transparent;
-}
-.recent-strip::-webkit-scrollbar { height: 4px; }
-.recent-strip::-webkit-scrollbar-track { background: transparent; }
-.recent-strip::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
-
-.recent-item {
-  flex-shrink: 0;
-  width: 80px; height: 112px;
-  border-radius: var(--radius);
+.dash-card-author {
+  font-size: 0.65rem;
+  color: var(--text-2);
+  white-space: nowrap;
   overflow: hidden;
-  cursor: pointer;
-  background: var(--bg-3);
-  border: 1px solid var(--border);
-  transition: border-color 0.2s, transform 0.15s;
-}
-.recent-item:hover { border-color: var(--accent); transform: translateY(-3px); }
-.recent-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-.recent-placeholder {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.6rem; font-weight: 700; color: var(--text-3);
+  text-overflow: ellipsis;
 }
 
-/* ── Veritabanı Bakımı ───────────────────────────────────────── */
-.db-maintenance-box {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 1rem 1.1rem;
-  display: flex;
-  flex-direction: column;
+/* Boş durum mesajı */
+.dash-empty {
+  font-size: 0.85rem;
+  color: var(--text-3);
+  font-style: italic;
+  padding: 0.5rem 0;
+  margin: 0;
+  grid-column: 1 / -1;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Eksik Bilgi Merkezi kartları                                    */
+/* ═══════════════════════════════════════════════════════════════ */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 0.75rem;
 }
 
-.db-maintenance-desc { font-size: 0.85rem; color: var(--text-2); line-height: 1.5; }
-.db-maintenance-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.stat-card {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 0.9rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  transition: border-color 0.2s, transform 0.15s;
+}
+.stat-card:hover { border-color: var(--border-2); transform: translateY(-1px); }
 
-.orphan-scan-result {
-  font-size: 0.85rem;
+.stat-card-icon  { font-size: 1.1rem; line-height: 1; }
+.stat-card-value { font-size: 1.7rem; font-weight: 700; line-height: 1; letter-spacing: -0.5px; color: var(--text); }
+.stat-card-label { font-size: 0.72rem; color: var(--text-2); font-weight: 500; }
+
+.stat-card--missing { cursor: pointer; border-color: rgba(224,92,92,0.25); }
+.stat-card--missing .stat-card-icon  { color: var(--danger); }
+.stat-card--missing .stat-card-value { color: var(--danger); }
+.stat-card--missing:hover { border-color: var(--danger); transform: translateY(-2px); }
+.stat-card--missing:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Veritabanı Bakımı bölümü                                       */
+/* ═══════════════════════════════════════════════════════════════ */
+.dash-maintenance-desc {
+  font-size: 0.83rem;
+  color: var(--text-2);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.dash-maintenance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.btn-maintenance-orphan {
+  border-color: rgba(124,106,247,0.4);
+  color: var(--accent);
+}
+.btn-maintenance-orphan:hover {
+  background: rgba(124,106,247,0.12);
+  border-color: var(--accent);
+}
+
+.btn-maintenance-cover {
+  border-color: rgba(224,168,74,0.4);
+  color: var(--warning);
+}
+.btn-maintenance-cover:hover {
+  background: rgba(224,168,74,0.12);
+  border-color: var(--warning);
+}
+
+.dash-scan-result {
+  font-size: 0.83rem;
   color: var(--text-2);
   background: var(--bg-3);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.5rem 0.7rem;
+  padding: 0.5rem 0.75rem;
 }
 
 /* ── Mobil ───────────────────────────────────────────────────── */
 @media (max-width: 600px) {
-  .dashboard-wrap { padding: 1rem 0.75rem 2rem; }
+  .dashboard-wrap { padding: 1rem 0.75rem 2rem; gap: 1rem; }
+  .dash-container { padding: 0.85rem 0.9rem 1rem; }
+  .dash-book-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.6rem; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
-  .stat-card-value { font-size: 1.5rem; }
-  .reading-card { max-width: 100%; }
-  .reading-card-title, .reading-card-author { max-width: none; }
-  .recent-item { width: 68px; height: 96px; }
-  .suggest-grid { grid-template-columns: repeat(3, 1fr); }
+  .stat-card-value { font-size: 1.4rem; }
 }

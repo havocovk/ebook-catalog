@@ -7,10 +7,17 @@
 //               → bunlar İstatistikler sayfasına (Adım 6-11) taşındı.
 //
 //   KALDI:      Şu An Okunuyor, Son Eklenenler, Eksik Bilgi Merkezi,
-//               Tam Yedekleme
+//               Tam Yedekleme, Veritabanı Bakımı
 //
 //   YENİ:       Rastgele Öneri — okunmadı/sırada kitaplardan 5 rastgele,
 //               "Yenile" butonuyla değişir, tıklayınca modal açılır.
+//
+// Güncelleme (Adım 5 revizyon):
+//   - Tüm bölümler dash-container (çerçeveli kutu) içinde — Grimmory tarzı
+//   - Şu An Okunuyor: her zaman görünür, kitap yoksa grid boş kalır
+//   - Son Eklenenler: her zaman görünür
+//   - Tüm kapaklar büyük dikey kart boyutunda (öneri kartı ile aynı stil)
+//   - Veritabanı Bakımı ve Yedekleme bölümleri renklendirme
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../core/state.js";
@@ -20,7 +27,6 @@ import { escapeHtml, showToast } from "../ui/common.js";
 import { findAndDeleteOrphans, findAndDeleteOrphanCovers } from "../core/api.js";
 import { renderBackupSection, bindBackupSection } from "./dashboard-backup.js";
 
-// ── Adım J9: Yeniden çizim önleme ───────────────────────────────────────────
 let _lastStatsKey = null;
 
 function _statsKey(stats) {
@@ -34,208 +40,168 @@ function _statsKey(stats) {
     suggestPool:      stats.suggestPool.length,
   });
 }
-// ── Adım J9 sonu ─────────────────────────────────────────────────────────────
 
-// ─── Dışa açık: router her ziyarette çağırır ────────────────────────────────
 export async function renderDashboard() {
   const stats = compute();
-
   const key = _statsKey(stats);
   if (key === _lastStatsKey && document.getElementById("dashboard-content")?.hasChildNodes()) {
     bindClicks();
     return;
   }
   _lastStatsKey = key;
-
   renderLayout(stats);
   bindClicks();
 }
 
-// ─── İstatistikleri hesapla ──────────────────────────────────────────────────
 function compute() {
   const books = state.books;
-
-  // Şu an okunan kitaplar
   const reading = books.filter((b) => b.status === "okunuyor");
-
-  // Son eklenen 10 kitap
   const recent = [...books]
     .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt))
     .slice(0, 10);
-
-  // Eksik bilgi
   const missingAuthor    = books.filter((b) => !b.author).length;
   const missingPublisher = books.filter((b) => !b.publisher).length;
   const missingCover     = books.filter((b) => !b.cover_url).length;
   const missingYear      = books.filter((b) => !b.year).length;
-
-  // Rastgele öneri havuzu: okunmadı veya sırada
   const suggestPool = books.filter(
     (b) => b.status === "okunmadi" || b.status === "sirada"
   );
-
   return { reading, recent, missingAuthor, missingPublisher, missingCover, missingYear, suggestPool };
 }
 
-// ─── 5 rastgele kitap seç ────────────────────────────────────────────────────
 function pickRandom(pool, n = 5) {
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
+  return [...pool].sort(() => Math.random() - 0.5).slice(0, n);
 }
 
-// ─── Tüm sayfayı çiz ────────────────────────────────────────────────────────
+// ─── Ortak büyük kapak kartı HTML'i ─────────────────────────────────────────
+// Tüm bölümlerde (okunuyor, son eklenenler, öneri) aynı kart yapısı kullanılır.
+function bookCard(b, extraClass = "") {
+  const cover = b.cover_url
+    ? `<img src="${b.cover_url}" alt="${escapeHtml(b.title || "")}" loading="lazy" />`
+    : `<div class="dash-card-placeholder">${escapeHtml((b.title || "?")[0].toUpperCase())}</div>`;
+  return `
+    <div class="dash-card ${extraClass}" data-id="${b.$id}" title="${escapeHtml(b.title || "")}">
+      <div class="dash-card-cover">${cover}</div>
+      <div class="dash-card-info">
+        <span class="dash-card-title">${escapeHtml(b.title || "Başlıksız")}</span>
+        <span class="dash-card-author">${escapeHtml(b.author || "")}</span>
+      </div>
+    </div>
+  `;
+}
+
 function renderLayout(s) {
   const container = document.getElementById("dashboard-content");
   if (!container) return;
-
   const suggestions = pickRandom(s.suggestPool);
 
   container.innerHTML = `
 
-    <!-- ── Şu An Okunuyor ── -->
-    ${s.reading.length > 0 ? renderReadingSection(s.reading) : ""}
+    <!-- ── Şu An Okunuyor — her zaman görünür ── -->
+    <div class="dash-container">
+      <div class="dash-container-header">
+        <h2 class="dash-container-title">
+          <iconify-icon icon="lucide:book-open"></iconify-icon> Şu An Okunuyor
+        </h2>
+      </div>
+      <div class="dash-book-grid" id="reading-grid">
+        ${s.reading.length > 0
+          ? s.reading.map((b) => bookCard(b)).join("")
+          : `<p class="dash-empty">Şu an okunan kitap yok.</p>`}
+      </div>
+    </div>
 
     <!-- ── Rastgele Öneri ── -->
-    ${renderSuggestSection(suggestions, s.suggestPool.length)}
-
-    <!-- ── Son Eklenenler ── -->
-    ${s.recent.length > 0 ? renderRecentSection(s.recent) : ""}
-
-    <!-- ── Eksik Bilgi Merkezi ── -->
-    ${renderMissingInfoSection(s)}
-
-    <!-- ── Veritabanı Bakımı ── -->
-    <div class="dash-section">
-      <h2 class="dash-section-title">
-        <iconify-icon icon="lucide:shield-check"></iconify-icon> Veritabanı Bakımı
-      </h2>
-      <div class="db-maintenance-box">
-        <p class="db-maintenance-desc">
-          Bir kitap sildiğinde, o kitaba ait yazar/yayınevi/seri/koleksiyon
-          artık başka hiçbir kitapta kullanılmıyorsa otomatik olarak silinir.
-          Bu araç, her ihtimale karşı, veritabanında öyle bir kalıntı kalıp
-          kalmadığını tarar ve varsa temizler.
-        </p>
-        <div class="db-maintenance-actions">
-          <button id="scan-orphans-btn" class="btn btn-sm">
-            <iconify-icon icon="lucide:shield-check"></iconify-icon>
-            <span class="btn-label">Yetim Kayıtları Tara ve Temizle</span>
-          </button>
-          <button id="scan-orphan-covers-btn" class="btn btn-sm">
-            <iconify-icon icon="lucide:image-off"></iconify-icon>
-            <span class="btn-label">Fazla Kapakları Tara ve Temizle</span>
-          </button>
-        </div>
-        <div id="orphan-scan-result" class="orphan-scan-result hidden"></div>
-        <div id="orphan-covers-result" class="orphan-scan-result hidden"></div>
-      </div>
-    </div>
-
-    <!-- ── Tam Yedekleme ── -->
-    ${renderBackupSection()}
-
-  `;
-}
-
-// ─── Rastgele Öneri bölümü ───────────────────────────────────────────────────
-function renderSuggestSection(suggestions, poolSize) {
-  if (poolSize === 0) return "";
-
-  const items = suggestions.map((b) => `
-    <div class="suggest-item" data-id="${b.$id}" title="${escapeHtml(b.title || "")}">
-      <div class="suggest-cover">
-        ${b.cover_url
-          ? `<img src="${b.cover_url}" alt="${escapeHtml(b.title || "")}" loading="lazy" />`
-          : `<div class="suggest-placeholder">${escapeHtml((b.title || "?")[0].toUpperCase())}</div>`}
-        <span class="suggest-status suggest-status--${b.status || "okunmadi"}">
-          ${b.status === "sirada" ? "Sırada" : "Okunmadı"}
-        </span>
-      </div>
-      <div class="suggest-info">
-        <span class="suggest-title">${escapeHtml(b.title || "Başlıksız")}</span>
-        <span class="suggest-author">${escapeHtml(b.author || "")}</span>
-      </div>
-    </div>
-  `).join("");
-
-  return `
-    <div class="dash-section">
-      <div class="dash-section-header">
-        <h2 class="dash-section-title">
+    ${s.suggestPool.length > 0 ? `
+    <div class="dash-container">
+      <div class="dash-container-header">
+        <h2 class="dash-container-title">
           <iconify-icon icon="lucide:shuffle"></iconify-icon> Rastgele Öneri
-          <span class="dash-section-sub">${poolSize} kitap arasından</span>
+          <span class="dash-container-sub">${s.suggestPool.length} kitap arasından</span>
         </h2>
         <button id="suggest-refresh-btn" class="btn btn-sm" title="Yeni öneriler getir">
           <iconify-icon icon="lucide:refresh-cw"></iconify-icon>
           <span class="btn-label">Yenile</span>
         </button>
       </div>
-      <div class="suggest-grid" id="suggest-grid">${items}</div>
-    </div>
-  `;
-}
-
-// ─── "Şu An Okunuyor" bölümü ─────────────────────────────────────────────────
-function renderReadingSection(books) {
-  const items = books.map((b) => `
-    <div class="reading-card" data-id="${b.$id}">
-      <div class="reading-card-cover">
-        ${b.cover_url
-          ? `<img src="${b.cover_url}" alt="${escapeHtml(b.title || "")}" loading="lazy" />`
-          : `<div class="cover-placeholder">${escapeHtml((b.title || "?")[0].toUpperCase())}</div>`}
-      </div>
-      <div class="reading-card-info">
-        <span class="reading-card-title">${escapeHtml(b.title || "Başlıksız")}</span>
-        <span class="reading-card-author">${escapeHtml(b.author || "")}</span>
+      <div class="dash-book-grid" id="suggest-grid">
+        ${suggestions.map((b) => bookCard(b, "suggest-item")).join("")}
       </div>
     </div>
-  `).join("");
+    ` : ""}
 
-  return `
-    <div class="dash-section">
-      <h2 class="dash-section-title">
-        <iconify-icon icon="lucide:book-open"></iconify-icon> Şu An Okunuyor
-      </h2>
-      <div class="reading-cards" id="reading-cards">${items}</div>
+    <!-- ── Son Eklenenler — her zaman görünür ── -->
+    <div class="dash-container">
+      <div class="dash-container-header">
+        <h2 class="dash-container-title">
+          <iconify-icon icon="lucide:clock"></iconify-icon> Son Eklenenler
+        </h2>
+      </div>
+      <div class="dash-book-grid" id="recent-grid">
+        ${s.recent.length > 0
+          ? s.recent.map((b) => bookCard(b)).join("")
+          : `<p class="dash-empty">Henüz kitap eklenmemiş.</p>`}
+      </div>
     </div>
+
+    <!-- ── Eksik Bilgi Merkezi ── -->
+    ${renderMissingInfoSection(s)}
+
+    <!-- ── Veritabanı Bakımı ── -->
+    <div class="dash-container dash-container--maintenance">
+      <div class="dash-container-header">
+        <h2 class="dash-container-title">
+          <iconify-icon icon="lucide:shield-check"></iconify-icon> Veritabanı Bakımı
+        </h2>
+      </div>
+      <p class="dash-maintenance-desc">
+        Bir kitap sildiğinde, o kitaba ait yazar/yayınevi/seri/koleksiyon
+        artık başka hiçbir kitapta kullanılmıyorsa otomatik olarak silinir.
+        Bu araç, her ihtimale karşı, veritabanında öyle bir kalıntı kalıp
+        kalmadığını tarar ve varsa temizler.
+      </p>
+      <div class="dash-maintenance-actions">
+        <button id="scan-orphans-btn" class="btn btn-sm btn-maintenance-orphan">
+          <iconify-icon icon="lucide:shield-check"></iconify-icon>
+          <span class="btn-label">Yetim Kayıtları Tara ve Temizle</span>
+        </button>
+        <button id="scan-orphan-covers-btn" class="btn btn-sm btn-maintenance-cover">
+          <iconify-icon icon="lucide:image-off"></iconify-icon>
+          <span class="btn-label">Fazla Kapakları Tara ve Temizle</span>
+        </button>
+      </div>
+      <div id="orphan-scan-result"   class="dash-scan-result hidden"></div>
+      <div id="orphan-covers-result" class="dash-scan-result hidden"></div>
+    </div>
+
+    <!-- ── Tam Yedekleme ── -->
+    <div class="dash-container dash-container--backup">
+      <div class="dash-container-header">
+        <h2 class="dash-container-title">
+          <iconify-icon icon="lucide:hard-drive-download"></iconify-icon> Tam Yedekleme
+        </h2>
+      </div>
+      ${renderBackupSection()}
+    </div>
+
   `;
 }
 
-// ─── "Son Eklenenler" yatay şerit ────────────────────────────────────────────
-function renderRecentSection(books) {
-  const items = books.map((b) => `
-    <div class="recent-item" data-id="${b.$id}" title="${escapeHtml(b.title || "")}">
-      ${b.cover_url
-        ? `<img src="${b.cover_url}" alt="${escapeHtml(b.title || "")}" loading="lazy" />`
-        : `<div class="recent-placeholder">${escapeHtml((b.title || "?")[0].toUpperCase())}</div>`}
-    </div>
-  `).join("");
-
-  return `
-    <div class="dash-section">
-      <h2 class="dash-section-title">
-        <iconify-icon icon="lucide:clock"></iconify-icon> Son Eklenenler
-      </h2>
-      <div class="recent-strip" id="recent-strip">${items}</div>
-    </div>
-  `;
-}
-
-// ─── "Eksik Bilgi Merkezi" bölümü ────────────────────────────────────────────
 function renderMissingInfoSection(s) {
   const total = s.missingAuthor + s.missingPublisher + s.missingCover + s.missingYear;
   if (total === 0) return "";
-
   return `
-    <div class="dash-section">
-      <h2 class="dash-section-title">
-        <iconify-icon icon="lucide:alert-circle"></iconify-icon> Eksik Bilgi Merkezi
-      </h2>
+    <div class="dash-container dash-container--warning">
+      <div class="dash-container-header">
+        <h2 class="dash-container-title">
+          <iconify-icon icon="lucide:alert-circle"></iconify-icon> Eksik Bilgi Merkezi
+        </h2>
+      </div>
       <div class="stat-grid" id="missing-info-grid">
-        ${missingCard("lucide:user-x",      "Yazar Eksik",    s.missingAuthor,    "author")}
-        ${missingCard("lucide:building-2",  "Yayınevi Eksik", s.missingPublisher, "publisher")}
-        ${missingCard("lucide:image-off",   "Kapak Eksik",    s.missingCover,     "cover_url")}
-        ${missingCard("lucide:calendar-x",  "Yıl Eksik",      s.missingYear,      "year")}
+        ${missingCard("lucide:user-x",     "Yazar Eksik",    s.missingAuthor,    "author")}
+        ${missingCard("lucide:building-2", "Yayınevi Eksik", s.missingPublisher, "publisher")}
+        ${missingCard("lucide:image-off",  "Kapak Eksik",    s.missingCover,     "cover_url")}
+        ${missingCard("lucide:calendar-x", "Yıl Eksik",      s.missingYear,      "year")}
       </div>
     </div>
   `;
@@ -251,24 +217,23 @@ function missingCard(icon, label, value, field) {
   `;
 }
 
-// ─── Tüm tıklama olaylarını bağla ────────────────────────────────────────────
 function bindClicks() {
   // Şu an okunuyor
-  document.getElementById("reading-cards")?.addEventListener("click", (e) => {
-    const card = e.target.closest(".reading-card");
+  document.getElementById("reading-grid")?.addEventListener("click", (e) => {
+    const card = e.target.closest(".dash-card");
     if (card?.dataset.id) openModal(card.dataset.id);
   });
 
   // Son eklenenler
-  document.getElementById("recent-strip")?.addEventListener("click", (e) => {
-    const item = e.target.closest(".recent-item");
-    if (item?.dataset.id) openModal(item.dataset.id);
+  document.getElementById("recent-grid")?.addEventListener("click", (e) => {
+    const card = e.target.closest(".dash-card");
+    if (card?.dataset.id) openModal(card.dataset.id);
   });
 
   // Rastgele öneri — kart tıklama
   document.getElementById("suggest-grid")?.addEventListener("click", (e) => {
-    const item = e.target.closest(".suggest-item");
-    if (item?.dataset.id) openModal(item.dataset.id);
+    const card = e.target.closest(".dash-card");
+    if (card?.dataset.id) openModal(card.dataset.id);
   });
 
   // Rastgele öneri — Yenile butonu
@@ -276,28 +241,12 @@ function bindClicks() {
     const pool = state.books.filter(
       (b) => b.status === "okunmadi" || b.status === "sirada"
     );
-    const suggestions = pickRandom(pool);
     const grid = document.getElementById("suggest-grid");
     if (!grid) return;
-    grid.innerHTML = suggestions.map((b) => `
-      <div class="suggest-item" data-id="${b.$id}" title="${escapeHtml(b.title || "")}">
-        <div class="suggest-cover">
-          ${b.cover_url
-            ? `<img src="${b.cover_url}" alt="${escapeHtml(b.title || "")}" loading="lazy" />`
-            : `<div class="suggest-placeholder">${escapeHtml((b.title || "?")[0].toUpperCase())}</div>`}
-          <span class="suggest-status suggest-status--${b.status || "okunmadi"}">
-            ${b.status === "sirada" ? "Sırada" : "Okunmadı"}
-          </span>
-        </div>
-        <div class="suggest-info">
-          <span class="suggest-title">${escapeHtml(b.title || "Başlıksız")}</span>
-          <span class="suggest-author">${escapeHtml(b.author || "")}</span>
-        </div>
-      </div>
-    `).join("");
+    grid.innerHTML = pickRandom(pool).map((b) => bookCard(b, "suggest-item")).join("");
   });
 
-  // Eksik Bilgi Merkezi kartları
+  // Eksik Bilgi Merkezi
   const missingGrid = document.getElementById("missing-info-grid");
   missingGrid?.addEventListener("click", (e) => {
     const card = e.target.closest(".stat-card--missing");
@@ -314,7 +263,7 @@ function bindClicks() {
     navigate("catalog");
   });
 
-  // Tam Yedekleme butonları
+  // Tam Yedekleme
   bindBackupSection();
 
   // Yetim Kayıt Tarayıcı
@@ -325,8 +274,7 @@ function bindClicks() {
     if (resultBox) { resultBox.classList.remove("hidden"); resultBox.textContent = "Taranıyor..."; }
     try {
       const removed = await findAndDeleteOrphans();
-      const totalRemoved =
-        removed.authors.length + removed.publishers.length +
+      const totalRemoved = removed.authors.length + removed.publishers.length +
         removed.series.length + removed.collections.length;
       if (totalRemoved === 0) {
         showToast("Veritabanı temiz — yetim kayıt bulunamadı.");
@@ -343,9 +291,7 @@ function bindClicks() {
     } catch (err) {
       showToast("Tarama sırasında hata oluştu: " + (err?.message || err), "error");
       if (resultBox) resultBox.textContent = "Tarama başarısız oldu.";
-    } finally {
-      scanBtn.disabled = false;
-    }
+    } finally { scanBtn.disabled = false; }
   });
 
   // Fazla Kapak Tarayıcı
@@ -366,8 +312,6 @@ function bindClicks() {
     } catch (err) {
       showToast("Tarama sırasında hata oluştu: " + (err?.message || err), "error");
       if (resultBox) resultBox.textContent = "Tarama başarısız oldu.";
-    } finally {
-      scanCoversBtn.disabled = false;
-    }
+    } finally { scanCoversBtn.disabled = false; }
   });
 }
