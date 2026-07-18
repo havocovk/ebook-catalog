@@ -1273,11 +1273,27 @@
   font-weight: 500;
 }
 
-/* Etiketler */
+/* Notlar */
+.locked-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.locked-notes-text {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* Etiketler / Koleksiyonlar */
 .locked-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
+  align-items: center;
 }
 
 .locked-tag {

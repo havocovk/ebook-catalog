@@ -710,7 +710,7 @@ function _buildLockedView(book) {
        </div>`
     : "";
 
-  // Bilgi grid'i: yayınevi, yıl, baskı, dil
+  // Bilgi grid'i: yayınevi, yıl, baskı, dil, kategori, tür
   const langLabels = { tr:"Türkçe", en:"İngilizce", de:"Almanca", fr:"Fransızca",
     es:"İspanyolca", it:"İtalyanca", ru:"Rusça", ar:"Arapça", ja:"Japonca",
     zh:"Çince", other:"Diğer" };
@@ -719,6 +719,8 @@ function _buildLockedView(book) {
     { icon: "lucide:calendar",    label: "Yıl",      val: book.year      },
     { icon: "lucide:layers-2",    label: "Baskı",    val: book.edition   },
     { icon: "lucide:languages",   label: "Dil",      val: langLabels[book.language] || book.language },
+    { icon: "lucide:tags",        label: "Kategori", val: book.category  },
+    { icon: "lucide:library",     label: "Tür",      val: book.genre     },
   ].filter((i) => i.val);
 
   const infoGridHtml = infoItems.length
@@ -733,9 +735,32 @@ function _buildLockedView(book) {
        </div>`
     : "";
 
+  // Notlar
+  const notesHtml = book.notes
+    ? `<div class="locked-notes">
+         <span class="locked-info-label">
+           <iconify-icon icon="lucide:notebook-pen"></iconify-icon> Notlar
+         </span>
+         <p class="locked-notes-text">${escapeHtml(book.notes)}</p>
+       </div>`
+    : "";
+
+  // Koleksiyonlar
+  const collectionsHtml = (book.collections || []).length
+    ? `<div class="locked-tags">
+         <span class="locked-info-label" style="width:100%;margin-bottom:0.2rem;">
+           <iconify-icon icon="lucide:folder-heart"></iconify-icon> Koleksiyonlar
+         </span>
+         ${book.collections.map((c) => `<span class="locked-tag">${escapeHtml(c)}</span>`).join("")}
+       </div>`
+    : "";
+
   // Etiketler
   const tagsHtml = (book.tags || []).length
     ? `<div class="locked-tags">
+         <span class="locked-info-label" style="width:100%;margin-bottom:0.2rem;">
+           <iconify-icon icon="lucide:tag"></iconify-icon> Etiketler
+         </span>
          ${book.tags.map((t) => `<span class="locked-tag">${escapeHtml(t)}</span>`).join("")}
        </div>`
     : "";
@@ -758,6 +783,8 @@ function _buildLockedView(book) {
       </div>
       ${seriesHtml}
       ${infoGridHtml}
+      ${notesHtml}
+      ${collectionsHtml}
       ${tagsHtml}
     </div>
   `;
