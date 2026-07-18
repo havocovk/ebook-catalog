@@ -1131,3 +1131,169 @@
   color: var(--text);
 }
 /* ── Adım 18 sonu ─────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* Adım 4 (V5) — Kilitli Modal Görünümü                                       */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Kilitle butonu — modal header'da, güven rozeti ile kapat butonu arasında */
+.modal-lock-btn {
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+/* Kilitli görünüm kapsayıcısı — modal-body ile aynı padding/layout */
+.modal-locked-view {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Büyük kapak resmi */
+.locked-cover-wrap {
+  flex-shrink: 0;
+  width: 160px;
+}
+
+.locked-cover-img {
+  width: 100%;
+  border-radius: var(--radius);
+  display: block;
+}
+
+.locked-cover-placeholder {
+  width: 160px;
+  height: 220px;
+  border-radius: var(--radius);
+  font-size: 3rem;
+}
+
+/* Sağ meta bölümü */
+.locked-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.locked-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.locked-author {
+  font-size: 0.9rem;
+  color: var(--text-2);
+  margin: 0;
+}
+
+/* Chip satırı: format + durum + fiziksel kopya + güven */
+.locked-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* Temel chip stili — kilitli görünüme özgü */
+.locked-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  color: #fff;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* Format renkleri: mevcut .format-pdf / .format-epub sınıflarını yeniden kullanır */
+/* (Adım 3 V5'te tanımlandı, burada ekstra bir şey gerekmez) */
+
+/* Fiziksel kopya chip — mor (accent rengi) */
+.locked-chip-physical {
+  background: var(--accent);
+  text-transform: none;
+}
+
+/* Okuma durumu chip renkleri — katalog kartındaki .status-* ile uyumlu */
+.locked-chip-status-okunmadi { background: rgba(92,95,114,0.9);   }
+.locked-chip-status-sirada   { background: rgba(224,168,74,0.9);  }
+.locked-chip-status-okunuyor { background: rgba(124,106,247,0.9); }
+.locked-chip-status-okundu   { background: rgba(76,175,130,0.9);  }
+
+/* Seri adı + sıra bloğu */
+.locked-series {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Bilgi grid'i: yayınevi, yıl, baskı, dil — 2 sütun */
+.locked-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 1rem;
+}
+
+.locked-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.locked-info-label {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.locked-info-val {
+  font-size: 0.82rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Etiketler */
+.locked-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.locked-tag {
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 20px;
+}
+
+/* Mobil: kilitli görünümde dikey yığılma */
+@media (max-width: 600px) {
+  .modal-locked-view { flex-direction: column; }
+  .locked-cover-wrap { width: 100%; }
+  .locked-cover-img  { max-height: 200px; object-fit: contain; margin: 0 auto; }
+  .locked-info-grid  { grid-template-columns: 1fr; }
+}
+/* ── Adım 4 (V5) sonu ────────────────────────────────────────────────────── */

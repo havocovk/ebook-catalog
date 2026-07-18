@@ -34,6 +34,10 @@ import { mountEntityPicker } from "./entity-picker.js";
 // Şu an düzenlenen kitabın ID'si. Modal kapalıyken null.
 let editingId = null;
 
+// ── Adım 4 (V5): Kilit durumu — true = kilitli görünüm, false = form görünümü.
+// Her openModal() çağrısında false'a sıfırlanır.
+let _isLocked = false;
+
 // Açılır menüler (initModal'da bir kez kurulur).
 let authorPicker = null;
 let publisherPicker = null;
@@ -166,6 +170,12 @@ export function openModal(bookId) {
   if (physicalEl) physicalEl.checked = Boolean(book.has_physical_copy);
   // ── Adım 39 sonu ──────────────────────────────────────────────────────────
 
+  // ── Adım 4 (V5): Her açılışta AÇIK moddan başla + kilitli view'ı hazırla ──
+  _isLocked = false;
+  _applyLockState(false);
+  _buildLockedView(book);
+  // ── Adım 4 (V5) sonu ──────────────────────────────────────────────────────
+
   const modal = document.getElementById("book-modal");
   modal.classList.remove("hidden");
   modal.classList.add("visible");
@@ -177,6 +187,10 @@ export function closeModal() {
   modal.classList.remove("visible");
   modal.classList.add("hidden");
   editingId = null;
+  // ── Adım 4 (V5): Kapanınca kilit durumunu sıfırla ────────────────────────
+  _isLocked = false;
+  _applyLockState(false);
+  // ── Adım 4 (V5) sonu ──────────────────────────────────────────────────────
 }
 
 // ─── Kaydet ─────────────────────────────────────────────────────────────────
@@ -520,6 +534,21 @@ export function initModal() {
   document.getElementById("modal-save").addEventListener("click", saveModal);
   document.getElementById("modal-delete").addEventListener("click", deleteCurrentBook);
 
+  // ── Adım 4 (V5): Kilitle / Kilidi Aç butonu ──────────────────────────────
+  document.getElementById("modal-lock-btn")?.addEventListener("click", () => {
+    if (!editingId) return;
+    _isLocked = !_isLocked;
+    // Kilitlenince kilitli view'ı güncel kitap verisiyle yeniden oluştur
+    // (kullanıcı form'da bir şey değiştirmiş olabilir ama kaydetmemişse
+    // kilitli view state.books'taki SON KAYDEDILMIŞ veriyi gösterir).
+    if (_isLocked) {
+      const book = state.books.find((b) => b.$id === editingId);
+      if (book) _buildLockedView(book);
+    }
+    _applyLockState(_isLocked);
+  });
+  // ── Adım 4 (V5) sonu ──────────────────────────────────────────────────────
+
   // ── Kapak resmi yükleme: butona basınca gizli dosya seçiciyi tetikle ──────
   const coverInput = document.getElementById("modal-cover-input");
   document.getElementById("modal-cover-upload-btn")?.addEventListener("click", () => {
@@ -590,3 +619,129 @@ function toggleAcademicFields(isAcademic) {
   }
 }
 // ── Adım 11 sonu ─────────────────────────────────────────────────────────────
+
+// ── Adım 4 (V5): Kilit durumunu uygula ───────────────────────────────────────
+// locked=true  → form katmanı gizlenir, kilitli view gösterilir, buton "Kilidi Aç" olur
+// locked=false → form katmanı gösterilir, kilitli view gizlenir, buton "Kilitle" olur
+function _applyLockState(locked) {
+  const fields     = document.getElementById("modal-fields");
+  const footer     = document.getElementById("modal-footer");
+  const lockedView = document.getElementById("modal-locked-view");
+  const lockBtn    = document.getElementById("modal-lock-btn");
+
+  if (fields)     fields.classList.toggle("hidden", locked);
+  if (footer)     footer.classList.toggle("hidden", locked);
+  if (lockedView) lockedView.classList.toggle("hidden", !locked);
+
+  if (lockBtn) {
+    if (locked) {
+      lockBtn.innerHTML = `<iconify-icon icon="lucide:lock-open"></iconify-icon> Kilidi Aç`;
+      lockBtn.title = "Düzenleme moduna geç";
+    } else {
+      lockBtn.innerHTML = `<iconify-icon icon="lucide:lock"></iconify-icon> Kilitle`;
+      lockBtn.title = "Salt okunur görünüme geç";
+    }
+  }
+}
+
+// ── Adım 4 (V5): Kilitli görünüm HTML'ini oluştur ────────────────────────────
+// state.books'taki EN SON KAYDEDILMIŞ veriyi kullanır.
+// Format chip renkleri Adım 3 (V5) ile eklenen CSS sınıflarını (format-pdf /
+// format-epub) kullanır — aynı görsel dil korunur.
+function _buildLockedView(book) {
+  const el = document.getElementById("modal-locked-view");
+  if (!el) return;
+
+  // Format chip
+  const fmt         = (book.format || "").toLowerCase();
+  const fmtClass    = fmt === "pdf" ? "format-pdf" : fmt === "epub" ? "format-epub" : "";
+  const fmtHtml     = book.format
+    ? `<span class="locked-chip ${fmtClass}">${(book.format).toUpperCase()}</span>`
+    : "";
+
+  // Fiziksel kopya chip (sadece true ise göster)
+  const physHtml = book.has_physical_copy
+    ? `<span class="locked-chip locked-chip-physical">
+         <iconify-icon icon="lucide:book-marked"></iconify-icon> Fiziksel Kopya
+       </span>`
+    : "";
+
+  // Okuma durumu chip
+  const statusMap = {
+    okunmadi: { label: "Okunmadı",  cls: "locked-chip-status-okunmadi"  },
+    sirada:   { label: "Sırada",    cls: "locked-chip-status-sirada"    },
+    okunuyor: { label: "Okunuyor",  cls: "locked-chip-status-okunuyor"  },
+    okundu:   { label: "Okundu",    cls: "locked-chip-status-okundu"    },
+  };
+  const st      = statusMap[book.status] || statusMap["okunmadi"];
+  const stHtml  = `<span class="locked-chip ${st.cls}">${st.label}</span>`;
+
+  // Güven skoru badge
+  const confLevel = confidenceLevel(book.confidence_score);
+  const confHtml  = confLevel
+    ? `<span class="confidence-badge-lg confidence-${confLevel}">
+         ${confidenceLabel(confLevel)} Güven (${book.confidence_score}/100)
+       </span>`
+    : "";
+
+  // Seri bloğu
+  const seriesHtml = book.series
+    ? `<div class="locked-series">
+         <iconify-icon icon="lucide:layers"></iconify-icon>
+         ${escapeHtml(book.series)}${book.series_order ? " #" + book.series_order : ""}
+       </div>`
+    : "";
+
+  // Bilgi grid'i: yayınevi, yıl, baskı, dil
+  const langLabels = { tr:"Türkçe", en:"İngilizce", de:"Almanca", fr:"Fransızca",
+    es:"İspanyolca", it:"İtalyanca", ru:"Rusça", ar:"Arapça", ja:"Japonca",
+    zh:"Çince", other:"Diğer" };
+  const infoItems = [
+    { icon: "lucide:building-2",  label: "Yayınevi", val: book.publisher },
+    { icon: "lucide:calendar",    label: "Yıl",      val: book.year      },
+    { icon: "lucide:layers-2",    label: "Baskı",    val: book.edition   },
+    { icon: "lucide:languages",   label: "Dil",      val: langLabels[book.language] || book.language },
+  ].filter((i) => i.val);
+
+  const infoGridHtml = infoItems.length
+    ? `<div class="locked-info-grid">
+         ${infoItems.map((i) => `
+           <div class="locked-info-item">
+             <span class="locked-info-label">
+               <iconify-icon icon="${i.icon}"></iconify-icon> ${i.label}
+             </span>
+             <span class="locked-info-val">${escapeHtml(String(i.val))}</span>
+           </div>`).join("")}
+       </div>`
+    : "";
+
+  // Etiketler
+  const tagsHtml = (book.tags || []).length
+    ? `<div class="locked-tags">
+         ${book.tags.map((t) => `<span class="locked-tag">${escapeHtml(t)}</span>`).join("")}
+       </div>`
+    : "";
+
+  // Kapak
+  const coverHtml = book.cover_url
+    ? `<img src="${book.cover_url}" alt="${escapeHtml(book.title || "")}" class="locked-cover-img" />`
+    : `<div class="cover-placeholder locked-cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
+
+  el.innerHTML = `
+    <div class="locked-cover-wrap">${coverHtml}</div>
+    <div class="locked-meta">
+      <h2 class="locked-title">${escapeHtml(book.title || "Başlıksız")}</h2>
+      <p class="locked-author">${escapeHtml(book.author || "")}</p>
+      <div class="locked-chips">
+        ${fmtHtml}
+        ${stHtml}
+        ${physHtml}
+        ${confHtml}
+      </div>
+      ${seriesHtml}
+      ${infoGridHtml}
+      ${tagsHtml}
+    </div>
+  `;
+}
+// ── Adım 4 (V5) sonu ──────────────────────────────────────────────────────────

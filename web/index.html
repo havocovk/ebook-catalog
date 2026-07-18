@@ -462,6 +462,11 @@
       <div class="modal-header">
         <h2 class="modal-heading">Kitap Detayı</h2>
         <span id="modal-confidence-badge" class="confidence-badge-lg hidden"></span>
+        <!-- ── Adım 4 (V5): Kilitle / Kilidi Aç butonu ──────────────────── -->
+        <button id="modal-lock-btn" class="btn btn-sm modal-lock-btn" title="Salt okunur görünüme geç">
+          <iconify-icon icon="lucide:lock"></iconify-icon> Kilitle
+        </button>
+        <!-- ── Adım 4 (V5) sonu ──────────────────────────────────────────── -->
         <button id="modal-close" class="modal-close" title="Kapat">✕</button>
       </div>
       <div class="modal-body">
@@ -473,7 +478,8 @@
           </button>
           <input type="file" id="modal-cover-input" accept="image/jpeg,image/png,image/webp" hidden />
         </div>
-        <div class="modal-fields">
+        <!-- ── Adım 4 (V5): id eklendi — JS _applyLockState() bu id ile bulur ── -->
+        <div class="modal-fields" id="modal-fields">
 
           <!-- Kitap Adı -->
           <div class="field">
@@ -737,7 +743,14 @@
 
         </div>
       </div>
-      <div class="modal-footer">
+      <!-- ── Adım 4 (V5): Kilitli görünüm — form katmanının ALTINDA, modal-body içinde.
+           JS _buildLockedView() bu div'in içini kitap verisiyle doldurur.
+           Varsayılan: hidden (AÇIK modda form görünür, bu gizli). ──────────── -->
+      <div id="modal-locked-view" class="modal-locked-view hidden"></div>
+      <!-- ── Adım 4 (V5) sonu ─────────────────────────────────────────────── -->
+
+      <!-- ── Adım 4 (V5): id eklendi — JS _applyLockState() bu id ile bulur ── -->
+      <div class="modal-footer" id="modal-footer">
         <button id="modal-delete" class="btn btn-danger">
           <iconify-icon icon="lucide:trash-2"></iconify-icon> Sil
         </button>
