@@ -44,6 +44,9 @@ function compute() {
   // Toplam dosya boyutu (bytes)
   const totalBytes = books.reduce((sum, b) => sum + (b.file_size || 0), 0);
 
+  // Toplam sayfa sayısı (page_count dolu olan kitapların toplamı)
+  const totalPages = books.reduce((sum, b) => sum + (b.page_count || 0), 0);
+
   // Format dağılımı
   const epub = books.filter((b) => b.format === "epub").length;
   const pdf  = books.filter((b) => b.format === "pdf").length;
@@ -62,7 +65,7 @@ function compute() {
   const confNone   = books.filter((b) => b.confidence_score == null).length;
 
   return {
-    total, authorCount, seriesCount, publisherCount, totalBytes,
+    total, authorCount, seriesCount, publisherCount, totalBytes, totalPages,
     epub, pdf, fmtOther,
     langTr, langEn, langOther, langNone,
     confHigh, confMedium, confLow, confNone,
@@ -99,11 +102,12 @@ export async function renderStats() {
 
       <!-- ── Üst Özet Bar ── -->
       <div class="stats-summary-bar">
-        ${summaryCard("lucide:book-copy",   "Toplam Kitap",   s.total,              "accent")}
-        ${summaryCard("lucide:users",       "Yazar",          s.authorCount,         "neutral")}
-        ${summaryCard("lucide:layers",      "Seri",           s.seriesCount,         "neutral")}
-        ${summaryCard("lucide:building-2",  "Yayınevi",       s.publisherCount,      "neutral")}
-        ${summaryCard("lucide:hard-drive",  "Toplam Boyut",   _fmtBytes(s.totalBytes), "neutral", true)}
+        ${summaryCard("lucide:book-copy",   "Toplam Kitap",   s.total,                                    "accent")}
+        ${summaryCard("lucide:users",       "Yazar",          s.authorCount,                              "neutral")}
+        ${summaryCard("lucide:layers",      "Seri",           s.seriesCount,                              "neutral")}
+        ${summaryCard("lucide:building-2",  "Yayınevi",       s.publisherCount,                           "neutral")}
+        ${summaryCard("lucide:hard-drive",  "Toplam Boyut",   _fmtBytes(s.totalBytes),                   "neutral", true)}
+        ${s.totalPages > 0 ? summaryCard("lucide:book-open", "Toplam Sayfa", s.totalPages.toLocaleString("tr-TR"), "neutral", true) : ""}
       </div>
 
       <!-- ── Pasta / Halka Grafikler ── -->
