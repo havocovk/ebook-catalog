@@ -17,6 +17,7 @@ import { initCatalog, renderCatalog } from "./pages/catalog.js";
 // ── Adım 38: Hızlı Kategori Doldurma Modu ───────────────────────────────────
 import { initQuickFill, handleQuickFillButtonClick } from "./pages/catalog/catalog-quickfill.js";
 import { renderDashboard } from "./pages/dashboard.js";
+import { renderStats } from "./pages/stats.js"; // ── Adım 6: İstatistikler sayfası
 import { renderAuthors, initAuthors } from "./pages/authors.js";
 import { renderPublishers, initPublishers } from "./pages/publishers.js";
 import { renderSeries, initSeries } from "./pages/series.js";
@@ -84,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 1) Her sayfanın çizim fonksiyonunu router'a tanıt.
   registerRoute("catalog", renderCatalog);
   registerRoute("dashboard", renderDashboard);
+  registerRoute("stats", renderStats); // ── Adım 6
   registerRoute("authors", renderAuthors);
   registerRoute("publishers", renderPublishers);
   registerRoute("series", renderSeries);

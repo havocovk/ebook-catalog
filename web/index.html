@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="styles/series.css" />
   <link rel="stylesheet" href="styles/collections.css" />
   <link rel="stylesheet" href="styles/dedupe.css" />
+  <link rel="stylesheet" href="styles/stats.css" /> <!-- ── Adım 6 -->
   <!-- ── Adım 12 sonu ─────────────────────────────────────────────── -->
   <script src="https://code.iconify.design/iconify-icon/3.0.2/iconify-icon.min.js"></script>
 </head>
@@ -73,6 +74,9 @@
         </a>
         <a href="#collections" data-nav="collections" class="nav-link">
           <iconify-icon icon="lucide:folder-heart"></iconify-icon><span>Koleksiyonlar</span>
+        </a>
+        <a href="#stats" data-nav="stats" class="nav-link">
+          <iconify-icon icon="lucide:bar-chart-2"></iconify-icon><span>İstatistikler</span>
         </a>
         <a href="#dedupe" data-nav="dedupe" class="nav-link">
           <iconify-icon icon="lucide:copy-x"></iconify-icon><span>Kitap Ayıklayıcı</span>
@@ -449,6 +453,11 @@
           <!-- dedupe.js bu div'in içini doldurur -->
           <div id="dedupe-content"></div>
         </div>
+      </section>
+
+      <!-- ── İstatistikler (Adım 6) ───────────────────────────────── -->
+      <section id="stats-page" class="page hidden">
+        <div id="stats-content"></div>
       </section>
 
     </main>
