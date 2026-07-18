@@ -58,7 +58,7 @@ function compute() {
   const reading = books.filter((b) => b.status === "okunuyor");
   const recent = [...books]
     .sort((a, b) => new Date(b.$createdAt) - new Date(a.$createdAt))
-    .slice(0, 10);
+    .slice(0, 12);
   const missingAuthor    = books.filter((b) => !b.author).length;
   const missingPublisher = books.filter((b) => !b.publisher).length;
   const missingCover     = books.filter((b) => !b.cover_url).length;
@@ -69,7 +69,7 @@ function compute() {
   return { reading, recent, missingAuthor, missingPublisher, missingCover, missingYear, suggestPool };
 }
 
-function pickRandom(pool, n = 5) {
+function pickRandom(pool, n = 6) {
   return [...pool].sort(() => Math.random() - 0.5).slice(0, n);
 }
 
