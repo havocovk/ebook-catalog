@@ -91,11 +91,19 @@ export function createBookCard(book, isSelected = false) {
   `;
   // ── Adım 17 sonu ──────────────────────────────────────────────────────────
 
+  // ── Adım 3 (V5): PDF/EPUB chip renk ayrımı ──────────────────────────────
+  // format değeri "pdf" veya "epub" (küçük harf) olarak gelir.
+  // CSS sınıfı format-pdf → kırmızı, format-epub → yeşil.
+  // Bilinmeyen format varsa nötr arka plan kalır (sadece book-format sınıfı).
+  const fmt = (book.format || "").toLowerCase();
+  const formatClass = fmt === "pdf" ? "format-pdf" : fmt === "epub" ? "format-epub" : "";
+  // ── Adım 3 (V5) sonu ──────────────────────────────────────────────────────
+
   card.innerHTML = `
     <div class="book-cover">
       ${coverHtml}
       ${selectBtnHtml}
-      <span class="book-format">${book.format || ""}</span>
+      <span class="book-format ${formatClass}">${(book.format || "").toUpperCase()}</span>
       ${confBadgeHtml}
       <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
       ${favoriteBtnHtml}

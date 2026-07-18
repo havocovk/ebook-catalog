@@ -73,6 +73,15 @@
   letter-spacing: 0.5px;
 }
 
+/* ── Adım 3 (V5): PDF/EPUB chip renk ayrımı ──────────────────────────────── */
+/* Kart (grid) görünümü: .book-format üzerine eklenen sınıflar.               */
+/* Liste görünümü: .badge.row-format üzerine eklenen sınıflar.                */
+/* Her iki öğe de aynı sınıf adlarını kullandığı için tek kural yeterli.      */
+/* --danger (#e05c5c) → PDF kırmızı  |  --success (#4caf82) → EPUB yeşil     */
+.format-pdf  { background: var(--danger)  !important; color: #fff !important; }
+.format-epub { background: var(--success) !important; color: #fff !important; }
+/* ── Adım 3 (V5) sonu ────────────────────────────────────────────────────── */
+
 .book-status-badge {
   position: absolute;
   bottom: 0.4rem;

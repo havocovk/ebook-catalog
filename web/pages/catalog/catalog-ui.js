@@ -211,6 +211,12 @@ function createBookRow(book, isSelected = false) {
   `;
   // ── Adım 17 sonu ──────────────────────────────────────────────────────────
 
+  // ── Adım 3 (V5): PDF/EPUB chip renk ayrımı (liste görünümü) ─────────────
+  // Grid görünümüyle aynı mantık: format değerine göre CSS sınıfı eklenir.
+  const fmt = (book.format || "").toLowerCase();
+  const formatClass = fmt === "pdf" ? "format-pdf" : fmt === "epub" ? "format-epub" : "";
+  // ── Adım 3 (V5) sonu ──────────────────────────────────────────────────────
+
   row.innerHTML = `
     ${selectBtnHtml}
     <div class="row-cover">${coverHtml}</div>
@@ -218,7 +224,7 @@ function createBookRow(book, isSelected = false) {
       <span class="row-title">${escapeHtml(book.title  || "Başlıksız")}</span>
       <span class="row-author">${escapeHtml(book.author || "Yazar bilinmiyor")}</span>
     </div>
-    <span class="badge row-format">${(book.format || "").toUpperCase()}</span>
+    <span class="badge row-format ${formatClass}">${(book.format || "").toUpperCase()}</span>
     <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
     ${favoriteBtnHtml}
   `;
