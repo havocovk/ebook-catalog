@@ -295,11 +295,13 @@ function computeTimeline() {
   // En yaygın yıl
   const peakYear = Object.entries(yearMap).sort((a, b) => b[1] - a[1])[0];
 
-  // On yıllık gruplar
-  const decadeMap = {};
-  years.forEach((y) => {
-    const decade = Math.floor(y / 10) * 10;
-    decadeMap[decade] = (decadeMap[decade] || 0) + 1;
+  // On yıllık gruplar (kitap sayısı + toplam sayfa sayısı)
+  const decadeMap     = {};
+  const decadePageMap = {};
+  withYear.forEach((b) => {
+    const decade = Math.floor(b.year / 10) * 10;
+    decadeMap[decade]     = (decadeMap[decade]     || 0) + 1;
+    decadePageMap[decade] = (decadePageMap[decade] || 0) + (b.page_count || 0);
   });
   const peakDecade = Object.entries(decadeMap).sort((a, b) => b[1] - a[1])[0];
 
@@ -318,14 +320,21 @@ function computeTimeline() {
   const sortedDecades = Object.entries(decadeMap).sort((a, b) => Number(a[0]) - Number(b[0]));
   const decadeLabels  = sortedDecades.map(([d]) => `${d}'ler`);
   const decadeValues  = sortedDecades.map(([, v]) => v);
+  const decadePages   = sortedDecades.map(([d]) => decadePageMap[Number(d)] || 0);
+
+  // En çok sayfalı on yıl
+  const peakPageDecadeEntry = sortedDecades
+    .map(([d]) => ({ decade: Number(d), pages: decadePageMap[Number(d)] || 0 }))
+    .sort((a, b) => b.pages - a.pages)[0] || null;
 
   return {
     minYear, maxYear, avgYear,
     peakYear: peakYear ? Number(peakYear[0]) : null,
     peakYearCount: peakYear ? peakYear[1] : 0,
     peakDecade: peakDecade ? Number(peakDecade[0]) : null,
+    peakPageDecade: peakPageDecadeEntry && peakPageDecadeEntry.pages > 0 ? peakPageDecadeEntry : null,
     span, classicPct, modernPct,
-    decadeLabels, decadeValues,
+    decadeLabels, decadeValues, decadePages,
     withYearCount: withYear.length,
   };
 }
@@ -366,10 +375,11 @@ export async function renderTimelineSection() {
         ${miniCard("lucide:sparkles",     "En Yeni Kitap",    t.maxYear,                    "accent")}
         ${miniCard("lucide:calculator",   "Ortalama Yıl",     t.avgYear,                    "neutral")}
         ${miniCard("lucide:trophy",       "En Yaygın Yıl",    t.peakYear ? `${t.peakYear} (${t.peakYearCount} kitap)` : "—", "warning")}
-        ${miniCard("lucide:move-horizontal","Zaman Aralığı",  `${t.span} yıl`,               "neutral")}
+        ${miniCard("lucide:move-horizontal","Zaman Aralığı",  `${t.span} yıl`,              "neutral")}
         ${miniCard("lucide:bar-chart-4",  "Zirve On Yıl",    t.peakDecade ? `${t.peakDecade}'ler` : "—", "success")}
-        ${miniCard("lucide:clock",        "Klasik Oranı",     `%${t.classicPct}`,            "neutral")}
-        ${miniCard("lucide:zap",          "21. Yüzyıl",       `%${t.modernPct}`,             "accent")}
+        ${miniCard("lucide:clock",        "Klasik Oranı",     `%${t.classicPct}`,           "neutral")}
+        ${miniCard("lucide:zap",          "21. Yüzyıl",       `%${t.modernPct}`,            "accent")}
+        ${t.peakPageDecade ? miniCard("lucide:book-marked", "En Hacimli On Yıl", `${t.peakPageDecade.decade}'ler (${t.peakPageDecade.pages.toLocaleString("tr-TR")} s.)`, "success") : ""}
       </div>
 
       <!-- Yatay çubuk grafik -->
@@ -415,7 +425,11 @@ function _drawTimeline(t) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => ` ${ctx.parsed.x} kitap`,
+            label: (ctx) => {
+              const pages = t.decadePages[ctx.dataIndex];
+              const pageStr = pages > 0 ? ` · ${pages.toLocaleString("tr-TR")} sayfa` : "";
+              return ` ${ctx.parsed.x} kitap${pageStr}`;
+            },
           },
         },
       },
