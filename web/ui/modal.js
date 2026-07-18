@@ -34,9 +34,10 @@ import { mountEntityPicker } from "./entity-picker.js";
 // Şu an düzenlenen kitabın ID'si. Modal kapalıyken null.
 let editingId = null;
 
-// ── Adım 4 (V5): Kilit durumu — true = kilitli görünüm, false = form görünümü.
-// Her openModal() çağrısında false'a sıfırlanır.
-let _isLocked = false;
+// ── Adım 4 (V5): Kilit durumu — kitap başına Map<bookId, boolean>.
+// Aynı kitabın modalı kapatılıp yeniden açılınca kilit durumu korunur.
+// Farklı kitaplarda kilit durumu birbirinden bağımsızdır.
+const _lockState = new Map();
 
 // Açılır menüler (initModal'da bir kez kurulur).
 let authorPicker = null;
@@ -170,12 +171,12 @@ export function openModal(bookId) {
   if (physicalEl) physicalEl.checked = Boolean(book.has_physical_copy);
   // ── Adım 39 sonu ──────────────────────────────────────────────────────────
 
-  // ── Adım 4 (V5): Her açılışta AÇIK moddan başla + kilitli view'ı hazırla ──
-  _isLocked = false;
-  _applyLockState(false);
+  // ── Adım 4 (V5): Kitabın önceki kilit durumunu geri yükle ───────────────
+  // Aynı kitap daha önce kilitlenmişse Map'ten true gelir, yoksa false.
+  const locked = _lockState.get(bookId) ?? false;
   _buildLockedView(book);
+  _applyLockState(locked);
   // ── Adım 4 (V5) sonu ──────────────────────────────────────────────────────
-
   const modal = document.getElementById("book-modal");
   modal.classList.remove("hidden");
   modal.classList.add("visible");
@@ -186,11 +187,11 @@ export function closeModal() {
   const modal = document.getElementById("book-modal");
   modal.classList.remove("visible");
   modal.classList.add("hidden");
-  editingId = null;
-  // ── Adım 4 (V5): Kapanınca kilit durumunu sıfırla ────────────────────────
-  _isLocked = false;
+  // ── Adım 4 (V5): DOM'u AÇIK konumuna döndür (bir sonraki kitap doğru başlasın).
+  // Map'teki kayıt SİLİNMEZ — aynı kitap yeniden açılınca kilit durumu geri gelir.
   _applyLockState(false);
   // ── Adım 4 (V5) sonu ──────────────────────────────────────────────────────
+  editingId = null;
 }
 
 // ─── Kaydet ─────────────────────────────────────────────────────────────────
@@ -537,15 +538,17 @@ export function initModal() {
   // ── Adım 4 (V5): Kilitle / Kilidi Aç butonu ──────────────────────────────
   document.getElementById("modal-lock-btn")?.addEventListener("click", () => {
     if (!editingId) return;
-    _isLocked = !_isLocked;
+    const wasLocked = _lockState.get(editingId) ?? false;
+    const nowLocked = !wasLocked;
+    _lockState.set(editingId, nowLocked);
     // Kilitlenince kilitli view'ı güncel kitap verisiyle yeniden oluştur
     // (kullanıcı form'da bir şey değiştirmiş olabilir ama kaydetmemişse
     // kilitli view state.books'taki SON KAYDEDILMIŞ veriyi gösterir).
-    if (_isLocked) {
+    if (nowLocked) {
       const book = state.books.find((b) => b.$id === editingId);
       if (book) _buildLockedView(book);
     }
-    _applyLockState(_isLocked);
+    _applyLockState(nowLocked);
   });
   // ── Adım 4 (V5) sonu ──────────────────────────────────────────────────────
 
@@ -626,11 +629,13 @@ function toggleAcademicFields(isAcademic) {
 function _applyLockState(locked) {
   const fields     = document.getElementById("modal-fields");
   const footer     = document.getElementById("modal-footer");
+  const coverWrap  = document.getElementById("modal-cover-wrap");  // ── Resim Yükle butonu dahil
   const lockedView = document.getElementById("modal-locked-view");
   const lockBtn    = document.getElementById("modal-lock-btn");
 
   if (fields)     fields.classList.toggle("hidden", locked);
   if (footer)     footer.classList.toggle("hidden", locked);
+  if (coverWrap)  coverWrap.classList.toggle("hidden", locked);   // ── Kilitliyken sol kapak alanı gizle
   if (lockedView) lockedView.classList.toggle("hidden", !locked);
 
   if (lockBtn) {
