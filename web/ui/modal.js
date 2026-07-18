@@ -159,6 +159,7 @@ export function openModal(bookId) {
   document.getElementById("modal-format").textContent    = (book.format || "").toUpperCase();
 
   document.getElementById("modal-language").value      = book.language || "";
+  document.getElementById("modal-genre").value         = book.genre || "";
   document.getElementById("modal-rating").innerHTML = renderStars(book.rating, true, bookId);
 
   // ── Adım 17: Favori kutucuğunu doldur ────────────────────────────────────
@@ -246,6 +247,7 @@ async function saveModal() {
     // ── Adım 11 sonu ──────────────────────────────────────────────────────
     year:         yearRaw === "" ? null : parseInt(yearRaw) || null,
     language:     document.getElementById("modal-language").value || null,
+    genre:        document.getElementById("modal-genre").value.trim() || null,
     status:       document.getElementById("modal-status").value,
     notes:        document.getElementById("modal-notes").value.trim() || null,
     finished_at:  finishedAt,
