@@ -565,10 +565,25 @@ function computeJourney() {
     }
   });
 
+  // ── Sayfa sayısı istatistikleri ───────────────────────────────────────────
+  // Tamamlanan kitapların toplam sayfa sayısı
+  const finishedPages = finished.reduce((s, b) => s + (b.page_count || 0), 0);
+
+  // Backlog kitapların toplam sayfa sayısı
+  const backlogBooks  = books.filter((b) => b.status === "okunmadi" || b.status === "sirada");
+  const backlogPages  = backlogBooks.reduce((s, b) => s + (b.page_count || 0), 0);
+
+  // Tamamlanan kitaplar arasında page_count dolu olanların ortalaması
+  const finishedWithPages = finished.filter((b) => b.page_count);
+  const avgPagesPerBook   = finishedWithPages.length > 0
+    ? Math.round(finishedWithPages.reduce((s, b) => s + b.page_count, 0) / finishedWithPages.length)
+    : null;
+
   return {
     backlog, completionPct, avgDays, bestReadMonth, bestAddMonth,
     avgMonthlyFinish, last3Activity, maxStreak,
-    chartLabels:    months.map((m) => m.label),
+    finishedPages, backlogPages, avgPagesPerBook,
+    chartLabels: months.map((m) => m.label),
     addedCum, finishedCum,
   };
 }
@@ -610,6 +625,9 @@ export async function renderJourneySection() {
         ${miniCard("lucide:flame",         "En Uzun Seri",         `${j.maxStreak} ay`,              "success")}
         ${miniCard("lucide:activity",      "Son 3 Ay",             j.last3Activity,                  "neutral")}
         ${miniCard("lucide:percent",       "Tamamlanma Oranı",     `%${j.completionPct}`,            "accent")}
+        ${j.finishedPages > 0 ? miniCard("lucide:book-check",  "Okunan Sayfa",   j.finishedPages.toLocaleString("tr-TR"), "success") : ""}
+        ${j.backlogPages  > 0 ? miniCard("lucide:book-x",      "Bekleyen Sayfa", j.backlogPages.toLocaleString("tr-TR"),  "neutral") : ""}
+        ${j.avgPagesPerBook   ? miniCard("lucide:book-open",   "Ort. Sayfa/Kitap", j.avgPagesPerBook, "neutral") : ""}
       </div>
 
       <!-- Kümülatif çizgi grafik -->
