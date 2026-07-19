@@ -131,6 +131,7 @@
 .year-range-slider {
   position: relative;
   height: 1.4rem;
+  min-height: 1.4rem;  /* mobilde absolute child'lar yüksekliği sıfırlamasın */
   margin-top: 0.35rem;
 }
 
