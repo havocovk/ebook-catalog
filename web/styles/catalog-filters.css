@@ -128,10 +128,16 @@
   letter-spacing: normal;
 }
 
+/* ── Adım 4: Yıl Aralığı — Çift Uçlu Slider (Android Chrome uyumlu) ──────
+   SORUN: Android Chrome'da position:absolute + pointer-events:none olan
+   input[type=range] elemanları render edilmiyordu — slider tamamen kayboluyordu.
+   ÇÖZÜM: İki input normal akışa (position:static) alındı. İkincisi negatif
+   margin ile birincinin üstüne bindirildi. Track ve fill hâlâ absolute ama
+   artık SADECE dekoratif div'ler — input'lar değil. Bu kombinasyon tüm
+   mobil tarayıcılarda güvenilir şekilde render edilir. ───────────────────── */
 .year-range-slider {
   position: relative;
-  height: 1.4rem;
-  min-height: 1.4rem;  /* mobilde absolute child'lar yüksekliği sıfırlamasın */
+  padding: 0.5rem 0;      /* thumb'ların üstten/alttan kesilmemesi için */
   margin-top: 0.35rem;
 }
 
@@ -145,6 +151,7 @@
   background: var(--border-2);
   border-radius: 2px;
   transform: translateY(-50%);
+  pointer-events: none;
 }
 
 /* Seçili aralığı vurgulayan renkli (mor) dolgu — JS ile genişliği ayarlanır. */
@@ -155,42 +162,47 @@
   background: var(--accent);
   border-radius: 2px;
   transform: translateY(-50%);
+  pointer-events: none;
 }
 
-/* İki range input da aynı alanı kaplar; tıklama alanları sayesinde
-   her biri bağımsız sürüklenebilir. Kendi track/arka planları şeffaf —
-   sadece üstteki .year-range-track ve .year-range-fill görünür. */
+/* Her iki input normal akışta — Android Chrome'da absolute input render edilmez.
+   display:block + width:100% ile tam genişliği kaplar. Arka planları şeffaf,
+   kendi track çizgileri gizli — görsel olarak sadece thumb (tutamaç) görünür. */
 .year-range-input {
-  position: absolute;
-  top: 0;
-  left: 0;
+  display: block;
   width: 100%;
   height: 1.4rem;
   margin: 0;
+  padding: 0;
   background: transparent;
   -webkit-appearance: none;
   appearance: none;
-  pointer-events: none;   /* sadece thumb (tutamaç) tıklanabilir olsun */
+  cursor: pointer;
 }
 
-/* Tutamaç (thumb) — Chrome/Edge/Safari (WebKit) */
+/* İkinci input (max), birincinin (min) üstüne tam olarak biner */
+.year-range-input + .year-range-input {
+  margin-top: -1.4rem;
+}
+
+/* Tutamaç (thumb) — Chrome/Edge/Safari/Android WebKit */
 .year-range-input::-webkit-slider-thumb {
-  pointer-events: auto;
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--bg);
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  position: relative;
+  z-index: 2;
 }
 
 /* Tutamaç (thumb) — Firefox */
 .year-range-input::-moz-range-thumb {
-  pointer-events: auto;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--bg);
@@ -198,8 +210,14 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
-/* Firefox'un kendi track çizgisini şeffaf yap (üstteki özel track görünsün). */
-.year-range-input::-moz-range-track { background: transparent; }
+/* WebKit track: şeffaf yap (üstteki .year-range-track görünsün) */
+.year-range-input::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+}
+
+/* Firefox track: şeffaf yap */
+.year-range-input::-moz-range-track { background: transparent; height: 4px; }
 /* ── Adım 4 sonu ──────────────────────────────────────────────────── */
 
 /* ── Chip butonlar (format + durum + dil + etiket + kategori + tür) ─ */
