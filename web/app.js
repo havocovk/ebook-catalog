@@ -17,7 +17,7 @@ import { initCatalog, renderCatalog } from "./pages/catalog.js";
 // ── Adım 38: Hızlı Kategori Doldurma Modu ───────────────────────────────────
 import { initQuickFill, handleQuickFillButtonClick } from "./pages/catalog/catalog-quickfill.js";
 import { renderDashboard } from "./pages/dashboard.js";
-import { renderStats } from "./pages/stats.js"; // ── Adım 6: İstatistikler sayfası
+import { renderStats } from "./pages/stats/stats-main.js"; // ── Adım 6: İstatistikler sayfası
 import { renderAuthors, initAuthors } from "./pages/authors.js";
 import { renderPublishers, initPublishers } from "./pages/publishers.js";
 import { renderSeries, initSeries } from "./pages/series.js";
