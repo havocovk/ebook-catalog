@@ -38,6 +38,7 @@ def extract_metadata(file_path: str, forced_publisher: str = None, use_folder_se
         "series":       None,
         "series_index": None,
         "edition":      None,   # YENİ: baskı/edition bilgisi
+        "page_count":   None,   # Adım 13: sayfa sayısı
         "isbn":         None,
         "format":       ext.lstrip("."),
         "file_path":    file_path,
@@ -132,6 +133,10 @@ def extract_metadata(file_path: str, forced_publisher: str = None, use_folder_se
     if not metadata["edition"] and file_meta.get("edition"):
         metadata["edition"] = file_meta["edition"]
         sources["edition"] = file_source
+
+    # Sayfa sayısı: dosya içinden gelir (dosya adında olmaz) — Adım 13
+    if file_meta.get("page_count"):
+        metadata["page_count"] = file_meta["page_count"]
 
     # ── Klasör yapısından yazar bilgisi (seri scan.py tarafından yönetilir) ──
     folder_data = _parse_folder_structure(file_path)

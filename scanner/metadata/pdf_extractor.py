@@ -62,6 +62,11 @@ def _extract_pdf_metadata(file_path: str) -> dict:
         if edition:
             result["edition"] = edition
 
+        # Sayfa sayısı — doc zaten açık, ek istek yok
+        page_count = doc.page_count
+        if page_count and page_count > 0:
+            result["page_count"] = page_count
+
         doc.close()
     except Exception as e:
         print(f"  [PDF metadata hatası] {file_path}: {e}")

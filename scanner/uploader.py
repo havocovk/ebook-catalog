@@ -252,6 +252,8 @@ def save_book(metadata: dict, cover_url: str = None) -> bool:
         "tags": [],
         "confidence_score": metadata.get("confidence_score"),
         "metadata_source": metadata.get("metadata_source"),
+        "page_count": metadata.get("page_count"),          # Adım 13
+        "has_physical_copy": metadata.get("has_physical_copy", False),  # Adım 13
     }
 
     for int_field in ("series_order", "file_size", "year", "rating"):

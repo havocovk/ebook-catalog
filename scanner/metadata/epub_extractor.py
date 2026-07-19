@@ -75,6 +75,14 @@ def _extract_epub_metadata(file_path: str) -> dict:
         if edition:
             result["edition"] = edition
 
+        # ── Adım 13: Sayfa sayısı tahmini (kelime ÷ 250) ─────────────────────
+        # book nesnesi zaten açık — Appwrite'a sıfır ek istek.
+        # _count_epub_pages() tüm bölümleri dolaşır, kelime sayısını toplar
+        # ve 250'ye böler. Sonuç en az 1 olacak şekilde yuvarlanır.
+        page_count = _count_epub_pages(book)
+        if page_count:
+            result["page_count"] = page_count
+
     except Exception as e:
         print(f"  [EPUB metadata hatası] {file_path}: {e}")
 
@@ -331,6 +339,52 @@ def _extract_series_from_subjects(subjects: list) -> str | None:
     # (örn. "The Dune Chronicles" — Chronicles seri_markers'da var, yukarıda yakalanmalıydı)
     # Bu blok normalde boş döner; yedek güvenlik katmanı
     return None
+
+
+def _count_epub_pages(book) -> int | None:
+    """
+    Adım 13: Açık bir ebooklib Book nesnesi üzerinden sayfa sayısı tahmini.
+
+    Tüm ITEM_DOCUMENT bölümlerinin HTML içeriği okunur, etiketler soyulur,
+    kalan düz metin kelimelere ayrılır ve toplam kelime sayısı 250'ye bölünür.
+    (250 kelime ≈ 1 baskılı sayfa — page_count_fixer.py ile aynı formül.)
+
+    Döndürülen değer en az 1'dir (word_count > 0 ise).
+    Hiç bölüm okunamazsa veya hata oluşursa None döner.
+
+    NOT: Bu fonksiyon Appwrite'a hiçbir istek atmaz; yalnızca
+    bellekteki book nesnesini okur.
+    """
+    EPUB_WORDS_PER_PAGE = 250
+
+    try:
+        from html.parser import HTMLParser
+
+        class _TextExtractor(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.text_parts = []
+
+            def handle_data(self, data):
+                self.text_parts.append(data)
+
+        word_count = 0
+        for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
+            try:
+                raw_html = item.get_content().decode("utf-8", errors="ignore")
+            except Exception:
+                continue
+            parser = _TextExtractor()
+            parser.feed(raw_html)
+            text = " ".join(parser.text_parts)
+            word_count += len(text.split())
+
+        if word_count <= 0:
+            return None
+        return max(1, round(word_count / EPUB_WORDS_PER_PAGE))
+    except Exception as e:
+        print(f"  [EPUB sayfa sayısı hatası] {e}")
+        return None
 
 
 def _find_opf_path(zf):
