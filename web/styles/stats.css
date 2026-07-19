@@ -37,11 +37,52 @@
   margin: 0;
 }
 
-/* ── Üst Özet Bar ────────────────────────────────────────────── */
+/* ── Üst Özet Bar — eski büyük kartlar (artık kullanılmıyor) ── */
 .stats-summary-bar {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 0.75rem;
+}
+
+/* ── Grimmory tarzı kompakt pill bar ─────────────────────────── */
+.stats-pill-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.stats-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 0.35rem 0.85rem 0.35rem 0.65rem;
+  font-size: 0.82rem;
+  cursor: default;
+  transition: border-color 0.15s;
+}
+
+.stats-pill:hover { border-color: var(--border-2); }
+
+.stats-pill-icon {
+  color: var(--accent);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.stats-pill-label {
+  color: var(--text-2);
+  font-size: 0.78rem;
+}
+
+.stats-pill-value {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-left: 0.15rem;
 }
 
 .stats-summary-card {
@@ -73,11 +114,16 @@
 .stats-summary-card--accent { border-color: rgba(124,106,247,0.3); }
 .stats-summary-card--neutral .stats-summary-icon { color: var(--text-3); }
 
-/* ── Grafik Satırı (yan yana 3'lü) ──────────────────────────── */
+/* ── Grafik Satırı (yan yana 3'lü varsayılan) ───────────────── */
 .stats-charts-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
+}
+
+/* ── 4'lü grafik satırı ──────────────────────────────────────── */
+.stats-charts-row--4 {
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .stats-chart-box {
@@ -111,6 +157,20 @@
 .stats-chart-wrap canvas {
   max-width: 100% !important;
   max-height: 100% !important;
+}
+
+/* ── Bar chart wrap (sayfa dağılımı için) ────────────────────── */
+.stats-chart-wrap--bar {
+  aspect-ratio: unset;
+  height: 160px;
+  max-height: unset;
+}
+
+.stats-chart-sub {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  margin: 0;
+  text-align: center;
 }
 
 /* ── Grafik Legend ───────────────────────────────────────────── */
@@ -156,9 +216,15 @@
 }
 
 /* ── Mobil ───────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .stats-charts-row--4 { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
   .stats-summary-bar  { grid-template-columns: repeat(3, 1fr); }
   .stats-charts-row   { grid-template-columns: 1fr; }
+  .stats-charts-row--4 { grid-template-columns: 1fr; }
+  .stats-pill-bar { gap: 0.4rem; }
 }
 
 @media (max-width: 480px) {
