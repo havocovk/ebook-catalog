@@ -1,0 +1,81 @@
+/* ── Adım 24: "Sayfadaki Tümünü Seç" toolbar butonu ──────────────────────── */
+/* .btn / .btn-sm temel stilini base.css'ten alır; burada sadece "active"
+   (sayfadaki tüm kitaplar seçiliyken) durumunu ekliyoruz — Adım 18'deki
+   .select-btn.active ile aynı vurgu rengi (--accent) kullanılır, böylece
+   "selected" durumu tüm uygulamada görsel olarak tutarlı kalır. */
+.select-all-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.select-all-btn.active:hover {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+/* ── Adım 24 sonu ─────────────────────────────────────────────────────────── */
+
+/* ── Adım 18: Toplu işlem çubuğu ──────────────────────────────────────── */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: var(--bg-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.bulk-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* "Durum Değiştir" mini paneli — buton grubunun altında açılan küçük kutu. */
+.bulk-status-wrap {
+  position: relative;
+}
+
+.bulk-status-panel {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  padding: 0.35rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  min-width: 140px;
+}
+
+.bulk-status-panel button {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.bulk-status-panel button:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+/* ── Adım 18 sonu ─────────────────────────────────────────────────────────── */

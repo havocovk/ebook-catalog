@@ -1,0 +1,405 @@
+/* ═══════════════════════════════════════════════════════════════ */
+/* Filtre paneli, chip butonlar, mobil drawer                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Katalog gövde düzeni: sol panel + sağ ızgara ────────────── */
+.catalog-body {
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+}
+
+.catalog-main {
+  flex: 1;
+  min-width: 0;
+  padding: 1.25rem;
+}
+
+/* ── Filtre paneli — masaüstü: kalıcı sol sütun ──────────────── */
+/* DÜZELTME: önceki "min-height" kullanımı, panelin kendi içeriğine göre
+   viewport'tan UZAYABİLMESİNE izin veriyordu — bu durumda overflow-y:auto
+   hiç devreye girmiyordu, çünkü kayacak bir "taşma" hiç oluşmuyordu; panelin
+   kendisi sayfa ile birlikte büyüyüp uzuyordu. "height" + "max-height" ile
+   panel artık HER ZAMAN sabit (viewport'a göre) bir kutu: içerik bu kutudan
+   taşarsa, kutunun kendisi büyümez — sadece içindeki filtreler bu kutunun
+   İÇİNDE dikey kayar. Kitap kartlarının olduğu sağ taraf hiç hareket etmez. */
+.filter-panel {
+  width: 210px;
+  flex-shrink: 0;
+  background: var(--bg-2);
+  border-right: 1px solid var(--border);
+  padding: 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  height: calc(100vh - 56px);       /* tam viewport yüksekliği - header */
+  max-height: calc(100vh - 56px);   /* bu kutu asla bundan büyük olamaz */
+  position: sticky;
+  top: 56px; /* header yüksekliği */
+  overflow-y: auto;
+  scrollbar-width: thin;                              /* Firefox: ince çubuk */
+  scrollbar-color: var(--border-2) transparent;        /* Firefox: renkler */
+}
+
+/* ── Filtre panelinin dikey kaydırma çubuğu (Webkit: Chrome/Edge/Safari) ── */
+.filter-panel::-webkit-scrollbar {
+  width: 6px;
+}
+.filter-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.filter-panel::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 4px;
+}
+.filter-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+.filter-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-panel-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* "Temizle" linki */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: color 0.15s, text-decoration-color 0.15s;
+}
+.btn-link:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+/* ── Filtre grubu (başlık + chip veya select) ─────────────────── */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;              /* Adım 4: yıl göstergesini sağa itmek için */
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Adım 9: Çoklu seçim ipucu (Dil/Etiket başlığının yanında) ──────── */
+.filter-hint {
+  font-size: 0.65rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-3);
+  opacity: 0.7;
+  margin-left: 0.3rem;
+}
+
+/* ── Adım 4: Yıl Aralığı — Çift Uçlu Slider ───────────────────────── */
+.filter-year-display {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.year-range-slider {
+  position: relative;
+  height: 1.4rem;
+  margin-top: 0.35rem;
+}
+
+/* Arka plandaki sabit (gri) çizgi — tüm aralığı temsil eder. */
+.year-range-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--border-2);
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+/* Seçili aralığı vurgulayan renkli (mor) dolgu — JS ile genişliği ayarlanır. */
+.year-range-fill {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 2px;
+  transform: translateY(-50%);
+}
+
+/* İki range input da aynı alanı kaplar; tıklama alanları sayesinde
+   her biri bağımsız sürüklenebilir. Kendi track/arka planları şeffaf —
+   sadece üstteki .year-range-track ve .year-range-fill görünür. */
+.year-range-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1.4rem;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  pointer-events: none;   /* sadece thumb (tutamaç) tıklanabilir olsun */
+}
+
+/* Tutamaç (thumb) — Chrome/Edge/Safari (WebKit) */
+.year-range-input::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Tutamaç (thumb) — Firefox */
+.year-range-input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Firefox'un kendi track çizgisini şeffaf yap (üstteki özel track görünsün). */
+.year-range-input::-moz-range-track { background: transparent; }
+/* ── Adım 4 sonu ──────────────────────────────────────────────────── */
+
+/* ── Chip butonlar (format + durum + dil + etiket + kategori + tür) ─ */
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.chip {
+  padding: 0.28rem 0.65rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── Adım 3: Güven skoru chip renkleri ────────────────────────────── */
+/* .chip.active kuralından SONRA gelmeli — aynı özgüllükte (2 sınıf)  */
+/* olduğu için CSS'te sırası önemli, yoksa nötr mavi renk üstün gelir. */
+.chip-confidence-high.active   { background: var(--success); border-color: var(--success); color: #fff; }
+.chip-confidence-medium.active { background: var(--warning); border-color: var(--warning); color: #fff; }
+.chip-confidence-low.active    { background: var(--danger);  border-color: var(--danger);  color: #fff; }
+/* ── Adım 3 sonu ──────────────────────────────────────────────────── */
+
+/* ── Adım 17: "Sadece Favoriler" filtre chip'i ────────────────────── */
+/* .chip.active kuralından SONRA gelmeli (yukarıdaki Adım 3 notuyla aynı
+   sebep) — aksi halde nötr mavi renk üstün gelir. */
+.filter-favorite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  justify-content: center;
+}
+.filter-favorite-chip.active {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+/* ── Adım 17 sonu ─────────────────────────────────────────────────── */
+
+/* ── Adım 15: Akıllı Listeler (kaydedilebilir filtre setleri) ────────────── */
+.smart-list-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.smart-list-empty {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* Tek bir kayıtlı liste: isim butonu + sil (x) butonu yan yana, tek bir
+   pill içinde — format/durum chip'leriyle aynı görsel dile sahip ama
+   kendi içinde iki tıklanabilir alana bölünmüş. */
+.smart-list-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 20px;
+  border: 1px solid var(--border-2);
+  background: var(--bg-3);
+  overflow: hidden;
+}
+
+.smart-list-chip-apply {
+  padding: 0.28rem 0.5rem 0.28rem 0.65rem;
+  border: none;
+  background: none;
+  color: var(--text-2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.smart-list-chip-apply:hover { color: var(--accent); }
+
+.smart-list-chip-delete {
+  padding: 0.28rem 0.55rem 0.28rem 0.3rem;
+  border: none;
+  border-left: 1px solid var(--border-2);
+  background: none;
+  color: var(--text-3);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.smart-list-chip-delete:hover { color: #fff; background: var(--danger); }
+
+/* "Akıllı Liste Kaydet" butonu — btn-link'in görünümünü kullanır ama
+   ikon + metin yan yana hizalanması için flex eklenir. */
+.smart-list-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+/* ── Adım 15 sonu ─────────────────────────────────────────────────────────── */
+
+/* Tam genişlik select (panel içinde) */
+.select-full { width: 100%; }
+
+/* ── Mobil: filtre butonunu araç çubuğunda göster ─────────────── */
+.filter-toggle-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Aktif filtre sayısı rozeti */
+.filter-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0.05rem 0.4rem;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.filter-toggle-btn.has-filters {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Mobil drawer arka plan karartısı ────────────────────────── */
+.filter-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 60;
+}
+
+/* ── Katalog filtre paneli: pasif grup (yayınevi seçilmemiş seri) */
+.filter-group--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ── Adım J4: Dil chip'leri — bayrak emojisi için hafif genişletme */
+#filter-language-chips .chip {
+  padding-left: 0.55rem;
+  padding-right: 0.55rem;
+}
+
+/* ── Adım J4: Etiket chip'leri — hiç etiket yoksa grubu gizle */
+#filter-tag-wrap:has(#filter-tag-chips .chip[data-value=""]:only-child) {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Responsive — mobil: panel drawer'a dönüşür                      */
+/* ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  /* Masaüstü panel gizle; drawer olarak konumlandır */
+  .filter-panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 70;
+    width: 260px;
+    min-height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    border-right: 1px solid var(--border-2);
+    overflow-y: auto;
+  }
+
+  .filter-panel.open {
+    transform: translateX(0);
+  }
+
+  /* Mobil: filtre butonunu araç çubuğunda göster */
+  .filter-toggle-btn { display: flex; }
+
+  /* catalog-main tam genişlik (panel yokken) */
+  .catalog-main { padding: 0.75rem; }
+}
+
+@media (min-width: 901px) {
+  /* Masaüstü: filtre butonu gereksiz, gizle */
+  .filter-toggle-btn { display: none; }
+
+  /* Masaüstü toolbar'da sıralama yanındaki boşluk */
+  .toolbar { gap: 0.75rem; }
+}
