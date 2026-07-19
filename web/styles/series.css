@@ -22,17 +22,92 @@
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 1rem;
+  padding: 0;
   cursor: pointer;
   transition: border-color 0.2s, transform 0.15s;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  overflow: hidden;
 }
 
 .series-popular-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
+}
+
+/* ── Kapak görseli alanı ─────────────────────────────────────── */
+.series-covers-wrap {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  background: var(--bg-3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.series-covers-wrap--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.series-cover-placeholder {
+  font-size: 2.5rem;
+  color: var(--text-3);
+  opacity: 0.5;
+}
+
+/* 3 kapak üst üste bindirme — sağdan sola yelpaze */
+.series-cover-img {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: auto;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.series-cover-img--0 {
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: 45%;
+  height: 100%;
+  object-fit: cover;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.5), 4px 0 12px rgba(0,0,0,0.5);
+}
+
+.series-cover-img--1 {
+  left: 10%;
+  z-index: 2;
+  width: 40%;
+  height: 92%;
+  top: 4%;
+  object-fit: cover;
+  opacity: 0.85;
+  transform: rotate(-6deg);
+  box-shadow: 4px 0 10px rgba(0,0,0,0.4);
+}
+
+.series-cover-img--2 {
+  right: 10%;
+  z-index: 2;
+  width: 40%;
+  height: 92%;
+  top: 4%;
+  object-fit: cover;
+  opacity: 0.85;
+  transform: rotate(6deg);
+  box-shadow: -4px 0 10px rgba(0,0,0,0.4);
+}
+
+/* ── Kart alt bilgi alanı ────────────────────────────────────── */
+.series-popular-info {
+  padding: 0.85rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
 }
 
 .series-popular-name {
