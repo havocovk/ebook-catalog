@@ -124,20 +124,45 @@ function displayName(s) {
 // ─── Popüler seri kartı ───────────────────────────────────────────────────────
 function popularCardHtml(s) {
   const pct = s.total > 0 ? Math.round((s.read / s.total) * 100) : 0;
+
+  // Kapak görseli olan kitapları al, en fazla 3 tane
+  const booksWithCover = s.books.filter((b) => b.cover_url);
+  const coverBooks = booksWithCover.slice(0, 3);
+
+  // Kapak HTML: 3 resim üst üste bindirilerek gösterilir.
+  // Kapak yoksa placeholder gösterilir.
+  let coversHtml = "";
+  if (coverBooks.length > 0) {
+    const imgs = coverBooks.map((b, i) =>
+      `<img src="${esc(b.cover_url)}" alt="${esc(b.title || "")}" loading="lazy" class="series-cover-img series-cover-img--${i}" />`
+    ).join("");
+    coversHtml = `<div class="series-covers-wrap">${imgs}</div>`;
+  } else {
+    coversHtml = `
+      <div class="series-covers-wrap series-covers-wrap--empty">
+        <div class="series-cover-placeholder">
+          <iconify-icon icon="lucide:layers"></iconify-icon>
+        </div>
+      </div>`;
+  }
+
   return `
     <div class="series-popular-card"
          data-series="${escAttr(s.name)}"
          data-publisher="${escAttr(s.publisher)}">
-      <div class="series-popular-name">${esc(s.name)}</div>
-      ${s.publisher
-        ? `<div class="series-popular-publisher">${esc(s.publisher)}</div>`
-        : ""}
-      <div class="series-popular-stats">
-        <span>${s.total} kitap</span>
-        <span class="series-read-label">${s.read} okundu</span>
-      </div>
-      <div class="series-progress-track">
-        <div class="series-progress-fill" style="width:${pct}%"></div>
+      ${coversHtml}
+      <div class="series-popular-info">
+        <div class="series-popular-name">${esc(s.name)}</div>
+        ${s.publisher
+          ? `<div class="series-popular-publisher">${esc(s.publisher)}</div>`
+          : ""}
+        <div class="series-popular-stats">
+          <span>${s.total} kitap</span>
+          <span class="series-read-label">${s.read} okundu</span>
+        </div>
+        <div class="series-progress-track">
+          <div class="series-progress-fill" style="width:${pct}%"></div>
+        </div>
       </div>
     </div>
   `;
