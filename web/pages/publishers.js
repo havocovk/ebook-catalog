@@ -25,6 +25,9 @@ const ID_PREFIX = "publisher";
 // Şu an detayda gösterilen yayınevi adı. Liste görünümünde null.
 let activePublisher = null;
 
+// Yayınevleri listesindeki scroll pozisyonu — detaya girince kaydedilir, geri dönünce geri yüklenir.
+let _savedScrollY = 0;
+
 // ─── Dışa açık: router her ziyarette çağırır ────────────────────────────────
 export function renderPublishers() {
   if (activePublisher) {
@@ -153,11 +156,13 @@ function renderPublisherDetail(publisherName) {
     ${sectionsHtml}
   `;
 
-  // Geri butonu
+  // Geri butonu — kayıtlı scroll pozisyonuna dön
   document.getElementById("publisher-back-btn")?.addEventListener("click", () => {
     activePublisher = null;
     renderPublisherList();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: _savedScrollY, behavior: "instant" });
+    });
   });
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -203,9 +208,10 @@ export function initPublishers() {
       return;
     }
 
-    // Yayınevi satırı → detay görünümüne geç
+    // Yayınevi satırı → scroll pozisyonunu kaydet ve detay görünümüne geç
     const publisherRow = e.target.closest("[data-publisher]");
     if (publisherRow && publisherRow.dataset.publisher) {
+      _savedScrollY = window.scrollY;
       activePublisher = publisherRow.dataset.publisher;
       renderPublisherDetail(activePublisher);
       return;

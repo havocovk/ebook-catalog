@@ -30,8 +30,8 @@ export function syncChips() {
   syncChipGroup("filter-category-chips", ui.filters.category);
   syncChipGroup("filter-subcategory-chips", ui.filters.subcategory);
   syncChipGroup("filter-topic-chips", ui.filters.topic);
-  // Bölüm 2: Tür (çoklu seçim)
-  syncChipGroup("filter-genre-chips", ui.filters.genre);
+  // Bölüm 2: Tür — artık collapsible dropdown, chip değil.
+  // _syncGenreDropdown() ayrıca filter-populate.js'den çağrılır.
   // Adım 37: Kategori Durumu (tek seçim)
   syncChipGroup("filter-categoryStatus-chips", ui.filters.categoryStatus);
   // Kapak Resmi Durumu (tek seçim)

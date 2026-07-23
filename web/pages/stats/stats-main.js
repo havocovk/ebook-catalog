@@ -16,8 +16,21 @@ export async function renderStats() {
 
   _destroyCharts();
   await renderOverview();
+
+  // ── Grimmory gibi Timeline + Journey yan yana ─────────────────────────────
+  const wrap = document.querySelector(".stats-wrap");
+  if (wrap) {
+    const rowEl = document.createElement("div");
+    rowEl.className = "stats-tl-journey-row";
+    wrap.appendChild(rowEl);
+  }
+
   await renderTimelineSection();
   await renderJourneySection();
+
+  // ── Top Items (6 tip dropdown) + Yazar Evreni yan yana ───────────────────
+  // stats-authors.js içinde .stats-top-row ile yan yana render edilir.
   await renderAuthorsSection();
+
   await renderTrendSection();
 }

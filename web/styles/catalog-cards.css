@@ -17,7 +17,7 @@
 
 /* ── Book Card ────────────────────────────────────────────────── */
 .book-card {
-  background: var(--bg-2);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -35,7 +35,7 @@
 .book-cover {
   position: relative;
   height: var(--cover-h);
-  background: var(--bg-3);
+  background: #000000;
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -55,7 +55,7 @@
   justify-content: center;
   font-size: 3rem;
   color: var(--text-3);
-  background: var(--bg-3);
+  background: #000000;
   font-weight: 700;
 }
 
@@ -163,7 +163,7 @@
   position: static;
   width: 1.8rem;
   height: 1.8rem;
-  background: var(--bg-3);
+  background: #000000;
   color: var(--text-3);
   flex-shrink: 0;
 }
@@ -205,7 +205,7 @@
   position: static;
   width: 1.8rem;
   height: 1.8rem;
-  background: var(--bg-3);
+  background: #000000;
   color: var(--text-3);
   flex-shrink: 0;
   opacity: 1;
@@ -293,7 +293,7 @@
 }
 
 .badge {
-  background: var(--bg-3);
+  background: #000000;
   border: 1px solid var(--border);
   color: var(--text-2);
   font-size: 0.7rem;
@@ -326,7 +326,7 @@
 }
 
 .view-btn {
-  background: var(--bg-3);
+  background: #000000;
   border: none;
   color: var(--text-2);
   cursor: pointer;
@@ -351,7 +351,7 @@
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  background: var(--bg-2);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.5rem 0.75rem;
@@ -367,7 +367,7 @@
   flex-shrink: 0;
   border-radius: 4px;
   overflow: hidden;
-  background: var(--bg-3);
+  background: #000000;
 }
 .row-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .row-cover-placeholder {
@@ -414,7 +414,7 @@
   min-width: 34px;
   height: 34px;
   padding: 0 0.5rem;
-  background: var(--bg-3);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
@@ -439,3 +439,204 @@
 @media (max-width: 600px) {
   .view-toggle { align-self: flex-end; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Bölüm 4 — Canonical (Eşleştirilmiş Kitap) Rozeti + Popover               */
+/* Sadece yazarlar sayfasında gösterilir (showCanonicalBadge=true ile        */
+/* createBookCard çağrılırsa). Katalog ve diğer sayfalarda bu elementler     */
+/* hiç üretilmez — CSS kuralları gereksiz yere uygulanmaz.                  */
+/* ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Rozet butonu — kart kapağının sağ üst köşesi ────────────────────────
+   confidence-badge ile aynı köşeyi paylaşmamak için:
+   • Güven skoru varsa  → confidence-badge right:0.4rem, top:0.4rem
+   • canonical-badge    → confidence-badge'in hemen altına: top:2.2rem
+   Güven skoru yoksa canonical-badge zaten sağ üste oturursa da görsel
+   çakışma olmaz (confidence-badge hiç render edilmez).                   */
+.canonical-badge {
+  position: absolute;
+  top: 2.2rem;          /* confidence-badge'in altına yerleş */
+  right: 0.4rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(13, 148, 136, 0.85); /* teal — "bağlantı" rengi */
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  z-index: 5;
+}
+
+.canonical-badge:hover {
+  background: rgba(13, 148, 136, 1);
+  transform: scale(1.12);
+}
+
+/* Güven skoru YOK ise rozet daha yukarı oturur */
+.book-cover:not(:has(.confidence-badge)) .canonical-badge {
+  top: 0.4rem;
+}
+
+/* ── Popover kapsayıcısı ──────────────────────────────────────────────────
+   Sayfanın herhangi bir noktasına (body'e) eklenir; tıklanan rozetin
+   koordinatlarına göre JavaScript tarafından konumlandırılır.
+   z-index: 200 — modal (z-index:100) ve diğer katmanların üstünde.      */
+.canonical-popover {
+  position: fixed;
+  z-index: 200;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+  min-width: 260px;
+  max-width: 340px;
+  padding: 0;
+  overflow: hidden;
+  animation: popover-in 0.15s ease;
+}
+
+@keyframes popover-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+/* ── Popover başlık çubuğu ───────────────────────────────────────────────── */
+.canonical-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.canonical-popover-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0d9488; /* teal */
+}
+
+.canonical-popover-title iconify-icon {
+  font-size: 0.95rem;
+}
+
+.canonical-popover-close {
+  width: 1.4rem;
+  height: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-3);
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.canonical-popover-close:hover {
+  background: var(--bg-3);
+  color: var(--text);
+}
+
+/* ── Popover içerik: eşleştirilmiş dosya satırları ──────────────────────── */
+.canonical-popover-list {
+  padding: 0.5rem 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.canonical-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.85rem;
+  transition: background 0.1s;
+}
+
+.canonical-popover-item:hover {
+  background: var(--bg-3);
+}
+
+/* "Bu kitap" (rozetin üstünde olduğu kart) özel renk */
+.canonical-popover-item.is-current {
+  background: rgba(13, 148, 136, 0.08);
+}
+
+.canonical-popover-item.is-current .canonical-item-title {
+  color: #0d9488;
+}
+
+.canonical-item-format {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  min-width: 2.2rem;
+  text-align: center;
+}
+
+/* Format rozeti renkleri — mevcut format-pdf/epub ile aynı değerler */
+.canonical-item-format.fmt-pdf  { background: var(--danger);  color: #fff; }
+.canonical-item-format.fmt-epub { background: var(--success); color: #fff; }
+.canonical-item-format.fmt-other { background: var(--bg-3); color: var(--text-2); }
+
+.canonical-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.canonical-item-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.canonical-item-publisher {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* "Bu kitap" etiketi — satırın sağına küçük pin */
+.canonical-item-self-tag {
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: #0d9488;
+  background: rgba(13, 148, 136, 0.12);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* ── Popover alt çubuğu ──────────────────────────────────────────────────── */
+.canonical-popover-footer {
+  padding: 0.5rem 0.85rem 0.65rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.68rem;
+  color: var(--text-3);
+  text-align: center;
+}
+/* ══════════════════════════════════════════════════════════════════════════ */
+/* Bölüm 4 sonu                                                              */
+/* ══════════════════════════════════════════════════════════════════════════ */

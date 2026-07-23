@@ -38,7 +38,8 @@ import {
   populateSelectOptions,
   populateTagChips,
   populateCategoryChips,
-  populateGenreChips,
+  populateGenreDropdown,
+  _syncGenreDropdown,
   populateSubcategoryChips,
   populateTopicChips,
   populateYearSlider,
@@ -116,7 +117,7 @@ export function renderCatalog() {
   populateSelectOptions(filterOpts);
   populateTagChips(filterOpts);         // ── Adım J4: dinamik etiket chip'leri
   populateCategoryChips(filterOpts);    // ── Adım 11: dinamik kategori chip'leri (çoklu seçim)
-  populateGenreChips(filterOpts);       // ── Bölüm 2: dinamik tür chip'leri (çoklu seçim)
+  populateGenreDropdown(filterOpts);    // ── Bölüm 2: tür dropdown listesini doldur
   populateSubcategoryChips(filterOpts); // ── Adım 11: alt alan chip'leri (sadece akademik)
   populateTopicChips();       // ── Adım 11: konu chip'leri (alt alana bağlı) — ui.filters.subcategory'ye bağımlı, tek-geçişe dahil edilmedi
   populateYearSlider(filterOpts);       // ── Adım 4: yıl aralığı slider sınırlarını ayarla
@@ -207,6 +208,20 @@ export function initCatalog() {
       populateTopicChips();
     }
     // ── Adım 11 sonu ──────────────────────────────────────────────────────────
+
+    // ── Bölüm 2: Kategori değişince tür dropdown'ını yenile ─────────────────
+    // Kategori seçilince dropdown sadece o kategoriye ait türleri göstermeli.
+    // Kategori seçimi değiştiğinde mevcut tür seçimini de sıfırla — seçilen
+    // tür yeni kategoride olmayabilir, karışıklık yaratmasın.
+    if (filterKey === "category") {
+      ui.filters.genre = [];
+      const currentOpts = _collectFilterOptions();
+      populateGenreDropdown(currentOpts);
+      // Akademik seçimi değişince Alt Alan + Konu bölümlerini de yenile
+      populateSubcategoryChips(currentOpts);
+      populateTopicChips();
+    }
+    // ── Bölüm 2 sonu ─────────────────────────────────────────────────────────
 
     recompute(true);
   });
@@ -330,6 +345,39 @@ export function initCatalog() {
     runBulkOperation(() => bulkChangeStatus(btn.dataset.bulkStatus));
   });
   // ── Adım 18 sonu ──────────────────────────────────────────────────────────
+
+  // ── Bölüm 2: Tür dropdown — aç/kapa butonu ──────────────────────────────
+  document.getElementById("filter-genre-toggle")?.addEventListener("click", () => {
+    const dropdown = document.getElementById("filter-genre-dropdown");
+    const chevron  = document.getElementById("filter-genre-chevron");
+    if (!dropdown) return;
+    const isOpen = !dropdown.classList.contains("hidden");
+    dropdown.classList.toggle("hidden", isOpen);
+    chevron?.classList.toggle("rotated", !isOpen);
+  });
+
+  // ── Bölüm 2: Tür dropdown — checkbox tıklama (çoklu seçim) ──────────────
+  document.getElementById("filter-genre-list")?.addEventListener("change", (e) => {
+    const cb = e.target.closest(".filter-genre-checkbox");
+    if (!cb) return;
+    const genre = cb.dataset.filterGenre;
+    const idx   = ui.filters.genre.indexOf(genre);
+    if (cb.checked && idx === -1) {
+      ui.filters.genre.push(genre);
+    } else if (!cb.checked && idx !== -1) {
+      ui.filters.genre.splice(idx, 1);
+    }
+    _syncGenreDropdown();
+    recompute(true);
+  });
+
+  // ── Bölüm 2: Tür dropdown — seçimi temizle butonu ───────────────────────
+  document.getElementById("filter-genre-clear")?.addEventListener("click", () => {
+    ui.filters.genre = [];
+    _syncGenreDropdown();
+    recompute(true);
+  });
+  // ── Bölüm 2 sonu ─────────────────────────────────────────────────────────
 
   document.getElementById("filter-toggle")?.addEventListener("click", openFilterPanel);
   document.getElementById("filter-overlay")?.addEventListener("click", closeFilterPanel);

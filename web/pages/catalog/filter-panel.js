@@ -32,6 +32,7 @@ import {
   populateTopicChips,
   populateYearSlider,
   updateSeriesOptions,
+  _syncGenreDropdown,
 } from "./filter-populate.js";
 import { updateFavoriteOnlyChip } from "./catalog-ui.js";
 
@@ -53,6 +54,7 @@ export function clearFilters() {
   populateYearSlider(filterOpts);       // Adım 4: slider'ı tam aralığa geri döndür
   updateSeriesOptions();                // seriyi pasif yap
   updateFavoriteOnlyChip();             // Adım 17: "Sadece Favoriler" chip'ini pasif göster
+  _syncGenreDropdown();                 // Bölüm 2: tür dropdown'ını sıfırla (checkbox'lar + badge)
   recompute(true);
 }
 

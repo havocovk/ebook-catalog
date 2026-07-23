@@ -1,13 +1,21 @@
 /* ═══════════════════════════════════════════════════════════════ */
 /* İstatistikler sayfası stilleri                                  */
 /* Adım 7: Üst Özet Bar + Pasta/Halka Grafikler                   */
+/* Grimmory tasarımıyla uyumlu hale getirildi                      */
 /* ═══════════════════════════════════════════════════════════════ */
+
+/* ── İstatistik sayfası arka planı ──────────────────────────── */
+#stats-page {
+  background: #000000;
+  min-height: 100vh;
+}
 
 .stats-wrap {
   padding: 1.5rem 1.25rem 3rem;
   display: flex;
   flex-direction: column;
   gap: 1.75rem;
+  background: #000000;
 }
 
 /* ── Sayfa başlığı ───────────────────────────────────────────── */
@@ -44,49 +52,56 @@
   gap: 0.75rem;
 }
 
-/* ── Grimmory tarzı kompakt pill bar ─────────────────────────── */
+/* ── Grimmory: .library-totals — ortaya hizalı, büyük ikon+değer ── */
 .stats-pill-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 12px;
   align-items: center;
+  justify-content: center;
+  font-size: 0.8313rem;
+  color: var(--text-2);
 }
 
+/* Grimmory: .total-item — inline-flex, gap:8px, padding:6px 10px */
 .stats-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: 99px;
-  padding: 0.35rem 0.85rem 0.35rem 0.65rem;
-  font-size: 0.82rem;
+  gap: 8px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 6px;
+  padding: 6px 10px;
   cursor: default;
   transition: border-color 0.15s;
 }
 
-.stats-pill:hover { border-color: var(--border-2); }
+.stats-pill:hover { border-color: #404040; }
 
+/* Grimmory: .pi — font-size: 1.1812rem, color: primary (#ff8904) */
 .stats-pill-icon {
-  color: var(--accent);
-  font-size: 1rem;
+  font-size: 1.1812rem;
+  color: #ff8904;
   flex-shrink: 0;
 }
 
+/* Grimmory: .total-label — 0.7875rem, secondary */
 .stats-pill-label {
   color: var(--text-2);
-  font-size: 0.78rem;
+  font-size: 0.7875rem;
+  white-space: nowrap;
 }
 
+/* Grimmory: .total-value — 1.1812rem, font-weight:600 */
 .stats-pill-value {
   color: var(--text);
-  font-weight: 700;
-  font-size: 0.85rem;
-  margin-left: 0.15rem;
+  font-weight: 600;
+  font-size: 1.1812rem;
+  margin-left: 4px;
 }
 
 .stats-summary-card {
-  background: var(--bg-2);
+  background: #171717;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1rem 0.9rem 0.85rem;
@@ -124,31 +139,68 @@
 /* ── 4'lü grafik satırı ──────────────────────────────────────── */
 .stats-charts-row--4 {
   grid-template-columns: repeat(4, 1fr);
+  align-items: stretch;
 }
 
+/* ── Grafik kutusu (Grimmory kart stili) ────────────────────── */
 .stats-chart-box {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
+  background: #000000;
+  border: 1px solid #262626;
   border-radius: var(--radius-lg);
-  padding: 1.1rem 1rem 1rem;
+  padding: 1.25rem 1.1rem 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.75rem;
+  transition: border-color 0.2s;
 }
 
+.stats-chart-box:hover {
+  border-color: #404040;
+}
+
+/* ── Kart başlık satırı (ikon + başlık + açıklama) ──────────── */
+.stats-chart-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+/* Grimmory SCSS: .formats-title-icon { font-size: 1.3125rem } */
+/* iconify-icon custom element için width+height+font-size birlikte gerekli */
+.stats-chart-header-icon {
+  font-size: 1.3125rem;
+  width: 1.3125rem;
+  height: 1.3125rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+/* Grimmory _chart-shared.scss: h3 { font-size: 1.0938rem; font-weight: 500 } */
 .stats-chart-title {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-2);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0;
+  font-size: 1.0938rem;
+  font-weight: 500;
+  color: #fafafa;
+  margin: 0 0 0.4375rem 0;
+  font-family: 'Inter', sans-serif;
 }
 
+/* Grimmory _chart-shared.scss: .chart-description { font-size: 0.7875rem } */
+.stats-chart-desc {
+  font-size: 0.7875rem;
+  color: #a1a1a1;
+  margin: 0;
+  line-height: 1.4;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Grafik kanvas alanı ─────────────────────────────────────── */
 .stats-chart-wrap {
   width: 100%;
-  aspect-ratio: 1 / 1;
-  max-height: 200px;
+  height: 220px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,13 +209,16 @@
 .stats-chart-wrap canvas {
   max-width: 100% !important;
   max-height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* ── Bar chart wrap (sayfa dağılımı için) ────────────────────── */
+/* flex: 1 → kartın kalan tüm alanını kapla */
 .stats-chart-wrap--bar {
-  aspect-ratio: unset;
-  height: 160px;
-  max-height: unset;
+  flex: 1;
+  height: unset;
+  min-height: 160px;
 }
 
 .stats-chart-sub {
@@ -171,9 +226,10 @@
   color: var(--text-3);
   margin: 0;
   text-align: center;
+  font-family: 'Inter', sans-serif;
 }
 
-/* ── Grafik Legend ───────────────────────────────────────────── */
+/* ── Grafik Legend (artık Chart.js legend sağda — bu alan kaldırıldı) */
 .stats-chart-legend {
   display: flex;
   flex-direction: column;
@@ -231,16 +287,17 @@
   .stats-wrap { padding: 1rem 0.75rem 2rem; }
   .stats-summary-bar { grid-template-columns: repeat(2, 1fr); }
   .stats-summary-value { font-size: 1.5rem; }
+  .stats-chart-wrap { height: 180px; }
+  .stats-chart-wrap--bar { height: 180px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* Adım 8 — Publication Timeline                                   */
 /* ═══════════════════════════════════════════════════════════════ */
 
-/* Ortak bölüm kutusu */
 .stats-section-box {
-  background: var(--bg-2);
-  border: 1px solid var(--border);
+  background: #000000;
+  border: 1px solid #262626;
   border-radius: var(--radius-lg);
   padding: 1.1rem 1.25rem 1.25rem;
   display: flex;
@@ -259,7 +316,8 @@
   gap: 0.45rem;
   margin: 0;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #262626;
+  font-family: 'Inter', sans-serif;
 }
 
 .stats-section-title iconify-icon { color: var(--accent); font-size: 1rem; }
@@ -289,8 +347,8 @@
 }
 
 .stats-mini-card {
-  background: var(--bg-3);
-  border: 1px solid var(--border);
+  background: #0a0a0a;
+  border: 1px solid #262626;
   border-radius: var(--radius);
   padding: 0.75rem 0.8rem 0.7rem;
   display: flex;
@@ -298,7 +356,7 @@
   gap: 0.2rem;
   transition: border-color 0.2s;
 }
-.stats-mini-card:hover { border-color: var(--border-2); }
+.stats-mini-card:hover { border-color: #404040; }
 
 .stats-mini-icon { font-size: 0.95rem; line-height: 1; }
 .stats-mini-value {
@@ -307,11 +365,13 @@
   color: var(--text);
   line-height: 1.2;
   word-break: break-word;
+  font-family: 'Inter', sans-serif;
 }
 .stats-mini-label {
   font-size: 0.68rem;
   color: var(--text-3);
   font-weight: 500;
+  font-family: 'Inter', sans-serif;
 }
 
 .stats-mini-card--accent  .stats-mini-icon  { color: var(--accent); }
@@ -362,7 +422,6 @@
 /* Adım 10 — Top Yazarlar + Author Universe                        */
 /* ═══════════════════════════════════════════════════════════════ */
 
-/* 5 yazar özet kartı */
 .stats-author-cards {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -370,8 +429,8 @@
 }
 
 .stats-author-card {
-  background: var(--bg-3);
-  border: 1px solid var(--border);
+  background: #0a0a0a;
+  border: 1px solid #262626;
   border-radius: var(--radius);
   padding: 0.75rem 0.8rem 0.7rem;
   display: flex;
@@ -379,7 +438,7 @@
   gap: 0.2rem;
   transition: border-color 0.2s;
 }
-.stats-author-card:hover { border-color: var(--border-2); }
+.stats-author-card:hover { border-color: #404040; }
 
 .stats-author-value {
   font-size: 0.82rem;
@@ -387,9 +446,9 @@
   color: var(--text);
   line-height: 1.3;
   word-break: break-word;
+  font-family: 'Inter', sans-serif;
 }
 
-/* Alt başlık (Top 15, Author Universe) */
 .stats-subsection-title {
   font-size: 0.78rem;
   font-weight: 600;
@@ -401,19 +460,18 @@
   align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
+  font-family: 'Inter', sans-serif;
 }
 
-/* Top 15 yazar grafik yüksekliği */
 .stats-top-authors-wrap {
   height: 360px;
 }
 
-/* Bubble chart yüksekliği */
+/* Grimmory SCSS: author-universe .chart-wrapper { height: 350px } */
 .stats-bubble-wrap {
-  height: 320px;
+  height: 350px;
 }
 
-/* Mobil */
 @media (max-width: 768px) {
   .stats-author-cards { grid-template-columns: repeat(2, 1fr); }
   .stats-top-authors-wrap { height: 280px; }
@@ -434,4 +492,932 @@
 
 @media (max-width: 480px) {
   .stats-trend-wrap { height: 200px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Publication Timeline — Grimmory birebir stil                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Başlık satırı ───────────────────────────────────────────── */
+.tl-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #262626;
+  margin-bottom: 0.25rem;
+}
+
+.tl-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.tl-header-icon {
+  font-size: 1.3125rem;
+  color: #a78bfa;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.tl-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fafafa;
+  margin: 0 0 0.15rem 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.tl-desc {
+  font-size: 0.8rem;
+  color: #a1a1a1;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Badge — sağ üstte (Grimmory: "72 books with dates") */
+.tl-badge {
+  background: rgba(167,139,250,0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(167,139,250,0.3);
+  border-radius: 99px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Grafik alanı (Grimmory: height 380px) ───────────────────── */
+.tl-chart-wrap {
+  position: relative;
+  height: 380px;
+  width: 100%;
+}
+
+.tl-chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Chip satırı ─────────────────────────────────────────────── */
+.tl-insights-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6563rem;
+  margin-top: 0.6563rem;
+}
+
+.tl-insights-row + .tl-insights-row {
+  margin-top: 0.6563rem;
+}
+
+/* ── Tek chip ────────────────────────────────────────────────── */
+.tl-insight-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.6563rem;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: var(--radius);
+  transition: border-color 0.2s;
+}
+
+.tl-insight-item:hover {
+  border-color: #404040;
+}
+
+.tl-insight-label {
+  font-size: 0.6125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a1a1a1;
+  margin-bottom: 0.2188rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.tl-insight-value {
+  font-size: 1.3125rem;
+  font-weight: 600;
+  color: #fafafa;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.2;
+}
+
+.tl-insight-detail {
+  font-size: 0.72rem;
+  color: #a1a1a1;
+  margin-top: 0.2188rem;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Chip değer renkleri (Grimmory scss'den) ─────────────────── */
+.tl-insight-item--oldest      .tl-insight-value { color: #F59E0B; }  /* amber-500   */
+.tl-insight-item--average     .tl-insight-value { color: #A78BFA; }  /* violet-400  */
+.tl-insight-item--newest      .tl-insight-value { color: #22D3EE; }  /* cyan-400    */
+.tl-insight-item--common-year .tl-insight-value { color: #34D399; }  /* emerald-400 */
+.tl-insight-item--timespan    .tl-insight-value { color: #F472B6; }  /* pink-400    */
+.tl-insight-item--peak        .tl-insight-value { color: #4ADE80; }  /* green-400   */
+.tl-insight-item--golden-era  .tl-insight-value { color: #FB923C; }  /* orange-400  */
+.tl-insight-item--rarity      .tl-insight-value { color: #F87171; }  /* red-400     */
+
+/* ── Mobil ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .tl-chart-wrap { height: 320px; }
+  .tl-insights-row { gap: 0.4375rem; }
+  .tl-insight-value { font-size: 1.0938rem; }
+  .tl-insight-detail { max-width: 100px; }
+}
+
+@media (max-width: 480px) {
+  .tl-chart-wrap { height: 280px; }
+  .tl-insights-row { grid-template-columns: repeat(2, 1fr); }
+  .tl-insight-value { font-size: 0.9625rem; }
+  .tl-insight-label { font-size: 0.5687rem; }
+  .tl-badge { font-size: 0.7rem; padding: 0.2625rem 0.6563rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Timeline + Journey yan yana layout (Grimmory gibi)             */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.stats-tl-journey-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.stats-tl-journey-col {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .stats-tl-journey-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Reading Journey — Grimmory birebir stiller                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.rj-box {
+  height: 100%;
+}
+
+/* ── Başlık satırı ───────────────────────────────────────────── */
+.rj-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #262626;
+  margin-bottom: 0.25rem;
+}
+
+.rj-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.rj-header-icon {
+  font-size: 1.3125rem;
+  color: #10b981;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.rj-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fafafa;
+  margin: 0 0 0.15rem 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.rj-desc {
+  font-size: 0.8rem;
+  color: #a1a1a1;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Badge — sağ üstte (Grimmory: "Jul 2026 - Jul 2026") */
+.rj-badge {
+  background: rgba(16,185,129,0.15);
+  color: #10b981;
+  border: 1px solid rgba(16,185,129,0.3);
+  border-radius: 99px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Grafik alanı (Grimmory: height 380px) ───────────────────── */
+.rj-chart-wrap {
+  position: relative;
+  height: 380px;
+  width: 100%;
+}
+
+.rj-chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Chip grid (2 satır × 4) ─────────────────────────────────── */
+.rj-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6563rem;
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid #262626;
+}
+
+/* ── Tek chip ────────────────────────────────────────────────── */
+.rj-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.6563rem;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: var(--radius);
+  transition: border-color 0.2s;
+}
+
+.rj-chip:hover { border-color: #404040; }
+
+.rj-chip-label {
+  font-size: 0.6125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a1a1a1;
+  margin-bottom: 0.2188rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.rj-chip-value {
+  font-size: 1.3125rem;
+  font-weight: 600;
+  color: #fafafa;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.2;
+}
+
+.rj-chip-detail {
+  font-size: 0.72rem;
+  color: #a1a1a1;
+  margin-top: 0.2188rem;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Chip değer renkleri (Grimmory scss'den) ─────────────────── */
+.rj-chip--backlog     .rj-chip-value { color: #F59E0B; }   /* amber-500   */
+.rj-chip--time        .rj-chip-value { color: #8B5CF6; }   /* violet-500  */
+.rj-chip--productive  .rj-chip-value { color: #10B981; }   /* emerald-500 */
+.rj-chip--acquisition .rj-chip-value { color: #3B82F6; }   /* blue-500    */
+.rj-chip--rate        .rj-chip-value { color: #06B6D4; }   /* cyan-500    */
+.rj-chip--streak      .rj-chip-value { color: #F472B6; }   /* pink-400    */
+.rj-chip--recent      .rj-chip-value { color: #A78BFA; font-size: 0.9625rem; }  /* violet-400 */
+.rj-chip--completion  .rj-chip-value { color: #22D3EE; font-size: 0.9625rem; }  /* cyan-400   */
+
+/* ── Mobil ───────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .rj-chip-value { font-size: 1.05rem; }
+  .rj-chip--recent .rj-chip-value,
+  .rj-chip--completion .rj-chip-value { font-size: 0.9rem; }
+}
+
+@media (max-width: 768px) {
+  .rj-chart-wrap { height: 320px; }
+  .rj-chips-grid { gap: 0.4375rem; }
+  .rj-chip { padding: 0.4375rem; }
+  .rj-chip-value { font-size: 0.9625rem; }
+  .rj-chip-label { font-size: 0.525rem; }
+  .rj-chip-detail { font-size: 0.525rem; }
+}
+
+@media (max-width: 480px) {
+  .rj-chart-wrap { height: 280px; }
+  .rj-chips-grid { grid-template-columns: repeat(2, 1fr); }
+  .rj-badge { font-size: 0.7rem; padding: 0.2625rem 0.6563rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Author Universe — Grimmory birebir stiller                      */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Bölüm başlığı ───────────────────────────────────────────── */
+.au-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #262626;
+  margin-bottom: 0.25rem;
+}
+
+.au-section-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.au-header-icon {
+  font-size: 1.3125rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+/* Grimmory _chart-shared.scss: h3 { font-size: 1.0938rem; font-weight: 500 } */
+.au-title {
+  font-size: 1.0938rem;
+  font-weight: 500;
+  color: #fafafa;
+  margin: 0 0 0.4375rem 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Grimmory _chart-shared.scss: .chart-description { font-size: 0.7875rem } */
+.au-desc {
+  font-size: 0.7875rem;
+  color: #a1a1a1;
+  margin: 0;
+  line-height: 1.4;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Badge */
+.au-badge {
+  border-radius: 99px;
+  border: 1px solid;
+  padding: 0.25rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Bilgi notu (Grimmory: chart-legend-info) ────────────────── */
+.au-legend-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.7rem;
+  padding: 0.4375rem 0.6563rem;
+  color: #a1a1a1;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 0.5rem;
+}
+
+.au-info-icon {
+  color: #8B5CF6;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* ── Legend satırı ───────────────────────────────────────────── */
+.au-legend-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.au-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+}
+
+.au-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.au-legend-label {
+  color: #a1a1a1;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Insight grid (Grimmory: insights-grid) ─────────────────── */
+.au-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.6563rem;
+  margin-top: 1.0938rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid #262626;
+}
+
+/* Grimmory: violet gradient border, amber yıldız */
+.au-insight-card {
+  display: flex;
+  align-items: center;
+  gap: 0.525rem;
+  background: linear-gradient(135deg, rgba(139,92,246,0.10), rgba(139,92,246,0.05));
+  border: 1px solid rgba(139,92,246,0.20);
+  border-radius: 8px;
+  padding: 0.525rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.au-insight-card:hover {
+  background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.08));
+  border-color: rgba(139,92,246,0.35);
+  transform: translateY(-1px);
+}
+
+.au-insight-icon {
+  color: #F59E0B;
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.au-insight-text {
+  font-size: 0.85rem;
+  color: #fafafa;
+  line-height: 1.3;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Mobil ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .au-insights-grid { grid-template-columns: 1fr; }
+  .au-legend-info { font-size: 0.65rem; }
+}
+
+@media (max-width: 480px) {
+  .au-badge { font-size: 0.7rem; padding: 0.2625rem 0.6563rem; }
+  .au-insight-card { padding: 0.4375rem 0.6125rem; }
+  .au-insight-text { font-size: 0.7rem; }
+}
+/* ═══════════════════════════════════════════════════════════════ */
+/* Top Items + Yazar Evreni — Grimmory yan yana layout            */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── İki kutuyu yan yana tutan wrapper ──────────────────────── */
+/* align-items: stretch → iki kutu her zaman aynı yükseklikte   */
+.stats-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.ti-box,
+.au-universe-box {
+  min-width: 0;
+}
+
+@media (max-width: 1200px) {
+  .stats-top-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Top Items — başlık kontroller (dropdown + badge)               */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Dropdown + badge'i yan yana tutan flex container */
+.ti-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6563rem;
+  flex-shrink: 0;
+}
+
+/* ── Custom Dropdown — Grimmory stili ────────────────────────── */
+.ti-dropdown {
+  position: relative;
+}
+
+/* Trigger butonu — Grimmory: koyu arka plan, border, chevron */
+.ti-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #0a0a0a;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #fafafa;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  min-width: 140px;
+  justify-content: space-between;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+
+.ti-dropdown-trigger:hover {
+  border-color: #3a3a3a;
+}
+
+.ti-dropdown-trigger--open {
+  border-color: #4a4a4a;
+}
+
+.ti-dropdown-chevron {
+  font-size: 0.85rem;
+  color: #a1a1a1;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.ti-dropdown-trigger--open .ti-dropdown-chevron {
+  transform: rotate(180deg);
+}
+
+/* Açılır liste */
+.ti-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: #171717;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  min-width: 140px;
+  z-index: 100;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.ti-dropdown-menu--open {
+  display: block;
+}
+
+/* Tek seçenek satırı */
+.ti-dropdown-item {
+  padding: 0.5rem 0.75rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  color: #c8b8a8;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+
+.ti-dropdown-item:hover {
+  background: #1a1a1a;
+  color: #fafafa;
+}
+
+/* Aktif (seçili) satır — Grimmory'de highlight rengi */
+.ti-dropdown-item--active {
+  background: #1a1a1a;
+  color: #fafafa;
+  font-weight: 500;
+}
+
+/* ── Badge — Grimmory SCSS: .stats-badge ─────────────────────── */
+/* badge-value: 1.0938rem / 600 / var(--color-text)              */
+/* badge-label: 0.6125rem / uppercase / var(--color-text-secondary) */
+.ti-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.4375rem 0.6563rem;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.ti-badge-value {
+  font-size: 1.0938rem;
+  font-weight: 600;
+  color: #fafafa;
+  line-height: 1;
+  font-family: 'Inter', sans-serif;
+}
+
+.ti-badge-label {
+  font-size: 0.6125rem;
+  color: #a1a1a1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.2188rem;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Top Items — grafik alanı                                        */
+/* SCSS: .chart-wrapper { height: 450px } desktop                  */
+/*       .chart-wrapper { height: 400px } 768px                    */
+/*       .chart-wrapper { height: 380px } 480px                    */
+/* ═══════════════════════════════════════════════════════════════ */
+/* ti-content-area: sabit 450px kutu — içinde grafik ya da boş mesaj */
+/* Grimmory SCSS: .chart-wrapper { height: 450px }                    */
+.ti-content-area {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.ti-chart-wrap {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ti-chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Boş durum — Grimmory: .no-data-message ─────────────────── */
+/* position: absolute → sabit container içinde ortalanır         */
+.ti-no-data {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  padding: 1rem;
+}
+
+.ti-no-data-icon {
+  font-size: 1.5rem;
+  color: #a1a1a1;
+}
+
+.ti-empty-text {
+  font-size: 0.85rem;
+  color: #a1a1a1;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+.ti-empty-sub {
+  font-size: 0.75rem;
+  color: #6b6b6b;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Top Items — insights grid                                        */
+/* SCSS: .insights-grid { grid-template-columns: repeat(2,1fr) }  */
+/* SCSS: .insight-card padding: 0.6563rem 0.875rem                 */
+/* SCSS: icon font-size: 0.9625rem                                 */
+/* SCSS: insight-label: var(--app-text-xs) / uppercase / 0.3px    */
+/* SCSS: insight-value: 0.7875rem / 500 / ellipsis                 */
+/* ═══════════════════════════════════════════════════════════════ */
+.ti-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6563rem;
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid #262626;
+}
+
+/* Grimmory: neutral-surface mixin → dark bg + 1px border */
+.ti-insight-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6563rem;
+  padding: 0.6563rem 0.875rem;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.ti-insight-card:hover {
+  border-color: #404040;
+  transform: translateY(-1px);
+}
+
+/* Grimmory: icon font-size: 0.9625rem */
+.ti-insight-icon {
+  font-size: 0.9625rem;
+  width: 0.9625rem;
+  height: 0.9625rem;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ti-insight-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1313rem;
+  min-width: 0;
+}
+
+/* Grimmory: insight-label → xs / uppercase / 0.3px letter-spacing / secondary color */
+.ti-insight-label {
+  font-size: 0.65rem;
+  color: #a1a1a1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Grimmory: insight-value → 0.7875rem / weight 500 / ellipsis */
+.ti-insight-value {
+  font-size: 0.7875rem;
+  color: #fafafa;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Mobil ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ti-insights-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4375rem;
+  }
+
+  .ti-insight-card {
+    padding: 0.525rem 0.6563rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ti-insights-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ti-select {
+    min-width: 110px;
+    font-size: 0.78rem;
+  }
+
+  .ti-badge-value {
+    font-size: 0.9625rem;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Publication Trend — Grimmory birebir                           */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Yıl aralığı badge — Grimmory: .year-range-badge / cyan accent */
+.pt-year-badge {
+  background: rgba(6,182,212,0.15);
+  color: #06b6d4;
+  border: 1px solid rgba(6,182,212,0.3);
+  border-radius: 6px;
+  padding: 0.2625rem 0.6563rem;
+  font-size: 0.82rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Grafik yüksekliği — Grimmory SCSS: .chart-wrapper { height: 380px } */
+.pt-chart-wrap {
+  height: 380px;
+}
+
+/* Chip satırı — Grimmory: .insights-row */
+.pt-insights-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+  margin-top: 0.875rem;
+  padding-top: 0.875rem;
+  border-top: 1px solid #262626;
+}
+
+/* Tek chip — Grimmory: .insight-item + neutral-surface mixin */
+.pt-insight-item {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.6563rem;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.pt-insight-item:hover {
+  border-color: #404040;
+}
+
+/* Grimmory: .insight-label — 0.6125rem / uppercase / secondary color */
+.pt-insight-label {
+  font-size: 0.6125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #a1a1a1;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 0.2188rem;
+}
+
+/* Grimmory: .insight-value — 1.3125rem / 600 / renk inline style ile */
+.pt-insight-value {
+  font-size: 1.3125rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.2;
+}
+
+/* Grimmory: .insight-detail — xs / secondary color */
+.pt-insight-detail {
+  font-size: 0.65rem;
+  color: #a1a1a1;
+  font-family: 'Inter', sans-serif;
+  margin-top: 0.2188rem;
+  line-height: 1.3;
+}
+
+/* Responsive — Grimmory: 768px */
+@media (max-width: 768px) {
+  .pt-chart-wrap {
+    height: 320px;
+  }
+  .pt-insights-row {
+    gap: 0.6563rem;
+  }
+  .pt-insight-item {
+    padding: 0.525rem;
+    min-width: 100px;
+  }
+  .pt-insight-value {
+    font-size: 1.0938rem !important;
+  }
+}
+
+/* Responsive — Grimmory: 480px */
+@media (max-width: 480px) {
+  .pt-chart-wrap {
+    height: 280px;
+  }
+  .pt-year-badge {
+    font-size: 0.7rem;
+    padding: 0.2625rem 0.6563rem;
+  }
+  .pt-insights-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4375rem;
+  }
+  .pt-insight-item {
+    min-width: unset;
+    padding: 0.4375rem;
+  }
+  .pt-insight-value {
+    font-size: 0.9625rem !important;
+  }
+  .pt-insight-label {
+    font-size: 0.5687rem;
+  }
 }

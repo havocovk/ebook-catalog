@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ebook Kataloğu</title>
+  <title>Ebook Kütüphanem</title>
   <!-- ── Adım 12: style.css küçük modüllere bölündü ─────────────── -->
   <!-- base.css MUTLAKA ilk yüklenmeli: :root değişkenlerini (renkler,   -->
   <!-- boşluklar) tanımlıyor, diğer tüm dosyalar bunlara var() ile       -->
@@ -29,7 +29,7 @@
   <!-- ── Giriş Ekranı ────────────────────────────────────────────── -->
   <div id="login-screen">
     <div class="login-box">
-      <h1 class="login-title">Ebook Kataloğu</h1>
+      <h1 class="login-title">Ebook Kütüphanem</h1>
       <p class="login-sub">Kişisel kitaplığın</p>
       <div class="field">
         <label for="login-email">E-posta</label>
@@ -53,9 +53,8 @@
         <iconify-icon icon="lucide:menu"></iconify-icon>
       </button>
 
-      <span class="header-title">
-        <iconify-icon icon="lucide:library"></iconify-icon>
-        <span>Ebook Kataloğu</span>
+      <span class="header-logo" title="Ebook Kütüphanem">
+        <img src="assets/logo.svg" alt="Ebook Kütüphanem" class="header-logo-img" />
       </span>
 
       <!-- Sıra: Panel → Katalog → Yazarlar → Yayınevleri → Seriler → Kitap Ayıklayıcı -->
@@ -87,7 +86,7 @@
       </nav>
 
       <div class="header-actions">
-        <button id="logout-btn" class="btn btn-sm" title="Çıkış">
+        <button id="logout-btn" class="btn btn-sm" title="Çıkış" style="color:#f87171;">
           <iconify-icon icon="lucide:log-out"></iconify-icon><span class="btn-label">Çıkış</span>
         </button>
       </div>
@@ -277,12 +276,21 @@
             </div>
             <!-- ── Adım 11 sonu ─────────────────────────────────────────── -->
 
-            <!-- ── Bölüm 2: Tür Filtresi ──────────────────────────────────── -->
+            <!-- ── Bölüm 2: Tür Filtresi — Collapsible Dropdown ─────────────── -->
             <div class="filter-group" id="filter-genre-wrap">
-              <label class="filter-label">Tür <span class="filter-hint">(çoklu seçim)</span></label>
-              <div class="filter-chips" id="filter-genre-chips">
-                <button class="chip active" data-filter="genre" data-value="">Tümü</button>
-                <!-- Dinamik chip'ler catalog.js tarafından doldurulur -->
+              <button class="filter-genre-toggle" id="filter-genre-toggle" type="button">
+                <span class="filter-genre-toggle-left">
+                  <iconify-icon icon="lucide:tag"></iconify-icon>
+                  <span class="filter-genre-toggle-label">Tür</span>
+                  <span class="filter-genre-badge hidden" id="filter-genre-badge">0</span>
+                </span>
+                <iconify-icon icon="lucide:chevron-down" class="filter-genre-chevron" id="filter-genre-chevron"></iconify-icon>
+              </button>
+              <div class="filter-genre-dropdown hidden" id="filter-genre-dropdown">
+                <button class="filter-genre-clear hidden" id="filter-genre-clear" type="button">Seçimi Temizle</button>
+                <div class="filter-genre-list" id="filter-genre-list">
+                  <!-- Dinamik olarak filter-populate.js tarafından doldurulur -->
+                </div>
               </div>
             </div>
             <!-- ── Bölüm 2 sonu ───────────────────────────────────────────── -->

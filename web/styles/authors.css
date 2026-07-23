@@ -146,3 +146,92 @@
 
   .authors-wrap { padding: 0 0.75rem 2rem; }
 }
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Yazar detay — toplu işlem çubuğu                               */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.author-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 1rem;
+  background: #000000;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+
+  /* ── Sticky: seçim yapılınca her zaman görünür kalsın ──────────
+     top değeri: header (56px) + detail-header (~60px) + küçük boşluk.
+     z-index: alpha-bar (30) ve canonical-badge (5) üzerinde olsun. */
+  position: sticky;
+  top: 120px;
+  z-index: 40;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+.author-bulk-bar.hidden {
+  display: none;
+}
+
+.author-bulk-count {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fafafa;
+  margin-right: 0.25rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* Bölüm 4B — "Otomatik Eşleştir" butonu                         */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Buton, detail-header içinde geri butonunun karşısına konumlanır.
+   detail-header'ın mevcut flex yapısına uyum sağlaması için
+   margin-left:auto ile sağa itilir. */
+.author-auto-match-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid #7c3aed;
+  color: #a78bfa;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.author-auto-match-btn:hover {
+  background: rgba(124, 58, 237, 0.15);
+  border-color: #a78bfa;
+  color: #c4b5fd;
+}
+
+.author-auto-match-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Yükleme animasyonu (spin) — loader ikonunda kullanılır */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Mobilde buton yazısı kısaltılabilir, ikon gösterilir */
+@media (max-width: 600px) {
+  .author-auto-match-btn span {
+    display: none;
+  }
+  .author-auto-match-btn {
+    padding: 0.35rem 0.55rem;
+  }
+}
+/* ═══════════════════════════════════════════════════════════════ */
+/* Bölüm 4B sonu                                                   */
+/* ═══════════════════════════════════════════════════════════════ */

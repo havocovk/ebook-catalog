@@ -79,38 +79,107 @@ export function populateCategoryChips(opts) {
   syncChipGroup("filter-category-chips", ui.filters.category);
 }
 
-// ── Bölüm 2: Tür (genre) chip'lerini doldur ─────────────────────────────────
-// populateCategoryChips ile birebir aynı mantık. Çoklu seçim (VEYA mantığı).
-export function populateGenreChips(opts) {
-  const container = document.getElementById("filter-genre-chips");
-  if (!container) return;
+// ── Bölüm 2: Tür (genre) dropdown listesini doldur ──────────────────────────
+// Chip yapısı yerine collapsible dropdown + checkbox listesi kullanılır.
+// Her tür bir <label><input type="checkbox"> + metin satırıdır.
+// Seçili türler ui.filters.genre dizisinde tutulur (mevcut mantık değişmedi).
+//
+// KATEGORİ FİLTRELEMESİ:
+// Eğer kullanıcı bir veya birden fazla kategori seçmişse, dropdown sadece
+// o kategorilere ait kitaplarda bulunan türleri gösterir. Hiç kategori
+// seçilmemişse tüm türler listelenir.
+export function populateGenreDropdown(opts) {
+  const list = document.getElementById("filter-genre-list");
+  if (!list) return;
 
-  const allGenres = opts.genres;
+  // Kategori seçili mi? Seçiliyse sadece o kategorilerdeki türleri getir.
+  let visibleGenres;
+  if (ui.filters.category.length > 0) {
+    // state.books'tan seçili kategorilere ait türleri topla
+    const genreSet = new Set();
+    for (const b of state.books) {
+      if (b.genre && ui.filters.category.includes(b.category)) {
+        genreSet.add(b.genre);
+      }
+    }
+    const trCompare = (a, b) => a.localeCompare(b, "tr", { sensitivity: "base" });
+    visibleGenres = [...genreSet].sort(trCompare);
+  } else {
+    // Kategori seçili değil — tüm türleri göster
+    visibleGenres = opts.genres;
+  }
 
-  // Sadece tür chip'lerini yenile ("Tümü" butonu HTML'de kalıcı)
-  const existing = [...container.querySelectorAll(".chip[data-filter='genre']:not([data-value=''])")];
-  existing.forEach((c) => c.remove());
+  list.innerHTML = "";
 
-  allGenres.forEach((genre) => {
-    const btn = document.createElement("button");
-    btn.className      = "chip";
-    btn.dataset.filter = "genre";
-    btn.dataset.value  = genre;
-    btn.textContent    = genre;
-    container.appendChild(btn);
+  if (visibleGenres.length === 0) {
+    const empty = document.createElement("span");
+    empty.className   = "filter-genre-empty";
+    empty.textContent = ui.filters.category.length > 0
+      ? "Bu kategoride tür bilgisi yok"
+      : "Henüz tür bilgisi yok";
+    list.appendChild(empty);
+    return;
+  }
+
+  visibleGenres.forEach((genre) => {
+    const label = document.createElement("label");
+    label.className        = "filter-genre-item";
+    label.dataset.genre    = genre;
+
+    const cb = document.createElement("input");
+    cb.type               = "checkbox";
+    cb.className          = "filter-genre-checkbox";
+    cb.dataset.filterGenre = genre;
+    cb.checked             = ui.filters.genre.includes(genre);
+
+    const span = document.createElement("span");
+    span.className  = "filter-genre-item-text";
+    span.textContent = genre;
+
+    label.appendChild(cb);
+    label.appendChild(span);
+    list.appendChild(label);
   });
 
-  // Seçili türleri senkronize et (dizi, çoklu seçim)
-  syncChipGroup("filter-genre-chips", ui.filters.genre);
+  _syncGenreDropdown();
+}
+
+// Dropdown'daki checkbox'ları ve badge'i ui.filters.genre ile senkronize et
+export function _syncGenreDropdown() {
+  const checkboxes = document.querySelectorAll(".filter-genre-checkbox");
+  checkboxes.forEach((cb) => {
+    cb.checked = ui.filters.genre.includes(cb.dataset.filterGenre);
+  });
+
+  const count   = ui.filters.genre.length;
+  const badge   = document.getElementById("filter-genre-badge");
+  const clearBtn = document.getElementById("filter-genre-clear");
+
+  if (badge) {
+    badge.textContent = count;
+    badge.classList.toggle("hidden", count === 0);
+  }
+  if (clearBtn) {
+    clearBtn.classList.toggle("hidden", count === 0);
+  }
 }
 
 // ── Adım 11: Alt Alan chip'lerini doldur (sadece akademik kitaplardan) ──────
 // Ağacın 2. seviyesi. Sadece b.is_academic === true olan kitaplardan toplanır.
-// Görünürlük: en az 1 akademik kitap yoksa grup tamamen gizlenir.
+// Görünürlük: "Akademik" kategorisi seçili DEĞİLSE grup tamamen gizlenir.
+// Akademik seçiliyse ve alt alan verisi varsa gösterilir.
 export function populateSubcategoryChips(opts) {
   const wrap      = document.getElementById("filter-subcategory-wrap");
   const container = document.getElementById("filter-subcategory-chips");
   if (!wrap || !container) return;
+
+  // "Akademik" kategorisi seçili değilse Alt Alan'ı gizle ve sıfırla
+  const akademikSelected = ui.filters.category.includes("Akademik");
+  if (!akademikSelected) {
+    wrap.classList.add("hidden");
+    ui.filters.subcategory = [];
+    return;
+  }
 
   // Adım 35: opts.subcategories, _collectFilterOptions()'tan geliyor
   // (zaten sadece is_academic === true olan kitaplardan toplanmış).
@@ -146,6 +215,13 @@ export function populateTopicChips() {
   const wrap      = document.getElementById("filter-topic-wrap");
   const container = document.getElementById("filter-topic-chips");
   if (!wrap || !container) return;
+
+  // "Akademik" kategorisi seçili değilse Konu'yu da gizle ve sıfırla
+  if (!ui.filters.category.includes("Akademik")) {
+    wrap.classList.add("hidden");
+    ui.filters.topic = [];
+    return;
+  }
 
   let academicBooks = state.books.filter((b) => b.is_academic);
 

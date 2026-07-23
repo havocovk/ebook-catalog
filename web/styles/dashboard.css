@@ -11,14 +11,14 @@
   padding: 1.5rem 1.25rem 3rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.75rem;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
 /* Çerçeveli bölüm container'ı (Grimmory tarzı)                   */
 /* ═══════════════════════════════════════════════════════════════ */
 .dash-container {
-  background: var(--bg-2);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.1rem 1.25rem 1.25rem;
@@ -40,7 +40,7 @@
 .dash-container-title {
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--text-2);
+  color: var(--text);
   text-transform: uppercase;
   letter-spacing: 0.6px;
   display: flex;
@@ -76,7 +76,7 @@
 
 .dash-container--maintenance {
   border-color: rgba(124,106,247,0.3);
-  background: linear-gradient(135deg, var(--bg-2) 0%, rgba(124,106,247,0.04) 100%);
+  background: linear-gradient(135deg, #000000 0%, rgba(124,106,247,0.04) 100%);
 }
 .dash-container--maintenance .dash-container-title iconify-icon {
   color: var(--accent);
@@ -87,7 +87,7 @@
 
 .dash-container--backup {
   border-color: rgba(76,175,130,0.3);
-  background: linear-gradient(135deg, var(--bg-2) 0%, rgba(76,175,130,0.04) 100%);
+  background: linear-gradient(135deg, #000000 0%, rgba(76,175,130,0.04) 100%);
 }
 .dash-container--backup .dash-container-title iconify-icon {
   color: var(--success);
@@ -119,7 +119,7 @@
   aspect-ratio: 2/3;
   border-radius: var(--radius);
   overflow: hidden;
-  background: var(--bg-3);
+  background: #000000;
   border: 1px solid var(--border);
   transition: border-color 0.2s;
 }
@@ -162,7 +162,7 @@
 
 .dash-card-author {
   font-size: 0.65rem;
-  color: var(--text-2);
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -188,7 +188,7 @@
 }
 
 .stat-card {
-  background: var(--bg-3);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1rem 0.9rem 0.85rem;
@@ -202,7 +202,7 @@
 
 .stat-card-icon  { font-size: 1.1rem; line-height: 1; }
 .stat-card-value { font-size: 1.7rem; font-weight: 700; line-height: 1; letter-spacing: -0.5px; color: var(--text); }
-.stat-card-label { font-size: 0.72rem; color: var(--text-2); font-weight: 500; }
+.stat-card-label { font-size: 0.72rem; color: var(--text); font-weight: 500; }
 
 .stat-card--missing { cursor: pointer; border-color: rgba(224,92,92,0.25); }
 .stat-card--missing .stat-card-icon  { color: var(--danger); }
@@ -215,7 +215,7 @@
 /* ═══════════════════════════════════════════════════════════════ */
 .dash-maintenance-desc {
   font-size: 0.83rem;
-  color: var(--text-2);
+  color: var(--text);
   line-height: 1.55;
   margin: 0;
 }
@@ -246,11 +246,381 @@
 
 .dash-scan-result {
   font-size: 0.83rem;
-  color: var(--text-2);
-  background: var(--bg-3);
+  color: var(--text);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0.5rem 0.75rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EŞLEŞTİRME YÖNETİMİ — Container varyantı                       */
+/* ═══════════════════════════════════════════════════════════════ */
+.dash-container--reconcile {
+  border-color: rgba(14, 165, 233, 0.3);
+  background: linear-gradient(135deg, #000000 0%, rgba(14,165,233,0.04) 100%);
+}
+.dash-container--reconcile .dash-container-title iconify-icon {
+  color: #0ea5e9;
+}
+.dash-container--reconcile .dash-container-header {
+  border-bottom-color: rgba(14,165,233,0.2);
+}
+
+/* Tara butonu */
+.btn-reconcile-scan {
+  border-color: rgba(14,165,233,0.4);
+  color: #0ea5e9;
+}
+.btn-reconcile-scan:hover {
+  background: rgba(14,165,233,0.12);
+  border-color: #0ea5e9;
+}
+
+/* Eşleştir butonu */
+.btn-reconcile-match {
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.5);
+  color: #22c55e;
+}
+.btn-reconcile-match:hover {
+  background: rgba(34,197,94,0.2);
+  border-color: #22c55e;
+}
+.btn-reconcile-match:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Açıklama metni */
+.reconcile-desc {
+  font-size: 0.83rem;
+  color: var(--text-3);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Tarama öncesi action satırı */
+.reconcile-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* ── Sonuç satırları ──────────────────────────────────────────── */
+.reconcile-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.reconcile-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.2rem 0;
+}
+
+.reconcile-result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+}
+
+/* Birebir eşleşme satırı — yeşil ton */
+.reconcile-result-exact {
+  background: rgba(34,197,94,0.06);
+  border-color: rgba(34,197,94,0.2);
+}
+.reconcile-result-exact iconify-icon { color: #22c55e; font-size: 1.1rem; }
+
+/* Fuzzy eşleşme satırı — turuncu ton */
+.reconcile-result-fuzzy {
+  background: rgba(251,146,60,0.06);
+  border-color: rgba(251,146,60,0.2);
+}
+.reconcile-result-fuzzy iconify-icon { color: #fb923c; font-size: 1.1rem; }
+
+/* Temiz (hiç bulunamadı) satırı */
+.reconcile-result-clean {
+  background: rgba(100,116,139,0.06);
+  border-color: rgba(100,116,139,0.15);
+  color: var(--text-3);
+  font-size: 0.83rem;
+  gap: 0.5rem;
+}
+.reconcile-result-clean iconify-icon { color: var(--text-3); font-size: 1rem; }
+
+/* Sol bilgi bloğu (ikon + sayı + etiket) */
+.reconcile-result-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.reconcile-result-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.reconcile-result-count {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.reconcile-result-label {
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+
+/* Sağ buton grubu */
+.reconcile-result-btns {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* Cache notu */
+.reconcile-cache-note {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--text-3);
+  text-transform: none;
+  letter-spacing: normal;
+  margin-left: 0.3rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EŞLEŞTİRME MODAL                                               */
+/* ═══════════════════════════════════════════════════════════════ */
+.reconcile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.reconcile-modal-overlay.hidden { display: none; }
+
+.reconcile-modal {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 640px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+/* Modal başlık */
+.reconcile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.reconcile-modal-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.reconcile-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  font-size: 1.1rem;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius);
+  transition: color 0.15s, background 0.15s;
+}
+.reconcile-modal-close:hover { color: var(--text); background: var(--bg-3); }
+
+/* Modal içerik (kaydırılabilir) */
+.reconcile-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.85rem 1.25rem;
+}
+
+/* Modal footer */
+.reconcile-modal-footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+.reconcile-modal-footer:empty { display: none; }
+
+/* ── Exact match listesi ─────────────────────────────────────── */
+.reconcile-exact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.reconcile-exact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-3);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.reconcile-exact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;          /* boş alanı doldur → info bloğu sola yaslanır */
+  min-width: 0;     /* flex child'da overflow:ellipsis çalışsın diye */
+  text-align: left; /* her ihtimale karşı açıkça sola hizala */
+}
+.reconcile-exact-author {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.reconcile-exact-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.reconcile-exact-formats {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #22c55e;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+}
+
+/* ── Fuzzy match listesi ─────────────────────────────────────── */
+.reconcile-fuzzy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reconcile-fuzzy-row {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+}
+
+.reconcile-fuzzy-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.reconcile-fuzzy-book {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.reconcile-fuzzy-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--bg-2);
+  background: var(--text-3);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+.reconcile-fuzzy-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.reconcile-fuzzy-author {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.reconcile-fuzzy-title {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reconcile-fuzzy-format {
+  font-size: 0.68rem;
+  color: var(--text-3);
+}
+
+/* Ayraç: skor + neden */
+.reconcile-fuzzy-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0 0.2rem 1.8rem;
+}
+.reconcile-sim-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  flex-shrink: 0;
+}
+.reconcile-sim-high {
+  background: rgba(251,146,60,0.15);
+  border: 1px solid rgba(251,146,60,0.4);
+  color: #fb923c;
+}
+.reconcile-sim-mid {
+  background: rgba(234,179,8,0.12);
+  border: 1px solid rgba(234,179,8,0.35);
+  color: #eab308;
+}
+.reconcile-fuzzy-reason {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  font-style: italic;
+}
+
+/* Boş durum */
+.reconcile-empty {
+  font-size: 0.85rem;
+  color: var(--text-3);
+  font-style: italic;
+  text-align: center;
+  padding: 1.5rem 0;
+  margin: 0;
 }
 
 /* ── Mobil ───────────────────────────────────────────────────── */
@@ -260,4 +630,132 @@
   .dash-book-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.6rem; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .stat-card-value { font-size: 1.4rem; }
+
+  .reconcile-result-row { flex-direction: column; align-items: flex-start; }
+  .reconcile-result-btns { width: 100%; }
+  .reconcile-modal { max-height: 90vh; }
+  .reconcile-exact-row { flex-direction: column; align-items: flex-start; }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* EŞLEŞTİRME MODAL — Checkbox'lı satır stilleri                  */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* "Tümünü seç" üst satırı */
+.reconcile-select-all-row {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Checkbox'lı satır — label olarak kullanılır, tüm alan tıklanabilir */
+.reconcile-exact-row--selectable {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
+}
+.reconcile-exact-row--selectable:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+/* Tarayıcının varsayılan checkbox'ını gizle, custom olanı göster */
+.reconcile-exact-row--selectable input[type="checkbox"],
+.reconcile-select-all-row input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Custom checkbox kutusu */
+.reconcile-checkbox-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border-2);
+  border-radius: 4px;
+  background: var(--bg-3);
+  transition: background 0.12s, border-color 0.12s;
+  position: relative;
+}
+
+/* Checked durumu */
+input[type="checkbox"]:checked + .reconcile-checkbox-custom {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+input[type="checkbox"]:checked + .reconcile-checkbox-custom::after {
+  content: "";
+  display: block;
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) translate(0, -1px);
+}
+
+/* Indeterminate durumu ("Tümünü seç" için) */
+input[type="checkbox"]:indeterminate + .reconcile-checkbox-custom {
+  background: rgba(34,197,94,0.3);
+  border-color: #22c55e;
+}
+input[type="checkbox"]:indeterminate + .reconcile-checkbox-custom::after {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 2px;
+  background: #22c55e;
+  border-radius: 1px;
+}
+
+/* "Tümünü seç" etiket metni */
+.reconcile-select-all-text {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  margin-left: 0.4rem;
+}
+
+/* Checkbox label içindeki etiket */
+.reconcile-checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ── Modal footer iç yapısı ──────────────────────────────────── */
+.reconcile-modal-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.reconcile-modal-summary {
+  font-size: 0.8rem;
+  color: var(--text-3);
+  flex: 1;
+  min-width: 0;
+}
+
+/* Devre dışı modal match butonu */
+#reconcile-modal-match-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Mobil ek düzenlemeler ───────────────────────────────────── */
+@media (max-width: 600px) {
+  .reconcile-modal-footer-inner { flex-direction: column; align-items: flex-start; }
+  .reconcile-modal-summary { font-size: 0.75rem; }
 }

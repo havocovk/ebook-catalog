@@ -334,3 +334,107 @@ export async function uploadBookCover(bookId, file) {
 
   return coverUrl;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Bölüm 4 (Güncelleme): setCanonicalId — Zincirleme Grup Birleştirme
+//
+// PROBLEM (Eski Versiyon):
+//   Sadece gelen bookIds listesine bakıyor ve hepsine aynı canonicalId yazıyordu.
+//   Bu, "A(canon-111) + C(canon-222) seçilirse sadece A ve C güncellenir,
+//   B(canon-111) ve D(canon-222) yani önceden bağlı olanlar atlanır" sorununa
+//   yol açıyordu. İki ayrı grup birleştirilmek istendiğinde yarım birleşme
+//   gerçekleşiyordu.
+//
+// ÇÖZÜM (Yeni Versiyon — Zincirleme Genişleme):
+//   1. Başlangıç kümesi: gelen bookIds
+//   2. Genişleme adımı: bu kümedeki her kitabın canonical_id'sine sahip olan
+//      TÜM diğer kitapları da kümeye ekle
+//   3. Genişleme adımını, küme büyümeyene kadar tekrarla (zincirleme)
+//   4. Nihai kümedeki hepsine tek bir canonical_id yaz
+//
+//   Hangi canonical_id kazanır?
+//   • Kümedeki kitapların mevcut canonical_id'leri içinde en eski olanı
+//     (küçük string karşılaştırması — "canon-1735..." formatında timestamp
+//     olduğu için leksikografik sıra = kronolojik sıra). Bu sayede grup
+//     birleşmelerinde ID kararlı ve tahmin edilebilir kalır.
+//   • Hiç mevcut canonical_id yoksa yeni bir tane üretilir.
+//   • canonicalId parametresi "" (boş string) ile çağrılırsa GENİŞLEME YAPILMAZ —
+//     sadece gelen bookIds'in canonical_id'si temizlenir (bağlantı kaldırma).
+//
+// Dışa açık: authors.js hem manuel eşleştirme hem otomatik eşleştirme için
+// bu fonksiyonu çağırır.
+// ══════════════════════════════════════════════════════════════════════════════
+export async function setCanonicalId(bookIds, canonicalId) {
+
+  // ── BAĞLANTI KALDIRMA: boş string → sadece verilen kitapları temizle ──────
+  // Zincirleme genişleme yapılmaz; tam olarak istenen kitaplar temizlenir.
+  if (canonicalId === "") {
+    for (const id of bookIds) {
+      await databases.updateDocument(DATABASE_ID, TABLE_ID, id, { canonical_id: "" });
+      const idx = state.books.findIndex((b) => b.$id === id);
+      if (idx !== -1) state.books[idx] = { ...state.books[idx], canonical_id: "" };
+    }
+    return;
+  }
+
+  // ── ZİNCİRLEME GENİŞLEME: tüm bağlı grupları tek kümede topla ───────────
+  //
+  // Adım 1: Başlangıç kümesi — gelen bookIds
+  const expandedIds = new Set(bookIds);
+
+  // Adım 2-3: Kümedeki canonical_id'lere sahip tüm kitapları ekle; küme
+  // büyümeyene kadar tekrarla. Döngü sayısı sınırlı (max 20 tur) — pratikte
+  // asla bu kadar derin bir zincir olmaz, sonsuz döngü koruması.
+  let prevSize = 0;
+  let safetyCounter = 0;
+  while (expandedIds.size !== prevSize && safetyCounter < 20) {
+    prevSize = expandedIds.size;
+    safetyCounter++;
+
+    // Bu turda kümedeki kitapların canonical_id'lerini topla
+    const canonIdsInSet = new Set();
+    for (const id of expandedIds) {
+      const book = state.books.find((b) => b.$id === id);
+      const cid = (book?.canonical_id || "").trim();
+      if (cid) canonIdsInSet.add(cid);
+    }
+
+    // Bu canonical_id'lere sahip tüm kitapları kümeye ekle
+    if (canonIdsInSet.size > 0) {
+      for (const book of state.books) {
+        const cid = (book.canonical_id || "").trim();
+        if (cid && canonIdsInSet.has(cid)) {
+          expandedIds.add(book.$id);
+        }
+      }
+    }
+  }
+
+  // Adım 4: Hangi canonical_id kazanacak?
+  // Mevcut canonical_id'ler arasından en küçük string'i seç (leksikografik
+  // sıra "canon-TIMESTAMP-..." formatında kronolojik sırayla örtüşür — en
+  // eski oluşturulan ID kazanır, böylece birleşmeler kararlı ve tekrar edilebilir).
+  // Eğer hiç mevcut canonical_id yoksa dışarıdan gelen canonicalId kullanılır;
+  // o da boş ise yeni üretilir.
+  const existingIds = [...expandedIds]
+    .map((id) => (state.books.find((b) => b.$id === id)?.canonical_id || "").trim())
+    .filter(Boolean);
+
+  let finalCanonicalId;
+  if (existingIds.length > 0) {
+    // En eski (leksikografik olarak en küçük) canonical_id'yi koru
+    finalCanonicalId = existingIds.reduce((a, b) => (a < b ? a : b));
+  } else if (canonicalId && canonicalId.trim()) {
+    finalCanonicalId = canonicalId.trim();
+  } else {
+    finalCanonicalId = `canon-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
+  // Adım 5: Nihai kümedeki TÜM kitaplara aynı canonical_id yaz
+  for (const id of expandedIds) {
+    await databases.updateDocument(DATABASE_ID, TABLE_ID, id, { canonical_id: finalCanonicalId });
+    const idx = state.books.findIndex((b) => b.$id === id);
+    if (idx !== -1) state.books[idx] = { ...state.books[idx], canonical_id: finalCanonicalId };
+  }
+}
+// ── Bölüm 4 sonu ─────────────────────────────────────────────────────────────

@@ -424,11 +424,11 @@ export function renderBackupSection() {
           ve kapak resimlerini tek bir TAR.GZ arşivine yedekler veya geri yükler.
         </p>
         <div class="backup-actions">
-          <button id="backup-full-btn" class="btn btn-sm">
+          <button id="backup-full-btn" class="btn btn-sm" style="background:#0d9488;border-color:#0d9488;color:#fff;">
             <iconify-icon icon="lucide:download"></iconify-icon>
             <span class="btn-label">Yedek Al</span>
           </button>
-          <button id="restore-full-btn" class="btn btn-sm">
+          <button id="restore-full-btn" class="btn btn-sm" style="background:#ff8904;border-color:#ff8904;color:#fff;">
             <iconify-icon icon="lucide:upload"></iconify-icon>
             <span class="btn-label">Geri Yükle</span>
           </button>

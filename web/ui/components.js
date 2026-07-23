@@ -34,7 +34,15 @@ export function renderStars(rating, interactive = false, bookId = null) {
 // isSelected (Adım 18): seçim durumu catalog.js'deki selectedIds Set'inde
 // tutulur (bu modülün dışında); components.js o Set'e erişemez, bu yüzden
 // çağıran taraf (catalog.js) o bilgiyi parametre olarak buraya geçirir.
-export function createBookCard(book, isSelected = false) {
+//
+// options.showCanonicalBadge (Bölüm 4):
+//   true  → yazarlar sayfasında, eşleştirilmiş kitapların kartında 🔗 rozeti gösterilir.
+//   false → katalog dahil diğer tüm sayfalarda rozet çıkmaz (varsayılan).
+//   Rozetin popover içeriği (hangi kitaplarla eşleştirilmiş) authors.js'e geçirilmek
+//   üzere data-canonical-id attribute'u olarak karta yazılır; event binding authors.js'te.
+export function createBookCard(book, isSelected = false, options = {}) {
+  const { showCanonicalBadge = false } = options;
+
   const card = document.createElement("div");
   card.className = "book-card";
   card.dataset.id = book.$id;
@@ -99,12 +107,33 @@ export function createBookCard(book, isSelected = false) {
   const formatClass = fmt === "pdf" ? "format-pdf" : fmt === "epub" ? "format-epub" : "";
   // ── Adım 3 (V5) sonu ──────────────────────────────────────────────────────
 
+  // ── Bölüm 4: Canonical (Eşleştirilmiş Kitap) rozeti ──────────────────────
+  // Sadece yazarlar sayfasında (showCanonicalBadge=true) VE kitabın
+  // canonical_id'si varsa gösterilir. Rozete tıklanınca authors.js'teki
+  // event delegation bir popover açar — event binding burada değil.
+  // data-canonical-id: popover'ın hangi grubu göstereceğini bulmak için
+  // authors.js'e gereken anahtar bilgiyi taşır.
+  const canonicalId = (book.canonical_id || "").trim();
+  const canonicalBadgeHtml = (showCanonicalBadge && canonicalId)
+    ? `<button
+         class="canonical-badge"
+         data-canonical-id="${escapeHtml(canonicalId)}"
+         data-book-id="${escapeHtml(book.$id)}"
+         title="Bu kitap diğer dosyalarla eşleştirilmiş — detay için tıkla"
+         aria-label="Eşleştirilmiş kitap"
+       >
+         <iconify-icon icon="lucide:link"></iconify-icon>
+       </button>`
+    : "";
+  // ── Bölüm 4 sonu ──────────────────────────────────────────────────────────
+
   card.innerHTML = `
     <div class="book-cover">
       ${coverHtml}
       ${selectBtnHtml}
       <span class="book-format ${formatClass}">${(book.format || "").toUpperCase()}</span>
       ${confBadgeHtml}
+      ${canonicalBadgeHtml}
       <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
       ${favoriteBtnHtml}
     </div>

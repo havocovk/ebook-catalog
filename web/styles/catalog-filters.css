@@ -26,7 +26,7 @@
 .filter-panel {
   width: 210px;
   flex-shrink: 0;
-  background: var(--bg-2);
+  background: #000000;
   border-right: 1px solid var(--border);
   padding: 1rem 0.9rem;
   display: flex;
@@ -213,7 +213,7 @@
   padding: 0.28rem 0.65rem;
   border-radius: 20px;
   border: 1px solid var(--border-2);
-  background: var(--bg-3);
+  background: #000000;
   color: var(--text-2);
   font-size: 0.75rem;
   cursor: pointer;
@@ -274,7 +274,7 @@
   align-items: center;
   border-radius: 20px;
   border: 1px solid var(--border-2);
-  background: var(--bg-3);
+  background: #000000;
   overflow: hidden;
 }
 
@@ -403,4 +403,180 @@
 
   /* Masaüstü toolbar'da sıralama yanındaki boşluk */
   .toolbar { gap: 0.75rem; }
+}
+/* ═══════════════════════════════════════════════════════════════ */
+/* Bölüm 2 — Tür Filtresi: Collapsible Dropdown                    */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* ── Toggle butonu ───────────────────────────────────────────── */
+.filter-genre-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 0.8rem;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: left;
+}
+.filter-genre-toggle:hover {
+  border-color: var(--accent);
+  background: rgba(124,106,247,0.06);
+}
+
+/* Sol taraf: ikon + etiket + badge */
+.filter-genre-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.filter-genre-toggle-left iconify-icon {
+  font-size: 0.85rem;
+  color: var(--text-3);
+}
+.filter-genre-toggle-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+}
+
+/* Seçili tür sayısı rozeti */
+.filter-genre-badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0.05rem 0.4rem;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Chevron — açıkken döner */
+.filter-genre-chevron {
+  font-size: 0.85rem;
+  color: var(--text-3);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.filter-genre-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown kutusu ─────────────────────────────────────────── */
+.filter-genre-dropdown {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-top: 0.3rem;
+  overflow: hidden;
+}
+.filter-genre-dropdown.hidden { display: none; }
+
+/* "Seçimi Temizle" butonu — üstte, sadece seçim varsa görünür */
+.filter-genre-clear {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.65rem;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: rgba(124,106,247,0.08);
+  color: var(--accent);
+  font-size: 0.73rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.filter-genre-clear:hover { background: rgba(124,106,247,0.16); }
+.filter-genre-clear.hidden { display: none; }
+
+/* ── Tür listesi — kaydırılabilir ───────────────────────────── */
+.filter-genre-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 0.3rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
+}
+.filter-genre-list::-webkit-scrollbar { width: 4px; }
+.filter-genre-list::-webkit-scrollbar-thumb {
+  background: var(--border-2);
+  border-radius: 2px;
+}
+
+/* ── Her bir tür satırı ──────────────────────────────────────── */
+.filter-genre-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.1s;
+  user-select: none;
+}
+.filter-genre-item:hover { background: rgba(255,255,255,0.04); }
+
+/* Tarayıcının varsayılan checkbox'ını gizle */
+.filter-genre-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Custom checkbox — yuvarlak köşeli kare */
+.filter-genre-item::before {
+  content: "";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border-2);
+  border-radius: 3px;
+  background: var(--bg);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+/* Checked durumu — label'ın checkbox'ı checked olunca */
+.filter-genre-item:has(.filter-genre-checkbox:checked)::before {
+  background: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 9'%3E%3Cpath d='M1 4l3.5 3.5L11 1' stroke='white' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 9px 7px;
+}
+
+.filter-genre-item-text {
+  font-size: 0.78rem;
+  color: var(--text-2);
+  line-height: 1.3;
+}
+
+/* Seçili satır — metin rengi öne çıkar */
+.filter-genre-item:has(.filter-genre-checkbox:checked) .filter-genre-item-text {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* Boş durum */
+.filter-genre-empty {
+  display: block;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.75rem;
+  color: var(--text-3);
+  font-style: italic;
 }

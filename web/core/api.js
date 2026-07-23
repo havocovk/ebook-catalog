@@ -34,6 +34,7 @@ export {
   createBookRecord,
   stripSystemFields,
   uploadBookCover,
+  setCanonicalId,
 } from "./api/api-books.js";
 
 // ── Yetim temizliği ──────────────────────────────────────────────────────────

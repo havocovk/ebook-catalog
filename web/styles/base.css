@@ -2,16 +2,16 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #0c0a09;
-  --bg-2:      #171210;
-  --bg-3:      #1f1915;
-  --border:    #332720;
-  --border-2:  #4a382d;
-  --text:      #f5f0eb;
-  --text-2:    #a89080;
-  --text-3:    #6e5a4e;
-  --accent:    #EA580C;
-  --accent-2:  #C2410C;
+  --bg:        #000000;
+  --bg-2:      #171717;
+  --bg-3:      #262626;
+  --border:    #404040;
+  --border-2:  #525252;
+  --text:      #fafafa;
+  --text-2:    #a1a1a1;
+  --text-3:    #737373;
+  --accent:    #ff8904;
+  --accent-2:  #ff6900;
   --danger:    #EF4444;
   --success:   #22C55E;
   --warning:   #F59E0B;
@@ -53,7 +53,7 @@ iconify-icon {
 }
 
 .login-box {
-  background: var(--bg-2);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 2.5rem 2rem;
@@ -86,27 +86,32 @@ iconify-icon {
 
 /* ── Header ───────────────────────────────────────────────────── */
 .header {
-  background: var(--bg-2);
+  background: #000000;
   border-bottom: 1px solid var(--border);
-  padding: 0.75rem 1.25rem;
+  padding: 0.5rem 1.25rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   position: sticky;
   top: 0;
   z-index: 50;
+  min-height: 64px;
 }
 
-.header-title {
-  font-weight: 600;
-  font-size: 1rem;
+/* ── Header Logo ──────────────────────────────────────────────── */
+.header-logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: default;
+  user-select: none;
 }
 
-.header-title iconify-icon { color: var(--accent); font-size: 1.3em; }
+.header-logo-img {
+  height: 72px;
+  width: auto;
+  display: block;
+}
 
 .header-actions {
   display: flex;
@@ -136,7 +141,7 @@ iconify-icon {
   top: 100%;
   left: 0;
   right: 0;
-  background: var(--bg-2);
+  background: #000000;
   border-bottom: 1px solid var(--border);
   flex-direction: column;
   display: none;              /* kapalı; .open ile açılır */
@@ -155,13 +160,13 @@ iconify-icon {
   transition: background 0.15s, color 0.15s;
 }
 .nav-link:last-child { border-bottom: none; }
-.nav-link:hover { background: var(--bg-3); color: var(--text); }
-.nav-link.active { color: var(--accent); background: var(--bg-3); }
+.nav-link:hover { background: #000000; color: var(--text); }
+.nav-link.active { color: var(--accent); background: #000000; }
 .nav-link iconify-icon { font-size: 1.2em; }
 
 /* ── Toolbar ──────────────────────────────────────────────────── */
 .toolbar {
-  background: var(--bg-2);
+  background: #000000;
   border-bottom: 1px solid var(--border);
   padding: 0.75rem 1.25rem;
   display: flex;
@@ -179,7 +184,7 @@ iconify-icon {
 .search-input {
   width: 100%;
   padding: 0.45rem 0.75rem;
-  background: var(--bg-3);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
@@ -256,7 +261,7 @@ input[type="password"],
 input[type="number"],
 input[type="date"],
 textarea {
-  background: var(--bg-3);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
@@ -273,7 +278,7 @@ input:focus, textarea:focus, select:focus {
 textarea { resize: vertical; }
 
 .select {
-  background: var(--bg-3);
+  background: #000000;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
@@ -295,7 +300,7 @@ textarea { resize: vertical; }
   padding: 0.45rem 1rem;
   border-radius: var(--radius);
   border: 1px solid var(--border-2);
-  background: var(--bg-3);
+  background: #000000;
   color: var(--text);
   cursor: pointer;
   font-size: 0.875rem;
@@ -306,7 +311,7 @@ textarea { resize: vertical; }
   gap: 0.4rem;
 }
 
-.btn:hover { background: var(--bg-2); border-color: var(--accent); }
+.btn:hover { background: #000000; border-color: var(--accent); }
 .btn:active { opacity: 0.8; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -409,8 +414,8 @@ textarea { resize: vertical; }
     font-size: 0.875rem;
     color: var(--text-2);
   }
-  .nav-link:hover { background: var(--bg-3); }
-  .nav-link.active { background: var(--bg-3); color: var(--accent); }
+  .nav-link:hover { background: #000000; }
+  .nav-link.active { background: #000000; color: var(--accent); }
 
   /* Aksiyon butonlarındaki metinler masaüstünde görünür */
   .btn-label { display: inline; }
