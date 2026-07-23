@@ -72,9 +72,11 @@ export function compute() {
   const totalBytes     = books.reduce((sum, b) => sum + (b.file_size || 0), 0);
   const totalPages     = uniqueBooks.reduce((sum, b) => sum + (b.page_count || 0), 0);
 
-  const epub     = uniqueBooks.filter((b) => b.format === "epub").length;
-  const pdf      = uniqueBooks.filter((b) => b.format === "pdf").length;
-  const fmtOther = total - epub - pdf;
+  // Format dağılımı: tekilleştirilmiş değil, veritabanındaki TÜM dosyalar sayılır.
+  // (Aynı kitabın hem PDF hem EPUB versiyonu varsa her biri ayrı sayılır.)
+  const epub     = books.filter((b) => b.format === "epub").length;
+  const pdf      = books.filter((b) => b.format === "pdf").length;
+  const fmtOther = books.length - epub - pdf;
 
   const langTr    = uniqueBooks.filter((b) => b.language === "tr").length;
   const langEn    = uniqueBooks.filter((b) => b.language === "en").length;
