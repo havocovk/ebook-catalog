@@ -10,16 +10,16 @@
   "background_color": "#000000",
   "icons": [
     {
-      "src": "assets/icon-144.png",
-      "sizes": "144x144",
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
-      "src": "assets/icon-420.png",
-      "sizes": "420x420",
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }
