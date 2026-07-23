@@ -10,14 +10,14 @@
   "background_color": "#000000",
   "icons": [
     {
-      "src": "assets/icon-175.png",
-      "sizes": "175x175",
+      "src": "assets/icon-144.png",
+      "sizes": "144x144",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "assets/icon-460.png",
-      "sizes": "460x460",
+      "src": "assets/icon-420.png",
+      "sizes": "420x420",
       "type": "image/png",
       "purpose": "any maskable"
     }
