@@ -31,15 +31,33 @@ const CACHE_KEY_COUNT  = "reconcile_book_count"; // cache'in hangi kitap sayıs�
 
 // ─────────────────────────────────────────────────────────────────────────────
 // YARDIMCI: Normalleştirme
-// Türkçe karakterleri İngilizce karşılıklarına çevirir, küçük harfe indirir,
-// noktalama ve boşlukları siler. Fuzzy karşılaştırma için kullanılır.
+// Küçük harfe indirir, ardından TÜM dillerin aksanlı/özel karakterlerini
+// (Türkçe ş/ç/ğ/ı/ü/ö, Latin é/è/ñ/ü/ø/å, Slav karakterleri vb.) ASCII
+// karşılığına indirger. Unicode NFD (Normalization Form Decomposition) ile
+// her aksanlı harf "temel harf + aksan işareti" ikilisine ayrıştırılır, aksan
+// işaretleri (kombinleyici Unicode blok ̀–ͯ) atılır. Böylece "é",
+// "è", "ê" gibi hangi dilden gelirse gelsin hepsi "e"ye iner — dile özel bir
+// eşleme listesi tutmaya gerek kalmaz. Türkçe ı/İ, ş/ğ gibi NFD'de ayrışmayan
+// karakterler için ayrıca elle eşleme yapılır (NFD "ı" harfini bozamaz).
+// Son adımda harf ve rakam dışındaki her şey silinir. Fuzzy karşılaştırma için
+// kullanılır — hem başlık hem yazar adı burada geçer.
 // ─────────────────────────────────────────────────────────────────────────────
 function _normalize(str) {
   if (!str) return "";
   return str
     .toLocaleLowerCase("tr")
+    // Türkçe'ye özgü, NFD ile ayrışmayan karakterler
     .replace(/ş/g, "s").replace(/ç/g, "c").replace(/ğ/g, "g")
     .replace(/ı/g, "i").replace(/ü/g, "u").replace(/ö/g, "o")
+    // Diğer dillerdeki tek harfe indirgenemeyen özel karakterler
+    .replace(/ß/g, "ss").replace(/æ/g, "ae").replace(/œ/g, "oe")
+    .replace(/đ/g, "d").replace(/ð/g, "d").replace(/þ/g, "th")
+    .replace(/ł/g, "l").replace(/ø/g, "o")
+    // Unicode NFD: kalan tüm aksanlı Latin/Slav/vb. harfleri (é, è, ñ, á, ç
+    // dahil zaten yukarıda işlenenler tekrar dokunulmaz) temel harf + aksan
+    // işaretine ayırır; aksan işaretlerini (̀–ͯ) sil.
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]/g, ""); // harf ve rakam dışındaki her şeyi sil
 }
 
@@ -122,33 +140,54 @@ export function findExactMatches() {
 // ─────────────────────────────────────────────────────────────────────────────
 // FUZZY MATCH — Yakın benzerlik tespiti (~%90+)
 //
-// Yazar bazlı çalışır: önce tüm kitapları yazara göre gruplar, sonra her
-// yazar grubunun kendi içindeki kitapları normalleştirilmiş başlıkla
-// karşılaştırır. Benzerlik ≥ 0.90 olan çiftleri döndürür.
+// ESKİ DAVRANIŞ (hatalı): önce yazar adını NORMALLEŞTİRİP birebir aynı olanları
+// aynı gruba koyuyordu, sonra sadece o grup İÇİNDEKİ başlıkları karşılaştırıyordu.
+// Sorun: yazar adının kendisi bir harf farklıysa ("Lou Andreas-Salomé" / "Lou
+// Andreas-Salome") iki kitap baştan FARKLI gruplara düşüyor ve hiç
+// karşılaştırılmıyordu — yazar adındaki yazım farkı asla yakalanamıyordu.
+//
+// YENİ DAVRANIŞ: performans için yine kabaca gruplama yapılır (yazar adının
+// normalleştirilmiş İLK KARAKTERİNE göre — "bucket"), ama bucket içinde hem
+// YAZAR hem BAŞLIK benzerliği ayrı ayrı hesaplanır ve şu üç durumdan biri
+// eşleşirse çift fuzzy sonucuna girer:
+//   1) Yazar ~aynı (≥ threshold) VE başlık ~aynı (≥ threshold)  → en güçlü sinyal
+//   2) Yazar birebir aynı VE başlık ~aynı (≥ threshold)          → mevcut davranış
+//   3) Yazar ~aynı (≥ threshold) VE başlık birebir aynı          → YENİ: yazar
+//      adında yazım farkı olan ama başlığı bire bir aynı olan kitaplar da yakalanır
+// İlk karakter aynıysa aynı bucket'a düşer — Levenshtein ile 1 karakterlik fark
+// (örn. "é"→"e") ilk karakteri değiştirmediği sürece bucket'lama isabetli kalır;
+// olası kaçırma ihtimaline karşı yazar adı boşsa/1 karakterden kısaysa özel
+// "?" bucket'ına düşer ve TÜM diğer tek-karakterli bucket'larla karşılaştırılmaz
+// (bu, aşırı büyük O(n²) taramasını önler).
 //
 // Zaten aynı canonical_id grubundaki kitapları birbirleriyle karşılaştırmaz
-// (zaten eşleştirilmişler). Birebir exact match olan çiftleri de
-// fuzzy listesine katmaz (kullanıcıyı çift uyarmak istemiyoruz).
+// (zaten eşleştirilmişler). Birebir exact match (yazar+başlık ikisi de bire bir
+// aynı) olan çiftleri de fuzzy listesine katmaz (kullanıcıyı çift uyarmak istemiyoruz).
 //
 // Dönüş: [{ book_a, book_b, similarity, reason }, ...]
 //   book_a / book_b: { $id, title, author, format }
-//   similarity: 0.90–1.0 arası float (1.0 exact match'e gireceklerden exclude edildi)
+//   similarity: 0.90–1.0 arası float (title ve author benzerliğinden yüksek olanı)
 //   reason: neden benzer olduğunu açıklayan kısa metin
 // ─────────────────────────────────────────────────────────────────────────────
 export function findFuzzyMatches(threshold = 0.90) {
   const results = [];
+  const seenPairs = new Set(); // "$idA|||$idB" — aynı çifti iki kez eklememek için
 
-  // Yazara göre grupla
-  const byAuthor = {};
+  // Performans amaçlı kaba gruplama: normalleştirilmiş yazar adının ilk
+  // karakterine göre bucket'la. Bir harflik yazım farkları (é/e gibi) genelde
+  // ilk karaktere dokunmaz; dokunsa bile (örn. baştaki harf değişmişse) bu
+  // durum çok nadirdir ve kütüphane boyutu göz önüne alındığında tüm
+  // kütüphaneyi O(n²) taramaktan çok daha performanslıdır.
+  const buckets = {};
   for (const b of state.books) {
-    const authorKey = _normalize(b.author || "bilinmiyen");
-    if (!byAuthor[authorKey]) byAuthor[authorKey] = [];
-    byAuthor[authorKey].push(b);
+    const normAuthor = _normalize(b.author || "");
+    const bucketKey  = normAuthor ? normAuthor[0] : "?";
+    if (!buckets[bucketKey]) buckets[bucketKey] = [];
+    buckets[bucketKey].push(b);
   }
 
-  // Her yazar grubunun içinde başlıkları karşılaştır
-  for (const authorKey of Object.keys(byAuthor)) {
-    const group = byAuthor[authorKey];
+  for (const bucketKey of Object.keys(buckets)) {
+    const group = buckets[bucketKey];
     if (group.length < 2) continue; // tek kitap varsa karşılaştıracak bir şey yok
 
     for (let i = 0; i < group.length; i++) {
@@ -161,23 +200,70 @@ export function findFuzzyMatches(threshold = 0.90) {
         const cidB = (b.canonical_id || "").trim();
         if (cidA && cidB && cidA === cidB) continue;
 
-        const normA = _normalize(a.title || "");
-        const normB = _normalize(b.title || "");
+        const normTitleA  = _normalize(a.title  || "");
+        const normTitleB  = _normalize(b.title  || "");
+        const normAuthorA = _normalize(a.author || "");
+        const normAuthorB = _normalize(b.author || "");
 
-        // Exact normalize eşleşmesi → fuzzy'ye değil exact grubuna gider, atla
-        if (normA === normB && normA !== "") continue;
+        const titleExact  = normTitleA === normTitleB && normTitleA !== "";
+        const authorExact = normAuthorA === normAuthorB && normAuthorA !== "";
 
-        const sim = _similarity(normA, normB);
-        if (sim < threshold) continue;
+        // ÖNEMLİ: "normalize sonrası bire bir aynı" YETMEZ — findExactMatches()
+        // ham (aksan silinmemiş) string ile karşılaştırma yapar. "Salomé" ve
+        // "Salome" normalize edilince aynı çıkar (titleExact/authorExact true
+        // olur) ama findExactMatches bunları FARKLI gruplar sayar ve hiç
+        // eşleştirmez. O yüzden burada atlarsak bu çiftler ne exact'e ne
+        // fuzzy'ye girer, tamamen kaybolurlar. Sadece HAM string de bire bir
+        // aynıysa (yani gerçekten exact match tarafından yakalanacaksa) atla.
+        const rawTitleExactCheck  = (a.title  || "").toLocaleLowerCase("tr").trim() === (b.title  || "").toLocaleLowerCase("tr").trim();
+        const rawAuthorExactCheck = (a.author || "").toLocaleLowerCase("tr").trim() === (b.author || "").toLocaleLowerCase("tr").trim();
+        if (rawTitleExactCheck && rawAuthorExactCheck) continue;
+
+        const titleSim  = _similarity(normTitleA, normTitleB);
+        const authorSim = _similarity(normAuthorA, normAuthorB);
+
+        // Üç kabul senaryosundan biri sağlanmalı (yukarıdaki açıklamaya bkz.)
+        const titleClose  = titleSim  >= threshold;
+        const authorClose = authorSim >= threshold;
+        const isMatch =
+          (authorClose && titleClose) ||
+          (authorExact && titleClose) ||
+          (authorClose && titleExact);
+        if (!isMatch) continue;
+
+        // Görüntülenecek benzerlik skoru: iki bileşenden düşük olanı — kullanıcıya
+        // en zayıf sinyali gösterip "neden eşleşti" konusunda yanıltmayalım.
+        const sim = Math.min(
+          authorExact ? 1 : authorSim,
+          titleExact  ? 1 : titleSim
+        );
+
+        // Aynı çifti iki farklı bucket taramasından (teorik olarak olmaz ama
+        // güvenlik için) veya i/j simetrisinden tekrar eklememek için anahtar.
+        const pairKey = [a.$id, b.$id].sort().join("|||");
+        if (seenPairs.has(pairKey)) continue;
+        seenPairs.add(pairKey);
 
         // Fark nedenini tespit et (kullanıcıya açıklama için)
-        let reason = "Başlık yazımı benzer";
-        const rawA = (a.title || "").toLocaleLowerCase("tr");
-        const rawB = (b.title || "").toLocaleLowerCase("tr");
-        if (rawA === rawB && normA !== normB) {
-          reason = "Türkçe/Latin karakter farkı";
-        } else if (normA === normB) {
-          reason = "Büyük/küçük harf veya noktalama farkı";
+        let reason;
+        if (!authorExact && !titleExact) {
+          reason = "Yazar ve başlık yazımı benzer";
+        } else if (!authorExact) {
+          reason = "Yazar adı yazımı benzer (başlık aynı)";
+        } else {
+          reason = "Başlık yazımı benzer (yazar aynı)";
+        }
+        // Daha spesifik neden: sadece aksan/karakter farkıysa belirt
+        const rawTitleA  = (a.title  || "").toLocaleLowerCase("tr");
+        const rawTitleB  = (b.title  || "").toLocaleLowerCase("tr");
+        const rawAuthorA = (a.author || "").toLocaleLowerCase("tr");
+        const rawAuthorB = (b.author || "").toLocaleLowerCase("tr");
+        if (!authorExact && rawAuthorA !== rawAuthorB && normAuthorA === normAuthorB) {
+          reason = "Yazar adında Türkçe/Latin karakter farkı";
+        } else if (!titleExact && rawTitleA !== rawTitleB && normTitleA === normTitleB) {
+          reason = "Başlıkta Türkçe/Latin karakter farkı";
+        } else if (!authorExact && authorClose && rawAuthorA.replace(/[^a-z0-9]/gi, "") !== rawAuthorB.replace(/[^a-z0-9]/gi, "")) {
+          reason = "Yazar adında olası yazım hatası";
         }
 
         results.push({
