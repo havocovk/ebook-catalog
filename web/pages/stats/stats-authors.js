@@ -74,41 +74,83 @@ function getItemsFromBook(book, dataType) {
   }
 }
 
-// ── Grimmory calculateStats mantığı — yazar+başlık tekilleştirmeli ───────────
+// ── Kitap tekilleştirme anahtarı ─────────────────────────────────────────────
+// series: series.js → buildSeriesData() ile BİREBİR aynı 3 kademeli mantık
+//         (canonical_id > series_order > title+author) — seri sayfasındaki
+//         sayılarla tam eşleşmesi için gerekli.
+// diğerleri (category/publisher/genre/tags): groupByLetter/publishers.js ile
+//         aynı basit mantık (canonical_id > $id).
+function _bookDedupeKey(b, dataType) {
+  const cid = (b.canonical_id || "").trim();
+  if (cid) return cid;
+  if (dataType === "series") {
+    const titleKey = `title:${(b.title || "").trim().toLowerCase()}|${(b.author || "").trim().toLowerCase()}`;
+    return b.series_order != null ? `order:${b.series_order}` : titleKey;
+  }
+  return b.$id;
+}
+
+// ── Grimmory calculateStats mantığı — alan-bazlı tekilleştirmeli ────────────
 function calculateTopItems(books, dataType) {
   if (!books || books.length === 0) return [];
 
-  // Yazarlar için: deduplicateBooks ile tekilleştir (canonical_id > PDF > title+author)
-  // Diğer tipler (genre, series, publisher, tags, category) için tekilleştirme yok
-  const booksToUse = dataType === "authors"
-    ? deduplicateBooks(books)
-    : books;
+  // authors: deduplicateBooks (yazar sayfasıyla aynı akış) — mevcut davranış korunur.
+  if (dataType === "authors") {
+    const itemMap = new Map();
+    for (const book of deduplicateBooks(books)) {
+      const items      = getItemsFromBook(book, dataType);
+      const bookStatus = book.status || "okunmadi";
+      for (const item of items) {
+        if (!item || !item.trim()) continue;
+        const name = item.trim();
+        if (!itemMap.has(name)) {
+          itemMap.set(name, { name, count: 0, statusBreakdown: { okundu: 0, okunuyor: 0, okunmadi: 0, sirada: 0 } });
+        }
+        const entry = itemMap.get(name);
+        entry.count++;
+        if (entry.statusBreakdown[bookStatus] !== undefined) entry.statusBreakdown[bookStatus]++;
+        else entry.statusBreakdown["okunmadi"]++;
+      }
+    }
+    return Array.from(itemMap.values()).sort((a, b) => b.count - a.count).slice(0, 15);
+  }
 
-  const itemMap = new Map();
+  // category/series/publisher/genre/tags: her item adı KENDİ Set'inde tekilleşir
+  // (groupByLetter/buildSeriesData ile birebir aynı algoritma).
+  const itemKeys   = new Map(); // name → Set<dedupeKey>
+  const itemStatus = new Map(); // name → { dedupeKey → status } (statusBreakdown çift saymasın)
 
-  for (const book of booksToUse) {
-    const items      = getItemsFromBook(book, dataType);
-    const bookStatus = book.status || "okunmadi";
+  for (const book of books) {
+    const items = getItemsFromBook(book, dataType);
+    if (items.length === 0) continue;
+    const key    = _bookDedupeKey(book, dataType);
+    const status = book.status || "okunmadi";
 
     for (const item of items) {
       if (!item || !item.trim()) continue;
       const name = item.trim();
-      if (!itemMap.has(name)) {
-        itemMap.set(name, { name, count: 0, statusBreakdown: { okundu: 0, okunuyor: 0, okunmadi: 0, sirada: 0 } });
+      if (!itemKeys.has(name)) {
+        itemKeys.set(name, new Set());
+        itemStatus.set(name, new Map());
       }
-      const entry = itemMap.get(name);
-      entry.count++;
-      if (entry.statusBreakdown[bookStatus] !== undefined) {
-        entry.statusBreakdown[bookStatus]++;
-      } else {
-        entry.statusBreakdown["okunmadi"]++;
-      }
+      itemKeys.get(name).add(key);
+      // Aynı dedupeKey birden fazla kez gelirse (nadiren) son durumu tutar —
+      // pratikte bir dedupeKey tek bir status'a sahiptir.
+      itemStatus.get(name).set(key, status);
     }
   }
 
-  return Array.from(itemMap.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 15);
+  const result = [];
+  for (const [name, keySet] of itemKeys.entries()) {
+    const statusBreakdown = { okundu: 0, okunuyor: 0, okunmadi: 0, sirada: 0 };
+    for (const status of itemStatus.get(name).values()) {
+      if (statusBreakdown[status] !== undefined) statusBreakdown[status]++;
+      else statusBreakdown["okunmadi"]++;
+    }
+    result.push({ name, count: keySet.size, statusBreakdown });
+  }
+
+  return result.sort((a, b) => b.count - a.count).slice(0, 15);
 }
 
 // ── Grimmory generateInsights mantığı (top-items) ────────────────────────────
