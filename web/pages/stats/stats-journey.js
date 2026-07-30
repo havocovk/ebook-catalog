@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../../core/state.js";
-import { _activeCharts, _loadChartJs } from "./stats-core.js";
+import { _activeCharts, _loadChartJs, deduplicateBooks } from "./stats-core.js";
 
 // ── Ay etiket yardımcıları ────────────────────────────────────────────────────
 const TR_MONTHS = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
@@ -19,10 +19,11 @@ function _keyToLabel(key) {
 
 // ── Veri hesaplama ────────────────────────────────────────────────────────────
 function computeJourney() {
-  const books    = state.books;
-  const finished = books.filter((b) => b.status === "okundu");
-  const backlog  = books.filter((b) => b.status === "okunmadi" || b.status === "sirada").length;
-  const backlogPct = books.length > 0 ? Math.round((backlog / books.length) * 100) : 0;
+  const books        = state.books;
+  const uniqueBooks  = deduplicateBooks(books);
+  const finished     = uniqueBooks.filter((b) => b.status === "okundu");
+  const backlog      = uniqueBooks.filter((b) => b.status === "okunmadi" || b.status === "sirada").length;
+  const backlogPct   = uniqueBooks.length > 0 ? Math.round((backlog / uniqueBooks.length) * 100) : 0;
 
   // Ortalama bitirme süresi (gün)
   const durations = finished
@@ -36,7 +37,7 @@ function computeJourney() {
   const addedPerMonth    = {};
   const finishedPerMonth = {};
 
-  books.forEach((b) => {
+  uniqueBooks.forEach((b) => {
     if (!b.$createdAt) return;
     const d = new Date(b.$createdAt);
     const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;

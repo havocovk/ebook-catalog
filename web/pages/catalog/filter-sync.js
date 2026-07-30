@@ -34,6 +34,8 @@ export function syncChips() {
   // _syncGenreDropdown() ayrıca filter-populate.js'den çağrılır.
   // Adım 37: Kategori Durumu (tek seçim)
   syncChipGroup("filter-categoryStatus-chips", ui.filters.categoryStatus);
+  // Tür Durumu (tek seçim)
+  syncChipGroup("filter-genreStatus-chips", ui.filters.genreStatus);
   // Kapak Resmi Durumu (tek seçim)
   syncChipGroup("filter-coverStatus-chips", ui.filters.coverStatus);
 }

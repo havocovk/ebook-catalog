@@ -73,11 +73,25 @@ function renderPublisherList() {
 // YAYINEVİ DETAY GÖRÜNÜMÜ (6B)
 // ═══════════════════════════════════════════════════════════════
 
+// canonical_id varsa grupla (1 kitap), yoksa her $id ayrı — groupByLetter ile aynı mantık
+function _uniqueBookCount(books) {
+  const keys = new Set();
+  for (const b of books) {
+    keys.add((b.canonical_id || "").trim() || b.$id);
+  }
+  return keys.size;
+}
+
+function _countLabel(fileCount, uniqueCount) {
+  if (fileCount === uniqueCount) return `${uniqueCount} kitap`;
+  return `${uniqueCount} kitap · ${fileCount} dosya`;
+}
+
 function renderPublisherDetail(publisherName) {
   const container = document.getElementById("publishers-content");
   if (!container) return;
 
-  // Bu yayınevine ait tüm kitaplar
+  // Bu yayınevine ait tüm dosyalar
   const allBooks = state.books.filter((b) => b.publisher === publisherName);
 
   // Serilere göre grupla
@@ -109,14 +123,15 @@ function renderPublisherDetail(publisherName) {
 
   // Seri grupları
   for (const seriesName of sortedSeries) {
-    const books   = seriesMap[seriesName];
-    const cards   = books.map((b) => cardHtml(b)).join("");
+    const books       = seriesMap[seriesName];
+    const uniqueCount = _uniqueBookCount(books);
+    const cards       = books.map((b) => cardHtml(b)).join("");
     sectionsHtml += `
       <div class="detail-sub-section">
         <h3 class="detail-sub-title">
           <iconify-icon icon="lucide:layers"></iconify-icon>
           ${esc(seriesName)}
-          <span class="detail-sub-count">${books.length} kitap</span>
+          <span class="detail-sub-count">${_countLabel(books.length, uniqueCount)}</span>
         </h3>
         <div class="books-grid author-books-grid" data-grid-id="series-${escapeAttr(seriesName)}">${cards}</div>
       </div>
@@ -125,13 +140,14 @@ function renderPublisherDetail(publisherName) {
 
   // Seriye ait olmayan kitaplar
   if (standalone.length > 0) {
-    const cards   = standalone.map((b) => cardHtml(b)).join("");
+    const uniqueCount = _uniqueBookCount(standalone);
+    const cards       = standalone.map((b) => cardHtml(b)).join("");
     sectionsHtml += `
       <div class="detail-sub-section">
         <h3 class="detail-sub-title">
           <iconify-icon icon="lucide:book-copy"></iconify-icon>
           Seriye Ait Olmayan Kitaplar
-          <span class="detail-sub-count">${standalone.length} kitap</span>
+          <span class="detail-sub-count">${_countLabel(standalone.length, uniqueCount)}</span>
         </h3>
         <div class="books-grid author-books-grid">${cards}</div>
       </div>
@@ -142,6 +158,8 @@ function renderPublisherDetail(publisherName) {
     sectionsHtml = `<div class="empty-state">Bu yayınevine ait kitap bulunamadı.</div>`;
   }
 
+  const totalUnique = _uniqueBookCount(allBooks);
+
   container.innerHTML = `
     <div class="detail-header">
       <button class="detail-back-btn" id="publisher-back-btn">
@@ -150,7 +168,7 @@ function renderPublisherDetail(publisherName) {
       </button>
       <div class="detail-title-wrap">
         <h2 class="detail-title">${esc(publisherName)}</h2>
-        <span class="detail-subtitle">${allBooks.length} kitap</span>
+        <span class="detail-subtitle">${_countLabel(allBooks.length, totalUnique)}</span>
       </div>
     </div>
     ${sectionsHtml}
@@ -179,7 +197,7 @@ function cardHtml(book) {
     <div class="book-card" data-id="${esc(book.$id)}">
       <div class="book-cover">
         ${coverHtml}
-        <span class="book-format">${book.format || ""}</span>
+        <span class="book-format ${(book.format||"").toLowerCase()==="pdf"?"format-pdf":(book.format||"").toLowerCase()==="epub"?"format-epub":""}">${(book.format||"").toUpperCase()}</span>
         <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
       </div>
       <div class="book-info">

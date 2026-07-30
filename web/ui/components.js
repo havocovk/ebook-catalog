@@ -50,11 +50,7 @@ export function createBookCard(book, isSelected = false, options = {}) {
   const statusClass = `status-${book.status || "okunmadi"}`;
   const ratingHtml = renderStars(book.rating, false);
 
-  // ── Adım 3: Güven skoru rozeti (sağ üst köşe) ──────────────────────────
-  const confLevel = confidenceLevel(book.confidence_score);
-  const confBadgeHtml = confLevel
-    ? `<span class="confidence-badge confidence-${confLevel}" title="Güven Skoru: ${book.confidence_score}/100">${book.confidence_score}</span>`
-    : "";
+  // ── Adım 3: Güven skoru rozeti kaldırıldı — modal içinde gösteriliyor ──────
 
   // ── Adım 37: Manuel lazy loading (Intersection Observer) ────────────────
   // Native loading="lazy" kaldırıldı — tarayıcı "yakın olabilir" tahminiyle
@@ -67,9 +63,8 @@ export function createBookCard(book, isSelected = false, options = {}) {
     : `<div class="cover-placeholder">${escapeHtml((book.title || "?")[0].toUpperCase())}</div>`;
   // ── Adım 37 sonu ──────────────────────────────────────────────────────────
 
-  // ── Adım 18: Toplu işlem seçim checkbox'ı (sol üst köşe) ─────────────────
-  // Format rozeti zaten sol üstte (book-format) — checkbox onun ÜSTÜNE değil,
-  // YANINA/biraz daha sol-üste konumlanacak şekilde CSS'te ayarlanacak.
+  // ── Adım 18: Toplu işlem seçim checkbox'ı (sağ üst köşe) ─────────────────
+  // Güven skoru rozeti kaldırıldı; sağ üst köşe boşaldı — checkbox oraya taşındı.
   // Gerçek bir <input type="checkbox"> değil, tıklanabilir bir <button> —
   // favori butonuyla aynı kalıp (event delegation + closest() ile yakalanır).
   const selectBtnHtml = `
@@ -130,9 +125,8 @@ export function createBookCard(book, isSelected = false, options = {}) {
   card.innerHTML = `
     <div class="book-cover">
       ${coverHtml}
-      ${selectBtnHtml}
       <span class="book-format ${formatClass}">${(book.format || "").toUpperCase()}</span>
-      ${confBadgeHtml}
+      ${selectBtnHtml}
       ${canonicalBadgeHtml}
       <span class="book-status-badge ${statusClass}">${statusLabel(book.status)}</span>
       ${favoriteBtnHtml}

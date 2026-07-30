@@ -379,3 +379,60 @@
   .locked-info-grid  { grid-template-columns: 1fr; }
 }
 /* ── Adım 4 (V5) sonu ────────────────────────────────────────────────────── */
+
+/* ── Eşleştirilmiş Dosyalar (canonical) ─────────────────────────────────── */
+.modal-canonical-wrap {
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.canonical-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.45rem;
+}
+
+.canonical-badge-icon {
+  display: flex;
+  align-items: center;
+  background: #16a34a;
+  color: #fff;
+  border-radius: 50%;
+  width: 1.3rem;
+  height: 1.3rem;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.canonical-badge-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #22c55e;
+  letter-spacing: 0.02em;
+}
+
+.canonical-siblings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.canonical-sibling {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-2);
+}
+
+.canonical-sibling-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -45,13 +45,16 @@ let doneCount = 0;     // bu oturumda kaydedilen kitap sayısı (kapanışta öz
 // takip etmeliyiz — canlı `filtered` dizisine referans tutmuyoruz.
 export function openQuickFill() {
   // Sadece $id'leri kopyalıyoruz; her adımda state.books'tan güncel halini
-  // okuyacağız (kategori dışındaki alanlar oturum sırasında değişmiş olabilir).
-  queue = filtered.map((b) => b.$id);
+  // okuyacağız (kategori/tür dışındaki alanlar oturum sırasında değişmiş olabilir).
+  // Kuyruk: kategorisi VEYA türü boş olan kitaplar
+  queue = filtered
+    .filter((b) => !b.category || !b.genre)
+    .map((b) => b.$id);
   currentIndex = 0;
   doneCount = 0;
 
   if (queue.length === 0) {
-    showToast("Kategorisi boş kitap bulunamadı.", "error");
+    showToast("Kategori/türü boş kitap bulunamadı.", "error");
     return;
   }
 
@@ -112,22 +115,34 @@ function renderCurrentBook() {
     progressEl.textContent = `Kitap ${currentIndex + 1} / ${queue.length}`;
   }
 
-  // Kategori kutusunu temizle + odaklan (kullanıcı hemen yazabilsin)
+  // Kategori kutusunu doldur
   const input = document.getElementById("quickfill-category-input");
   if (input) {
-    input.value = book.category || ""; // zaten bir değer varsa göster (nadiren olur, ama güvenli)
-    setTimeout(() => input.focus(), 0);
+    input.value = book.category || "";
+  }
+
+  // Tür kutusunu doldur + odaklan
+  const genreInput = document.getElementById("quickfill-genre-input");
+  if (genreInput) {
+    genreInput.value = book.genre || "";
+    setTimeout(() => {
+      // Kategori doluysa tür inputuna, değilse kategori inputuna odaklan
+      if (book.category && input) input.focus();
+      else if (input) input.focus();
+    }, 0);
   }
 }
 
 // ── Geçerli kitabın kategorisini kaydet ve sonrakine geç ───────────────────
 async function saveAndNext() {
-  const bookId = queue[currentIndex];
-  const input  = document.getElementById("quickfill-category-input");
-  const value  = input ? input.value.trim() : "";
+  const bookId    = queue[currentIndex];
+  const catInput  = document.getElementById("quickfill-category-input");
+  const genreInput = document.getElementById("quickfill-genre-input");
+  const catValue  = catInput  ? catInput.value.trim()  : "";
+  const genreValue = genreInput ? genreInput.value.trim() : "";
 
-  if (!value) {
-    // Boş bırakılmış — kaydetmeye zorlamıyoruz, "Atla" ile aynı davranır.
+  if (!catValue && !genreValue) {
+    // İkisi de boş — kaydetmeye zorlamıyoruz, "Atla" ile aynı davranır.
     skipCurrent();
     return;
   }
@@ -136,7 +151,10 @@ async function saveAndNext() {
   if (saveBtn) saveBtn.disabled = true;
 
   try {
-    await updateBookRecordWithCascade(bookId, { category: value });
+    const updates = {};
+    if (catValue)   updates.category = catValue;
+    if (genreValue) updates.genre    = genreValue;
+    await updateBookRecordWithCascade(bookId, updates);
     doneCount++;
     currentIndex++;
     renderCurrentBook();
@@ -166,8 +184,8 @@ export function initQuickFill() {
   document.getElementById("quickfill-save-next")?.addEventListener("click", saveAndNext);
   document.getElementById("quickfill-skip")?.addEventListener("click", skipCurrent);
 
-  // Enter tuşu → Kaydet ve Sonraki (saveAndNext zaten boşsa atlamayla aynı davranır)
-  document.getElementById("quickfill-category-input")?.addEventListener("keydown", (e) => {
+  // Enter tuşu → Kaydet ve Sonraki
+  const _keyHandler = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       saveAndNext();
@@ -176,7 +194,9 @@ export function initQuickFill() {
       e.preventDefault();
       closeQuickFill();
     }
-  });
+  };
+  document.getElementById("quickfill-category-input")?.addEventListener("keydown", _keyHandler);
+  document.getElementById("quickfill-genre-input")?.addEventListener("keydown", _keyHandler);
 
   // Arka plana tıklayınca kapat (mevcut book-modal ile aynı davranış)
   document.getElementById("quickfill-modal")?.addEventListener("click", (e) => {

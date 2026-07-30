@@ -97,29 +97,9 @@
 .status-okunuyor  { background: rgba(124,106,247,0.85); color: #fff; }
 .status-okundu    { background: rgba(76,175,130,0.85);  color: #fff; }
 
-/* ── Adım 3: Güven Skoru Rozeti ──────────────────────────────────── */
-/* Kart üzerinde sağ üst köşede küçük, yuvarlak sayı rozeti.        */
-/* Renk anlamı: yeşil=yüksek güven, sarı=orta, kırmızı=düşük güven. */
-.confidence-badge {
-  position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 0 0.3rem;
-  border-radius: 999px;
-  color: #fff;
-  line-height: 1;
-}
-
-.confidence-high   { background: rgba(76,175,130,0.9); }
-.confidence-medium { background: rgba(224,168,74,0.9); }
-.confidence-low    { background: rgba(224,92,92,0.9); }
+/* ── Adım 3: Güven Skoru Rozeti — kart görünümünden kaldırıldı ────────────── */
+/* Kart üzerinde gösterilmiyor; modal içinde confidence-badge-lg olarak kalıyor. */
+/* .confidence-badge kart CSS'i silindi. Renkler sadece modal için aşağıda.     */
 
 /* Modal başlığındaki büyük güven skoru rozeti (yazılı etiket).    */
 .confidence-badge-lg {
@@ -172,13 +152,12 @@
 /* ── Adım 17 sonu ─────────────────────────────────────────────────────── */
 
 /* ── Adım 18: Toplu işlem selection checkbox'ı (kart) ──────────────────── */
-/* book-format zaten sol üstte (top/left: 0.4rem) ama dar bir etiket olduğu
-   için tam köşeyi kaplamıyor; checkbox onun hemen sağına, aynı yükseklikte
-   yerleştirilir — çakışma olmaz. */
+/* Güven skoru rozeti kaldırıldı; sağ üst köşe boşaldı — checkbox oraya taşındı.
+   book-format sol üstte, select-btn sağ üstte — çakışma yok. */
 .select-btn {
   position: absolute;
   top: 0.4rem;
-  left: 2.6rem;
+  right: 0.4rem;
   width: 1.5rem;
   height: 1.5rem;
   display: flex;
@@ -448,14 +427,12 @@
 /* ══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Rozet butonu — kart kapağının sağ üst köşesi ────────────────────────
-   confidence-badge ile aynı köşeyi paylaşmamak için:
-   • Güven skoru varsa  → confidence-badge right:0.4rem, top:0.4rem
-   • canonical-badge    → confidence-badge'in hemen altına: top:2.2rem
-   Güven skoru yoksa canonical-badge zaten sağ üste oturursa da görsel
-   çakışma olmaz (confidence-badge hiç render edilmez).                   */
+   confidence-badge kaldırıldı; select-btn sağ üstte (hover'da görünür).
+   canonical-badge sadece yazarlar sayfasında render edilir — select-btn'in
+   hemen altına yerleşir: top:2.2rem.                                      */
 .canonical-badge {
   position: absolute;
-  top: 2.2rem;          /* confidence-badge'in altına yerleş */
+  top: 2.2rem;          /* select-btn'in altına yerleş */
   right: 0.4rem;
   width: 1.5rem;
   height: 1.5rem;
@@ -477,10 +454,6 @@
   transform: scale(1.12);
 }
 
-/* Güven skoru YOK ise rozet daha yukarı oturur */
-.book-cover:not(:has(.confidence-badge)) .canonical-badge {
-  top: 0.4rem;
-}
 
 /* ── Popover kapsayıcısı ──────────────────────────────────────────────────
    Sayfanın herhangi bir noktasına (body'e) eklenir; tıklanan rozetin

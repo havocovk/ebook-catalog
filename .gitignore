@@ -16,3 +16,9 @@ Thumbs.db
 # Temp
 *.tmp
 *.log
+
+# Referans dosyaları - yerel tutulur, push edilmez
+_referans/
+
+#Logo içerik dosyası github'da olmasına gerek yok
+_logo/

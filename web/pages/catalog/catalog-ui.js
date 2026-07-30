@@ -77,7 +77,7 @@ export function render() {
 function updateQuickFillButton() {
   const btn = document.getElementById("quickfill-open-btn");
   if (!btn) return;
-  btn.classList.toggle("hidden", ui.filters.categoryStatus !== "empty");
+  btn.classList.toggle("hidden", ui.filters.categoryStatus !== "empty" && ui.filters.genreStatus !== "empty");
 }
 // ── Adım 38 sonu ──────────────────────────────────────────────────────────
 

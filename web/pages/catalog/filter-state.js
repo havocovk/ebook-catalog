@@ -35,7 +35,7 @@ export const PER_PAGE = 50;
 // Değerler: "" (filtre yok) | "empty" (kategorisi boş) | "filled" (kategorisi dolu).
 export const ui = {
   search  : "",
-  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], genre: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", coverStatus: "" },
+  filters : { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], genre: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", genreStatus: "", coverStatus: "" },
   sort    : "added_at_desc",
   view    : "grid",
   page    : 1,

@@ -3,17 +3,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../../core/state.js";
-import { _activeCharts, _loadChartJs, normalizeTitle } from "./stats-core.js";
+import { _activeCharts, _loadChartJs, normalizeTitle, deduplicateBooks } from "./stats-core.js";
 
 // ── Grimmory DATA_TYPE_DEFS ──────────────────────────────────────────────────
 // top-items-chart.component.ts → DATA_TYPE_DEFS dizisinden birebir alındı
 const DATA_TYPE_DEFS = [
-  { value: "authors",   labelTR: "Yazarlar",    icon: "lucide:layout-grid", color: "#2563EB" },
-  { value: "category",  labelTR: "Kategoriler", icon: "lucide:user",        color: "#0D9488" },
-  { value: "series",    labelTR: "Seriler",     icon: "lucide:tag",         color: "#DB2777" },
+  { value: "authors",   labelTR: "Yazarlar",    icon: "lucide:users",      color: "#2563EB" },
+  { value: "category",  labelTR: "Kategoriler", icon: "lucide:tags",        color: "#0D9488" },
+  { value: "series",    labelTR: "Seriler",     icon: "lucide:layers",      color: "#DB2777" },
   { value: "publisher", labelTR: "Yayınevleri", icon: "lucide:building-2",  color: "#7C3AED" },
-  { value: "tags",      labelTR: "Etiketler",   icon: "lucide:bookmark",    color: "#EAB308" },
-  { value: "genre",     labelTR: "Türler",      icon: "lucide:heart",       color: "#ff8904" },
+  { value: "tags",      labelTR: "Etiketler",   icon: "lucide:tag",         color: "#EAB308" },
+  { value: "genre",     labelTR: "Türler",      icon: "lucide:library",     color: "#ff8904" },
 ];
 
 // ── Grimmory READ_STATUS renkleri ─────────────────────────────────────────────
@@ -78,17 +78,10 @@ function getItemsFromBook(book, dataType) {
 function calculateTopItems(books, dataType) {
   if (!books || books.length === 0) return [];
 
-  // Yazarlar için: aynı yazar+başlık kombinasyonunu tek say
+  // Yazarlar için: deduplicateBooks ile tekilleştir (canonical_id > PDF > title+author)
   // Diğer tipler (genre, series, publisher, tags, category) için tekilleştirme yok
   const booksToUse = dataType === "authors"
-    ? (() => {
-        const seen = new Map();
-        for (const b of books) {
-          const key = `${(b.author || "").toLocaleLowerCase("tr").trim()}|||${normalizeTitle(b.title)}`;
-          if (!seen.has(key)) seen.set(key, b);
-        }
-        return Array.from(seen.values());
-      })()
+    ? deduplicateBooks(books)
     : books;
 
   const itemMap = new Map();
@@ -161,14 +154,7 @@ function generateTopItemsInsights(stats, typeDef, allBooks) {
 
 // ── Yazar evreni hesapla — yazar+başlık tekilleştirmeli ──────────────────────
 function computeAuthors(books) {
-  // Önce yazar+başlık bazlı tekilleştir
-  const seen = new Map();
-  for (const b of books) {
-    if (!b.author) continue;
-    const key = `${b.author.toLocaleLowerCase("tr").trim()}|||${normalizeTitle(b.title)}`;
-    if (!seen.has(key)) seen.set(key, b);
-  }
-  const uniqueBooks = Array.from(seen.values());
+  const uniqueBooks = deduplicateBooks(books).filter(b => b.author);
 
   // Sonra yazar bazlı grupla
   const authorMap = {};

@@ -103,17 +103,33 @@ function buildSeriesData() {
       map[key] = {
         name,
         publisher,
-        total : 0,
-        read  : 0,
-        books : [],
+        books      : [],
+        _canonical : new Set(), // tekilleştirme için
+        _readKeys  : new Set(), // okundu tekilleştirme için
       };
     }
-    map[key].total++;
     map[key].books.push(book);
-    if (book.status === "okundu") map[key].read++;
+    // Tekilleştirme önceliği:
+    // 1. canonical_id varsa onu kullan (manuel eşleştirilmiş grup)
+    // 2. series_order varsa "order:N" kullan (aynı sıra no = aynı kitap)
+    // 3. İkisi de yoksa title+author bazında grupla (sıra no girilmemiş aynı kitap)
+    const canonId = (book.canonical_id || "").trim();
+    const titleKey = `title:${(book.title || "").trim().toLowerCase()}|${(book.author || "").trim().toLowerCase()}`;
+    const canonKey = canonId
+      ? canonId
+      : (book.series_order != null ? `order:${book.series_order}` : titleKey);
+    map[key]._canonical.add(canonKey);
+    if (book.status === "okundu") map[key]._readKeys.add(canonKey);
   }
 
-  return Object.values(map);
+  // Set'leri sayıya dönüştür; geçici alanları temizle
+  return Object.values(map).map((s) => {
+    s.total = s._canonical.size;
+    s.read  = s._readKeys.size;
+    delete s._canonical;
+    delete s._readKeys;
+    return s;
+  });
 }
 
 // ─── Görüntü adı: "Seri Adı — Yayınevi" (yayınevi varsa) ────────────────────
@@ -231,8 +247,16 @@ function renderSeriesDetail(seriesName, publisher) {
 
   // İlerleme/okuma sayacı her zaman TÜM seri üzerinden hesaplanır (format
   // filtresi sadece görünümü değiştirir, serinin genel ilerlemesini değil).
-  const readCount  = allBooks.filter((b) => b.status === "okundu").length;
-  const totalCount = allBooks.length;
+  // Tekilleştirme: canonical_id > series_order > title+author önceliğiyle 1 kitap sayılır.
+  const _bookKey = (b) => {
+    const cid = (b.canonical_id || "").trim();
+    const titleKey = `title:${(b.title || "").trim().toLowerCase()}|${(b.author || "").trim().toLowerCase()}`;
+    return cid ? cid : (b.series_order != null ? `order:${b.series_order}` : titleKey);
+  };
+  const _totalKeys = new Set(allBooks.map(_bookKey));
+  const _readKeys  = new Set(allBooks.filter((b) => b.status === "okundu").map(_bookKey));
+  const readCount  = _readKeys.size;
+  const totalCount = _totalKeys.size;
   const pct        = totalCount > 0 ? Math.round((readCount / totalCount) * 100) : 0;
 
   // YENİ: Format chip'leri — sadece seride GERÇEKTEN var olan formatlar
@@ -353,35 +377,49 @@ function renderMissingGrid(missingInfo, filteredBooks, formatFilter) {
 
   const presentCount = maxOrder - missingNumbers.length;
 
-  // Özet metnindeki format etiketi: "Tümü" seçiliyken hiç belirtilmez
-  // (önceki davranışla aynı kalsın), EPUB/PDF seçiliyken açıkça yazılır —
-  // böylece kullanıcı "neye göre eksik hesaplandığını" karıştırmaz.
   const formatLabel = formatFilter === "epub" ? "EPUB formatında "
                      : formatFilter === "pdf"  ? "PDF formatında "
                      : "";
 
+  // Stat chip'leri
+  const chipsHtml = `
+    <div class="missing-grid-chips">
+      <span class="missing-chip missing-chip--total">
+        <iconify-icon icon="lucide:library"></iconify-icon>
+        ${maxOrder} toplam
+      </span>
+      <span class="missing-chip missing-chip--ok">
+        <iconify-icon icon="lucide:check-circle"></iconify-icon>
+        ${presentCount} mevcut
+      </span>
+      <span class="missing-chip missing-chip--miss">
+        <iconify-icon icon="lucide:alert-circle"></iconify-icon>
+        ${missingNumbers.length} eksik
+      </span>
+    </div>
+  `;
+
+  // Uyarı / onay satırı
   const summaryHtml = missingNumbers.length === 0
     ? `
       <p class="missing-grid-summary missing-grid-summary--ok">
         <iconify-icon icon="lucide:check-circle"></iconify-icon>
-        ${formatLabel}${maxOrder} kitabın tamamı mevcut, eksik yok.
+        ${formatLabel}Tüm kitaplar mevcut, eksik yok.
       </p>
     `
     : `
       <p class="missing-grid-summary missing-grid-summary--warn">
         <iconify-icon icon="lucide:alert-triangle"></iconify-icon>
-        ${formatLabel}${maxOrder} kitaptan ${presentCount}'si mevcut, ${missingNumbers.length} eksik
-        (${missingNumbers.map((n) => `#${n}`).join(", ")})
+        ${formatLabel}${missingNumbers.map((n) => `#${n}`).join(", ")} numaralı kitaplar eksik
       </p>
     `;
 
+  // Hücreler
   const cellsHtml = [];
   for (let i = 1; i <= maxOrder; i++) {
     const isPresent = presentMap.has(i);
     if (isPresent) {
       const booksAtThisNumber = presentMap.get(i);
-      // Birden fazla kitap aynı numarayı paylaşıyorsa (örn. aynı kitabın
-      // PDF+EPUB kopyası) tooltip'te hepsinin başlığı virgülle gösterilir.
       const titles = booksAtThisNumber.map((b) => b.title || "Başlıksız").join(", ");
       cellsHtml.push(
         `<span class="missing-grid-cell missing-grid-cell--present" title="#${i} — ${escAttr(titles)}">${i}</span>`
@@ -398,6 +436,7 @@ function renderMissingGrid(missingInfo, filteredBooks, formatFilter) {
       <h3 class="missing-grid-title">
         <iconify-icon icon="lucide:grid-3x3"></iconify-icon> Eksik Kitap Kontrolü
       </h3>
+      ${chipsHtml}
       ${summaryHtml}
       <div class="missing-grid">
         ${cellsHtml.join("")}

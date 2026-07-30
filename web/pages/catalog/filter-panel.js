@@ -38,7 +38,7 @@ import { updateFavoriteOnlyChip } from "./catalog-ui.js";
 
 // ─── Tüm filtreleri sıfırla ──────────────────────────────────────────────────
 export function clearFilters() {
-  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], genre: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", coverStatus: "" };
+  ui.filters = { format: "", status: "", author: "", publisher: "", series: "", language: [], tag: [], category: [], subcategory: [], topic: [], genre: [], confidence: "", yearMin: null, yearMax: null, missingField: "", favoriteOnly: false, categoryStatus: "", genreStatus: "", coverStatus: "" };
   syncChips();
   ["filter-author", "filter-publisher"].forEach((id) => {
     const el = document.getElementById(id);

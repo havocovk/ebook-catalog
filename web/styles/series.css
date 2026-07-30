@@ -343,6 +343,7 @@
   top: 72px;   /* header + biraz boşluk — kaydırırken görünür kalsın */
 }
 
+/* ── Eksik Kitap Kontrolü — Başlık ── */
 .missing-grid-title {
   font-size: 0.85rem;
   font-weight: 600;
@@ -350,31 +351,78 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
-.missing-grid-summary {
-  font-size: 0.8rem;
+/* ── Stat Chip'leri ── */
+.missing-grid-chips {
   display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.missing-chip {
+  display: inline-flex;
   align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.missing-chip iconify-icon { font-size: 0.8rem; }
+
+.missing-chip--total {
+  background: rgba(255, 255, 255, 0.05);
+  color: #888;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.missing-chip--ok {
+  background: rgba(76, 175, 130, 0.1);
+  color: #4caf82;
+  border: 1px solid rgba(76, 175, 130, 0.2);
+}
+
+.missing-chip--miss {
+  background: rgba(249, 115, 22, 0.1);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.22);
+}
+
+/* ── Uyarı / Onay Satırı ── */
+.missing-grid-summary {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: flex-start;
   gap: 0.4rem;
   margin-bottom: 1rem;
-  line-height: 1.4;
+  line-height: 1.5;
+  border-radius: 7px;
+  padding: 0.45rem 0.7rem;
 }
 
+.missing-grid-summary iconify-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+
 .missing-grid-summary--ok {
-  color: var(--success, #4caf82);
+  color: #4caf82;
+  background: rgba(76, 175, 130, 0.08);
+  border: 1px solid rgba(76, 175, 130, 0.18);
 }
 
 .missing-grid-summary--warn {
-  color: var(--warning, #e0a84a);
+  color: #fb923c;
+  background: rgba(249, 115, 22, 0.08);
+  border: 1px solid rgba(249, 115, 22, 0.2);
 }
 
-/* ── Grid: 10 sabit sütun, kutucuklar kare ve numaraları ortalanmış ── */
+/* ── Grid: 10 sabit sütun ── */
 .missing-grid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: 0.3rem;
+  gap: 4px;
 }
 
 .missing-grid-cell {
@@ -382,29 +430,31 @@
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.65rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: default;
-  transition: transform 0.1s, filter 0.15s;
+  transition: transform 0.12s;
+  position: relative;
 }
 
 .missing-grid-cell:hover {
-  transform: scale(1.12);
-  filter: brightness(1.15);
-  z-index: 1;
+  transform: scale(1.18);
+  z-index: 2;
 }
 
+/* Mevcut: koyu yeşil dolgulu, solid kenarlık */
 .missing-grid-cell--present {
-  background: rgba(76, 175, 130, 0.25);
+  background: #0d1f17;
   color: #4caf82;
-  border: 1px solid rgba(76, 175, 130, 0.4);
+  border: 1.5px solid #1a4a30;
 }
 
+/* Eksik: boş/şeffaf, kesik kenarlık */
 .missing-grid-cell--missing {
-  background: rgba(224, 92, 92, 0.25);
-  color: #e05c5c;
-  border: 1px solid rgba(224, 92, 92, 0.5);
+  background: transparent;
+  color: #fb923c;
+  border: 1.5px dashed rgba(249, 115, 22, 0.5);
 }
 
 /* ── Mobil: iki sütun alt alta dizilir, grid sticky olmaktan çıkar ── */

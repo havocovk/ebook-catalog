@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { state } from "../../core/state.js";
-import { _activeCharts, _loadChartJs } from "./stats-core.js";
+import { _activeCharts, _loadChartJs, deduplicateBooks } from "./stats-core.js";
 
 // ── Grimmory publication-timeline-chart.ts'den birebir on yıl renkleri ───────
 const DECADE_COLORS = {
@@ -55,8 +55,9 @@ function getDecadeKey(year) {
 }
 
 function computeTimeline() {
-  const books    = state.books;
-  const withYear = books.filter((b) => b.year && b.year > 0);
+  const books        = state.books;
+  const uniqueBooks  = deduplicateBooks(books);
+  const withYear     = uniqueBooks.filter((b) => b.year && b.year > 0);
   if (withYear.length === 0) return null;
 
   const years = withYear.map((b) => b.year).sort((a, b) => a - b);

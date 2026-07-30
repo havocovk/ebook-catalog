@@ -52,7 +52,8 @@ export function recompute(resetPage = false) {
             b.title?.toLowerCase().includes(q)  ||
             b.author?.toLowerCase().includes(q) ||
             b.series?.toLowerCase().includes(q) ||
-            b.tags?.some((t) => t.toLowerCase().includes(q))
+            b.tags?.some((t) => t.toLowerCase().includes(q)) ||
+            b.notes?.toLowerCase().includes(q)
         );
       }
     } else {
@@ -62,7 +63,8 @@ export function recompute(resetPage = false) {
           b.title?.toLowerCase().includes(q)  ||
           b.author?.toLowerCase().includes(q) ||
           b.series?.toLowerCase().includes(q) ||
-          b.tags?.some((t) => t.toLowerCase().includes(q))
+          b.tags?.some((t) => t.toLowerCase().includes(q)) ||
+          b.notes?.toLowerCase().includes(q)
       );
     }
   }
@@ -133,6 +135,13 @@ export function recompute(resetPage = false) {
     result = result.filter((b) => !b.category);
   } else if (ui.filters.categoryStatus === "filled") {
     result = result.filter((b) => Boolean(b.category));
+  }
+
+  // Tür Durumu filtresi (boş/dolu)
+  if (ui.filters.genreStatus === "empty") {
+    result = result.filter((b) => !b.genre);
+  } else if (ui.filters.genreStatus === "filled") {
+    result = result.filter((b) => Boolean(b.genre));
   }
 
   // Kapak Resmi Durumu filtresi (boş/dolu)

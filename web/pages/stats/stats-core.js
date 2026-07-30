@@ -35,29 +35,41 @@ export function normalizeTitle(title) {
   return title.toLocaleLowerCase("tr").trim().replace(/\s+/g, " ");
 }
 
-// ── Yazar+başlık bazlı tekilleştirilmiş kitap listesi ────────────────────────
-// Öncelik sırası:
-// 1. canonical_id varsa → aynı canonical_id'ye sahip kitaplar = aynı kitap
-// 2. canonical_id yoksa → aynı yazar + normalize başlık = aynı kitap
+// ── Tekilleştirilmiş kitap listesi ───────────────────────────────────────────
+// Yazarlar sayfasıyla aynı mantık:
+//   canonical_id varsa → aynı canonical_id grubu = 1 kitap (PDF tercih edilir)
+//   canonical_id yoksa → her dosya ayrı kitap ($id bazlı)
+// groupByLetter ile birebir aynı mantık: canonical_id varsa grupla, yoksa $id ile say.
+// Fark: sayı değil, kitap listesi döndürür (PDF tercih edilir).
 export function deduplicateBooks(books) {
-  const seen = new Map();
+  // canonical_id → kitaplar[]  ve  $id → kitap  haritaları
+  const canonicalGroups = new Map();
+  const standaloneMap   = new Map();
+
   for (const b of books) {
-    let key;
-    if (b.canonical_id && b.canonical_id.trim()) {
-      key = `canonical:${b.canonical_id.trim()}`;
+    const cid = (b.canonical_id || "").trim();
+    if (cid) {
+      if (!canonicalGroups.has(cid)) canonicalGroups.set(cid, []);
+      canonicalGroups.get(cid).push(b);
     } else {
-      key = `title:${(b.author || "").toLocaleLowerCase("tr").trim()}|||${normalizeTitle(b.title)}`;
-    }
-    if (!seen.has(key)) {
-      seen.set(key, b);
-    } else {
-      const existing = seen.get(key);
-      if ((b.page_count || 0) > (existing.page_count || 0)) {
-        seen.set(key, b);
-      }
+      standaloneMap.set(b.$id, b);
     }
   }
-  return Array.from(seen.values());
+
+  const result = [];
+
+  // Her canonical grupta PDF varsa PDF'i, yoksa ilk kaydı al
+  for (const group of canonicalGroups.values()) {
+    const pdf = group.find(b => (b.format || "").toLowerCase() === "pdf");
+    result.push(pdf || group[0]);
+  }
+
+  // canonical_id'si olmayan her dosya ayrı kitap ($id bazlı — groupByLetter ile aynı)
+  for (const b of standaloneMap.values()) {
+    result.push(b);
+  }
+
+  return result;
 }
 
 export function compute() {

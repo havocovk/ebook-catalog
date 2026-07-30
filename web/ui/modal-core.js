@@ -180,6 +180,37 @@ export function openModal(bookId) {
 
   document.getElementById("modal-language").value = book.language || "";
   document.getElementById("modal-genre").value    = book.genre || "";
+
+  // Eşleştirilmiş dosyalar (canonical_id)
+  const canonicalWrap = document.getElementById("modal-canonical-wrap");
+  if (canonicalWrap) {
+    const cid = (book.canonical_id || "").trim();
+    if (cid) {
+      const siblings = state.books.filter(
+        (b) => b.$id !== book.$id && (b.canonical_id || "").trim() === cid
+      );
+      if (siblings.length > 0) {
+        const rows = siblings.map((b) => `
+          <div class="canonical-sibling">
+            <span class="book-format ${(b.format||"").toLowerCase()==="pdf"?"format-pdf":(b.format||"").toLowerCase()==="epub"?"format-epub":""}">${(b.format||"").toUpperCase()}</span>
+            <span class="canonical-sibling-title">${escapeHtml(b.title || "(Başlıksız)")}</span>
+          </div>
+        `).join("");
+        canonicalWrap.innerHTML = `
+          <div class="canonical-badge-row">
+            <span class="canonical-badge-icon"><iconify-icon icon="lucide:link"></iconify-icon></span>
+            <span class="canonical-badge-label">Eşleştirilmiş Dosyalar</span>
+          </div>
+          <div class="canonical-siblings-list">${rows}</div>
+        `;
+        canonicalWrap.classList.remove("hidden");
+      } else {
+        canonicalWrap.classList.add("hidden");
+      }
+    } else {
+      canonicalWrap.classList.add("hidden");
+    }
+  }
   document.getElementById("modal-rating").innerHTML = renderStars(book.rating, true, bookId);
 
   // Adım 17: Favori kutucuğunu doldur

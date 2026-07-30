@@ -193,8 +193,8 @@ export function initCatalog() {
         }
       }
     } else {
-      // Eski davranış: tek seçim, dokunulmadı.
-      ui.filters[filterKey] = value;
+      // Tek seçim: aynı değere tekrar tıklanınca sıfırla (toggle)
+      ui.filters[filterKey] = ui.filters[filterKey] === value ? "" : value;
     }
 
     syncChipGroup(`filter-${filterKey}-chips`, ui.filters[filterKey]);

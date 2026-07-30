@@ -184,7 +184,6 @@
   font-weight: 500;
   color: #fafafa;
   margin: 0 0 0.4375rem 0;
-  font-family: 'Inter', sans-serif;
 }
 
 /* Grimmory _chart-shared.scss: .chart-description { font-size: 0.7875rem } */
@@ -193,7 +192,6 @@
   color: #a1a1a1;
   margin: 0;
   line-height: 1.4;
-  font-family: 'Inter', sans-serif;
 }
 
 /* ── Grafik kanvas alanı ─────────────────────────────────────── */
@@ -226,7 +224,6 @@
   color: var(--text-3);
   margin: 0;
   text-align: center;
-  font-family: 'Inter', sans-serif;
 }
 
 /* ── Grafik Legend (artık Chart.js legend sağda — bu alan kaldırıldı) */
@@ -317,7 +314,6 @@
   margin: 0;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #262626;
-  font-family: 'Inter', sans-serif;
 }
 
 .stats-section-title iconify-icon { color: var(--accent); font-size: 1rem; }
@@ -365,13 +361,11 @@
   color: var(--text);
   line-height: 1.2;
   word-break: break-word;
-  font-family: 'Inter', sans-serif;
 }
 .stats-mini-label {
   font-size: 0.68rem;
   color: var(--text-3);
   font-weight: 500;
-  font-family: 'Inter', sans-serif;
 }
 
 .stats-mini-card--accent  .stats-mini-icon  { color: var(--accent); }
@@ -446,7 +440,6 @@
   color: var(--text);
   line-height: 1.3;
   word-break: break-word;
-  font-family: 'Inter', sans-serif;
 }
 
 .stats-subsection-title {
@@ -460,7 +453,6 @@
   align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
-  font-family: 'Inter', sans-serif;
 }
 
 .stats-top-authors-wrap {
@@ -527,14 +519,12 @@
   font-weight: 600;
   color: #fafafa;
   margin: 0 0 0.15rem 0;
-  font-family: 'Inter', sans-serif;
 }
 
 .tl-desc {
   font-size: 0.8rem;
   color: #a1a1a1;
   margin: 0;
-  font-family: 'Inter', sans-serif;
 }
 
 /* Badge — sağ üstte (Grimmory: "72 books with dates") */
@@ -546,7 +536,6 @@
   padding: 0.25rem 0.75rem;
   font-size: 0.78rem;
   font-weight: 500;
-  font-family: 'Inter', sans-serif;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -598,14 +587,12 @@
   letter-spacing: 0.5px;
   color: #a1a1a1;
   margin-bottom: 0.2188rem;
-  font-family: 'Inter', sans-serif;
 }
 
 .tl-insight-value {
   font-size: 1.3125rem;
   font-weight: 600;
   color: #fafafa;
-  font-family: 'Inter', sans-serif;
   line-height: 1.2;
 }
 
@@ -617,7 +604,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: 'Inter', sans-serif;
 }
 
 /* ── Chip değer renkleri (Grimmory scss'den) ─────────────────── */
@@ -704,14 +690,12 @@
   font-weight: 600;
   color: #fafafa;
   margin: 0 0 0.15rem 0;
-  font-family: 'Inter', sans-serif;
 }
 
 .rj-desc {
   font-size: 0.8rem;
   color: #a1a1a1;
   margin: 0;
-  font-family: 'Inter', sans-serif;
 }
 
 /* Badge — sağ üstte (Grimmory: "Jul 2026 - Jul 2026") */
@@ -723,7 +707,6 @@
   padding: 0.25rem 0.75rem;
   font-size: 0.78rem;
   font-weight: 500;
-  font-family: 'Inter', sans-serif;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -771,14 +754,12 @@
   letter-spacing: 0.5px;
   color: #a1a1a1;
   margin-bottom: 0.2188rem;
-  font-family: 'Inter', sans-serif;
 }
 
 .rj-chip-value {
   font-size: 1.3125rem;
   font-weight: 600;
   color: #fafafa;
-  font-family: 'Inter', sans-serif;
   line-height: 1.2;
 }
 
@@ -790,7 +771,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: 'Inter', sans-serif;
 }
 
 /* ── Chip değer renkleri (Grimmory scss'den) ─────────────────── */
@@ -858,7 +838,6 @@
   font-weight: 500;
   color: #fafafa;
   margin: 0 0 0.4375rem 0;
-  font-family: 'Inter', sans-serif;
 }
 
 /* Grimmory _chart-shared.scss: .chart-description { font-size: 0.7875rem } */
@@ -867,7 +846,6 @@
   color: #a1a1a1;
   margin: 0;
   line-height: 1.4;
-  font-family: 'Inter', sans-serif;
 }
 
 /* Badge */
@@ -877,7 +855,6 @@
   padding: 0.25rem 0.85rem;
   font-size: 0.85rem;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -893,7 +870,6 @@
   background: #0a0a0a;
   border: 1px solid #262626;
   border-radius: 6px;
-  font-family: 'Inter', sans-serif;
   margin-bottom: 0.5rem;
 }
 
@@ -928,7 +904,6 @@
 
 .au-legend-label {
   color: #a1a1a1;
-  font-family: 'Inter', sans-serif;
 }
 
 /* ── Insight grid (Grimmory: insights-grid) ─────────────────── */
@@ -973,7 +948,6 @@
   font-size: 0.85rem;
   color: #fafafa;
   line-height: 1.3;
-  font-family: 'Inter', sans-serif;
 }
 
 /* ── Mobil ───────────────────────────────────────────────────── */
@@ -1037,7 +1011,6 @@
   border: 1px solid #404040;
   border-radius: 6px;
   color: #fafafa;
-  font-family: 'Inter', sans-serif;
   font-size: 0.82rem;
   padding: 0.4rem 0.75rem;
   cursor: pointer;
@@ -1088,7 +1061,6 @@
 /* Tek seçenek satırı */
 .ti-dropdown-item {
   padding: 0.5rem 0.75rem;
-  font-family: 'Inter', sans-serif;
   font-size: 0.82rem;
   color: #c8b8a8;
   cursor: pointer;
@@ -1129,7 +1101,6 @@
   font-weight: 600;
   color: #fafafa;
   line-height: 1;
-  font-family: 'Inter', sans-serif;
 }
 
 .ti-badge-label {
@@ -1138,7 +1109,6 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 0.2188rem;
-  font-family: 'Inter', sans-serif;
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
@@ -1189,14 +1159,12 @@
 .ti-empty-text {
   font-size: 0.85rem;
   color: #a1a1a1;
-  font-family: 'Inter', sans-serif;
   margin: 0;
 }
 
 .ti-empty-sub {
   font-size: 0.75rem;
   color: #6b6b6b;
-  font-family: 'Inter', sans-serif;
   margin: 0;
 }
 
@@ -1258,7 +1226,6 @@
   color: #a1a1a1;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  font-family: 'Inter', sans-serif;
 }
 
 /* Grimmory: insight-value → 0.7875rem / weight 500 / ellipsis */
@@ -1269,7 +1236,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: 'Inter', sans-serif;
 }
 
 /* ── Mobil ───────────────────────────────────────────────────── */
@@ -1311,7 +1277,6 @@
   border-radius: 6px;
   padding: 0.2625rem 0.6563rem;
   font-size: 0.82rem;
-  font-family: 'Inter', sans-serif;
   font-weight: 500;
   white-space: nowrap;
   flex-shrink: 0;
@@ -1358,7 +1323,6 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #a1a1a1;
-  font-family: 'Inter', sans-serif;
   margin-bottom: 0.2188rem;
 }
 
@@ -1366,7 +1330,6 @@
 .pt-insight-value {
   font-size: 1.3125rem;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
   line-height: 1.2;
 }
 
@@ -1374,7 +1337,6 @@
 .pt-insight-detail {
   font-size: 0.65rem;
   color: #a1a1a1;
-  font-family: 'Inter', sans-serif;
   margin-top: 0.2188rem;
   line-height: 1.3;
 }

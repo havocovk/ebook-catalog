@@ -35,14 +35,22 @@ function _normalize(str) {
     .replace(/I/g, "i");
 }
 
-// Fuzzy arama sonucu önbelleği — state.books değişmezse yeniden oluşturulmaz.
-// { books: state.books referansı, fuse: Fuse örneği }
+// Fuzzy arama sonucu önbelleği — kitap listesi veya notlar değişmezse yeniden oluşturulmaz.
+// { books: state.books referansı, notesKey: notların özet anahtarı, fuse: Fuse örneği }
 let _fuseCache = null;
+
+// Kitap listesindeki tüm notların birleşik özeti — bir not değişirse bu değer değişir.
+function _notesKey(books) {
+  return books.map((b) => (b.notes || "")).join("|");
+}
 
 function _getFuse() {
   if (!_Fuse) return null;
-  // Kitap listesi değiştiyse önbelleği yenile
-  if (_fuseCache?.books === state.books) return _fuseCache.fuse;
+  // Kitap listesi referansı AYNI olsa bile notlar değiştiyse önbelleği yenile
+  const currentNotesKey = _notesKey(state.books);
+  if (_fuseCache?.books === state.books && _fuseCache?.notesKey === currentNotesKey) {
+    return _fuseCache.fuse;
+  }
 
   // Her kitabın arama alanlarını Türkçe normalize ederek indeksle
   const docs = state.books.map((b) => ({
@@ -51,17 +59,18 @@ function _getFuse() {
     author: _normalize(b.author),
     series: _normalize(b.series),
     tags:   (b.tags || []).map(_normalize).join(" "),
+    notes:  _normalize(b.notes),
   }));
 
   const fuse = new _Fuse(docs, {
-    keys:               ["title", "author", "series", "tags"],
+    keys:               ["title", "author", "series", "tags", "notes"],
     threshold:          0.35,   // 0=tam eşleşme 1=her şeyi bul; 0.35 makul tolerans
     minMatchCharLength: 2,      // 1 karakterlik sorguyu fuzzy yapmayız
     distance:           200,    // uzun başlıklarda eşleşme alanı
     ignoreLocation:     true,   // başlığın herhangi bir yerinde eşleşsin
   });
 
-  _fuseCache = { books: state.books, fuse };
+  _fuseCache = { books: state.books, notesKey: currentNotesKey, fuse };
   return fuse;
 }
 

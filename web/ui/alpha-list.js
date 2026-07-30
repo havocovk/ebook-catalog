@@ -20,12 +20,22 @@ export const ALPHABET = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
 // ─── Kitapları belirtilen alana (author/publisher) göre ilk harfe grupla ────
 // field: "author" | "publisher" — state.books üzerindeki hangi alan gruplanacak.
 // Dönüş: { "A": [{name, count}, ...], "B": [...], ..., "#": [...] }
+// count: tekilleştirilmiş kitap sayısı.
+//   • canonical_id varsa: aynı canonical_id grubunu 1 kitap say.
+//   • canonical_id yoksa: her dosya ayrı kitap say.
 export function groupByLetter(books, field) {
-  const countMap = {};
+  // name → Set<canonicalKey>; canonicalKey = canonical_id varsa o, yoksa "$id"
+  const canonicalSets = {};
   for (const book of books) {
     const name = (book[field] || "").trim();
     if (!name) continue;
-    countMap[name] = (countMap[name] || 0) + 1;
+    if (!canonicalSets[name]) canonicalSets[name] = new Set();
+    const key = (book.canonical_id || "").trim() || book.$id;
+    canonicalSets[name].add(key);
+  }
+  const countMap = {};
+  for (const [name, set] of Object.entries(canonicalSets)) {
+    countMap[name] = set.size;
   }
 
   const grouped = {};

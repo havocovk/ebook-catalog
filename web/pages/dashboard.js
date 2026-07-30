@@ -81,7 +81,7 @@ function compute() {
   const missingCover     = books.filter((b) => !b.cover_url).length;
   const missingYear      = books.filter((b) => !b.year).length;
   const suggestPool = books.filter(
-    (b) => b.status === "okunmadi" || b.status === "sirada"
+    (b) => (b.status === "okunmadi" || b.status === "sirada") && !b.is_academic
   );
   return { reading, recent, missingAuthor, missingPublisher, missingCover, missingYear, suggestPool };
 }

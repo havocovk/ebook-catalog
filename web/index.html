@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ebook Kütüphanem</title>
   <link rel="manifest" href="manifest.json" />
+  <!-- ── Font preload (Inter, self-hosted) ───────────────────────── -->
+  <link rel="preload" href="assets/fonts/Inter-latin-wght.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/Inter-latin-ext-wght.woff2" as="font" type="font/woff2" crossorigin />
   <meta name="theme-color" content="#000000" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -313,13 +316,17 @@
               </div>
             </div>
 
-            <!-- ── Adım 37: Kategori Durumu Filtresi (boş/dolu) ─────────── -->
+            <!-- ── Adım 37: Kategori/Tür Durumu Filtresi (boş/dolu) ────── -->
             <div class="filter-group">
-              <label class="filter-label">Kategori Durumu</label>
+              <label class="filter-label">Kategori/Tür Durumu</label>
               <div class="filter-chips" id="filter-categoryStatus-chips">
                 <button class="chip active" data-filter="categoryStatus" data-value="">Tümü</button>
                 <button class="chip" data-filter="categoryStatus" data-value="empty">Kategorisi Boş</button>
                 <button class="chip" data-filter="categoryStatus" data-value="filled">Kategorisi Dolu</button>
+              </div>
+              <div class="filter-chips" id="filter-genreStatus-chips" style="margin-top:0.4rem">
+                <button class="chip" data-filter="genreStatus" data-value="empty">Türü Boş</button>
+                <button class="chip" data-filter="genreStatus" data-value="filled">Türü Dolu</button>
               </div>
             </div>
             <!-- ── Adım 37 sonu ─────────────────────────────────────────── -->
@@ -643,6 +650,9 @@
           </div>
           <!-- ── Bölüm 2 sonu ──────────────────────────────────────────── -->
 
+          <!-- Eşleştirilmiş Dosyalar (canonical_id) -->
+          <div id="modal-canonical-wrap" class="modal-canonical-wrap hidden"></div>
+
           <!-- ── Adım 11 (genişletilmiş): Akademik işareti + Alt Alan/Konu ── -->
           <div class="field field-checkbox">
             <label>
@@ -796,7 +806,7 @@
   <div id="quickfill-modal" class="modal hidden">
     <div class="modal-box quickfill-box">
       <div class="modal-header">
-        <h2 class="modal-heading">Hızlı Kategori Doldurma</h2>
+        <h2 class="modal-heading">Hızlı Kategori/Tür Doldurma</h2>
         <span id="quickfill-progress" class="quickfill-progress"></span>
         <button id="quickfill-close" class="modal-close" title="Kapat">✕</button>
       </div>
@@ -817,6 +827,17 @@
             id="quickfill-category-input"
             class="quickfill-category-input"
             placeholder="Roman, Akademik, Ders Notları..."
+            autocomplete="off"
+          />
+
+          <label class="filter-label" for="quickfill-genre-input" style="margin-top:0.75rem">
+            <iconify-icon icon="lucide:bookmark"></iconify-icon> Tür
+          </label>
+          <input
+            type="text"
+            id="quickfill-genre-input"
+            class="quickfill-category-input"
+            placeholder="Kurgu, Bilim, Tarih..."
             autocomplete="off"
           />
           <p class="quickfill-hint">Enter: kaydet ve sonraki kitaba geç &nbsp;•&nbsp; Esc: kapat</p>
