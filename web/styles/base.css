@@ -181,7 +181,11 @@ iconify-icon {
   display: none;              /* kapalı; .open ile açılır */
   z-index: 49;
 }
-.main-nav.open { display: flex; }
+.main-nav.open {
+  display: flex;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+}
 
 .nav-link {
   display: flex;
@@ -453,4 +457,15 @@ textarea { resize: vertical; }
 
   /* Aksiyon butonlarındaki metinler masaüstünde görünür */
   .btn-label { display: inline; }
+}
+
+/* Yatay ekran + küçük yükseklik (mobil landscape) — header kompakt */
+@media (orientation: landscape) and (max-height: 500px) {
+  .header {
+    min-height: 44px;
+    padding: 0.25rem 1rem;
+  }
+  .header-logo-img {
+    height: 40px;
+  }
 }
