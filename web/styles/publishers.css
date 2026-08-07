@@ -148,3 +148,39 @@
   margin-left: auto;
   flex-shrink: 0;
 }
+
+/* ── Seri aç/kapat butonu ────────────────────────────────────── */
+.series-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 0.15rem 0.25rem;
+  margin-left: 0.4rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.series-toggle-btn:hover {
+  color: var(--accent);
+  background: var(--bg-2);
+}
+
+.series-toggle-btn iconify-icon {
+  font-size: 1rem;
+  transition: none;
+}
+
+/* ── Collapsed grid ──────────────────────────────────────────── */
+.series-collapsible {
+  overflow: hidden;
+  transition: none;
+}
+
+.series-collapsible.series-collapsed {
+  display: none;
+}

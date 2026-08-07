@@ -131,6 +131,15 @@ Seri kitaplar: `Seri Adı 01 - Yazar - Başlık` veya `002 - Yazar - Başlık`
 - Test başarılı mı diye doğrudan sor
 - Bir sonraki adıma geçmek için açık onay al
 
+### MOBİL/PWA TASARIM KURALI
+**Web sitesi mobil PWA'ya çevrilirken veya mobil arayüz geliştirilirken geçerli.**
+
+Ekrana oluşturulan menü, kart, panel gibi yapılar için ekranın sağında ve solunda geniş çerçeveler (kenar boşlukları) bırakma. Mobil ekran zaten küçük; büyük kenar boşlukları menüyü ekranın ortasında dar ve sıkışık bir alana hapseder.
+
+Kenar boşluklarının piksel değeri olabildiğince küçük olacak. Tek istisna: boşluk aşırı küçültüldüğünde çerçevede kopma/kesilme oluyorsa veya menü görsel olarak bozuk görünüyorsa — bu durumda kopmanın/bozukluğun olmadığı en düşük piksel değerini kullan.
+
+Birden fazla katmanlı container (dış kapsayıcı + iç panel + sayfa wrapper'ı) varsa, her birinin padding'i üst üste toplanır — değişiklik yaparken toplam boşluğu hesapla, tek bir katmana bakıp yeterli sanma.
+
 ### HATA AYIKLAMA KURALI
 **KONSOL HATASI GELDİĞİNDE:**
 1. Hata mesajını oku — dosya adı ve satır numarası zaten orada

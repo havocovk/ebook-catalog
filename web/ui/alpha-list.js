@@ -15,7 +15,7 @@
 
 import { escapeHtmlBasic as esc, escapeAttr } from "./common.js";
 
-export const ALPHABET = "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ".split("");
+export const ALPHABET = "ABCÇDEFGHIİJKLMNOÖPQRSŞTUÜVWXYZ".split("");
 
 // ─── Kitapları belirtilen alana (author/publisher) göre ilk harfe grupla ────
 // field: "author" | "publisher" — state.books üzerindeki hangi alan gruplanacak.

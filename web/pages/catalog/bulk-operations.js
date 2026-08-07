@@ -40,6 +40,25 @@ import {
 import { recompute } from "./catalog-filters.js";
 import { selectedIds, clearSelection } from "./bulk-selection.js";
 
+// ── İlerleme toast yardımcısı ─────────────────────────────────────────────────
+// Kalıcı bir toast oluşturur; update() ile metni değiştirilir, remove() ile kaldırılır.
+function _createProgressToast(initialText) {
+  const container = document.getElementById("toast-container");
+  if (!container) return { update: () => {}, remove: () => {} };
+  const el = document.createElement("div");
+  el.className = "toast toast-success";
+  el.textContent = initialText;
+  container.appendChild(el);
+  setTimeout(() => el.classList.add("visible"), 10);
+  return {
+    update(text) { el.textContent = text; },
+    remove() {
+      el.classList.remove("visible");
+      setTimeout(() => el.remove(), 300);
+    },
+  };
+}
+
 // ── Adım 25: Toplu işlem KİLİDİ ──────────────────────────────────────────────
 // SORUN: Bir toplu işlem (örn. 50 kitabı sırayla silme) birkaç saniye sürebilir
 // (her kitap için ayrı bir ağ isteği). Bu süre boyunca butonlar hâlâ tıklanabilir
@@ -107,17 +126,7 @@ export async function bulkDelete() {
     // sürebiliyor; kullanıcının "sistem donmuş mu?" diye tereddüt etmemesi
     // için kalıcı, kendini güncelleyen bir ilerleme toast'ı gösteriliyor.
     const showProgress = ids.length >= 2;
-    let progressToast = null;
-    if (showProgress) {
-      const container = document.getElementById("toast-container");
-      if (container) {
-        progressToast = document.createElement("div");
-        progressToast.className = "toast toast-success";
-        progressToast.textContent = "Silme işlemi başladı.";
-        container.appendChild(progressToast);
-        setTimeout(() => progressToast.classList.add("visible"), 10);
-      }
-    }
+    const progressToast = showProgress ? _createProgressToast("Silme işlemi başladı.") : null;
 
     // Adım 24: SIRALI (sequential) silme — KASITLI olarak Promise.allSettled
     // ile paralel YAPILMIYOR. Sebep: deleteBookRecord her çağrıldığında
@@ -140,18 +149,10 @@ export async function bulkDelete() {
         console.error(`[bulkDelete] Kitap silinemedi — ${label}:`, err?.message || err, err);
       }
 
-      // Adım 31: her kitap işlenince ilerleme sayacını güncelle
-      if (progressToast) {
-        const done = ok + fail;
-        progressToast.textContent = `${done}/${ids.length} kitap silindi.`;
-      }
+      if (progressToast) progressToast.update(`${ok + fail}/${ids.length} kitap silindi.`);
     }
 
-    // Adım 31: ilerleme toast'ını kaldır, sonucu normal showToast ile bildir
-    if (progressToast) {
-      progressToast.classList.remove("visible");
-      setTimeout(() => progressToast.remove(), 300);
-    }
+    if (progressToast) progressToast.remove();
 
     showToast(`${ok} kitap silindi${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
@@ -170,21 +171,21 @@ export async function bulkChangeStatus(newStatus) {
   if (ids.length === 0) return;
 
   try {
-    const results = await Promise.allSettled(
-      ids.map((id) => updateBookRecord(id, { status: newStatus }))
-    );
-
     let ok = 0, fail = 0;
-    results.forEach((r, i) => {
-      if (r.status === "fulfilled") {
-        const book = state.books.find((b) => b.$id === ids[i]);
+    const toast = _createProgressToast(`Durum güncelleniyor... (0/${ids.length})`);
+    const results = await Promise.allSettled(
+      ids.map((id) => updateBookRecord(id, { status: newStatus }).then(() => {
+        const book = state.books.find((b) => b.$id === id);
         if (book) book.status = newStatus;
         ok++;
-      } else {
+        toast.update(`Durum güncelleniyor... (${ok + fail}/${ids.length})`);
+      }).catch(() => {
         fail++;
-      }
-    });
-
+        toast.update(`Durum güncelleniyor... (${ok + fail}/${ids.length})`);
+      }))
+    );
+    void results;
+    toast.remove();
     showToast(`${ok} kitabın durumu güncellendi${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
     recompute(false);
@@ -204,21 +205,27 @@ export async function bulkAddTag() {
   if (!tag) return; // kullanıcı iptal etti veya boş yazdı
 
   try {
-    const results = await Promise.allSettled(
+    let ok = 0, fail = 0;
+    const toast = _createProgressToast(`Etiket ekleniyor... (0/${ids.length})`);
+    await Promise.allSettled(
       ids.map((id) => {
         const book = state.books.find((b) => b.$id === id);
-        if (!book) return Promise.resolve();
+        if (!book) { ok++; toast.update(`Etiket ekleniyor... (${ok + fail}/${ids.length})`); return Promise.resolve(); }
         const currentTags = book.tags || [];
-        if (currentTags.includes(tag)) return Promise.resolve(); // zaten var
+        if (currentTags.includes(tag)) { ok++; toast.update(`Etiket ekleniyor... (${ok + fail}/${ids.length})`); return Promise.resolve(); }
         const newTags = [...currentTags, tag];
         return updateBookRecord(id, { tags: newTags }).then(() => {
-          book.tags = newTags; // hafızadaki kopyayı güncelle
+          book.tags = newTags;
+          ok++;
+          toast.update(`Etiket ekleniyor... (${ok + fail}/${ids.length})`);
+        }).catch(() => {
+          fail++;
+          toast.update(`Etiket ekleniyor... (${ok + fail}/${ids.length})`);
         });
       })
     );
-
-    const fail = results.filter((r) => r.status === "rejected").length;
-    showToast(`${ids.length - fail} kitaba etiket eklendi${fail ? `, ${fail} başarısız` : ""}.`);
+    toast.remove();
+    showToast(`${ok} kitaba etiket eklendi${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
     recompute(false);
   } catch (err) {
@@ -238,19 +245,24 @@ export async function bulkSetCategory() {
   if (!category) return;
 
   try {
-    const results = await Promise.allSettled(
+    let ok = 0, fail = 0;
+    const toast = _createProgressToast(`Kategori atanıyor... (0/${ids.length})`);
+    await Promise.allSettled(
       ids.map((id) => {
         const book = state.books.find((b) => b.$id === id);
-        if (!book) return Promise.resolve();
-        if (book.category === category) return Promise.resolve(); // zaten aynı değer
+        if (!book || book.category === category) { ok++; toast.update(`Kategori atanıyor... (${ok + fail}/${ids.length})`); return Promise.resolve(); }
         return updateBookRecord(id, { category }).then(() => {
           book.category = category;
+          ok++;
+          toast.update(`Kategori atanıyor... (${ok + fail}/${ids.length})`);
+        }).catch(() => {
+          fail++;
+          toast.update(`Kategori atanıyor... (${ok + fail}/${ids.length})`);
         });
       })
     );
-
-    const fail = results.filter((r) => r.status === "rejected").length;
-    showToast(`${ids.length - fail} kitaba kategori atandı${fail ? `, ${fail} başarısız` : ""}.`);
+    toast.remove();
+    showToast(`${ok} kitaba kategori atandı${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
     recompute(false);
   } catch (err) {
@@ -269,19 +281,24 @@ export async function bulkSetGenre() {
   if (!genre) return;
 
   try {
-    const results = await Promise.allSettled(
+    let ok = 0, fail = 0;
+    const toast = _createProgressToast(`Tür atanıyor... (0/${ids.length})`);
+    await Promise.allSettled(
       ids.map((id) => {
         const book = state.books.find((b) => b.$id === id);
-        if (!book) return Promise.resolve();
-        if (book.genre === genre) return Promise.resolve(); // zaten aynı değer
+        if (!book || book.genre === genre) { ok++; toast.update(`Tür atanıyor... (${ok + fail}/${ids.length})`); return Promise.resolve(); }
         return updateBookRecord(id, { genre }).then(() => {
           book.genre = genre;
+          ok++;
+          toast.update(`Tür atanıyor... (${ok + fail}/${ids.length})`);
+        }).catch(() => {
+          fail++;
+          toast.update(`Tür atanıyor... (${ok + fail}/${ids.length})`);
         });
       })
     );
-
-    const fail = results.filter((r) => r.status === "rejected").length;
-    showToast(`${ids.length - fail} kitaba tür atandı${fail ? `, ${fail} başarısız` : ""}.`);
+    toast.remove();
+    showToast(`${ok} kitaba tür atandı${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
     recompute(false);
   } catch (err) {
@@ -311,23 +328,26 @@ export async function bulkAddCollection() {
       console.warn(`[bulkAddCollection] Koleksiyon oluşturulamadı (${collectionName}):`, err?.message || err);
     }
 
-    const results = await Promise.allSettled(
+    let ok = 0, fail = 0;
+    const toast = _createProgressToast(`Koleksiyon ekleniyor... (0/${ids.length})`);
+    await Promise.allSettled(
       ids.map((id) => {
         const book = state.books.find((b) => b.$id === id);
-        if (!book) return Promise.resolve();
+        if (!book) { ok++; toast.update(`Koleksiyon ekleniyor... (${ok + fail}/${ids.length})`); return Promise.resolve(); }
         const currentCollections = book.collections || [];
-        if (currentCollections.includes(collectionName)) return Promise.resolve(); // zaten var
+        if (currentCollections.includes(collectionName)) { ok++; toast.update(`Koleksiyon ekleniyor... (${ok + fail}/${ids.length})`); return Promise.resolve(); }
         const newCollections = [...currentCollections, collectionName];
-        // Adım 34: updateBookRecordWithCascade — ileride "toplu koleksiyon çıkar"
-        // gibi bir kardeş eklenirse aynı güvenli mekanizmayı kullanması için
-        // tutarlılık sağlanıyor. NOT: book.collections updateBookRecordWithCascade
-        // tarafından Object.assign ile zaten güncelleniyor.
-        return updateBookRecordWithCascade(id, { collections: newCollections });
+        return updateBookRecordWithCascade(id, { collections: newCollections }).then(() => {
+          ok++;
+          toast.update(`Koleksiyon ekleniyor... (${ok + fail}/${ids.length})`);
+        }).catch(() => {
+          fail++;
+          toast.update(`Koleksiyon ekleniyor... (${ok + fail}/${ids.length})`);
+        });
       })
     );
-
-    const fail = results.filter((r) => r.status === "rejected").length;
-    showToast(`${ids.length - fail} kitaba koleksiyon eklendi${fail ? `, ${fail} başarısız` : ""}.`);
+    toast.remove();
+    showToast(`${ok} kitaba koleksiyon eklendi${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
     recompute(false);
   } catch (err) {
@@ -343,22 +363,22 @@ export async function bulkSetFavorite(newValue) {
   const ids = [...selectedIds];
   if (ids.length === 0) return;
 
+  const label = newValue ? "Favorilere ekleniyor" : "Favorilerden çıkarılıyor";
   try {
-    const results = await Promise.allSettled(
-      ids.map((id) => updateBookRecord(id, { favorite: newValue }))
-    );
-
     let ok = 0, fail = 0;
-    results.forEach((r, i) => {
-      if (r.status === "fulfilled") {
-        const book = state.books.find((b) => b.$id === ids[i]);
+    const toast = _createProgressToast(`${label}... (0/${ids.length})`);
+    await Promise.allSettled(
+      ids.map((id) => updateBookRecord(id, { favorite: newValue }).then(() => {
+        const book = state.books.find((b) => b.$id === id);
         if (book) book.favorite = newValue;
         ok++;
-      } else {
+        toast.update(`${label}... (${ok + fail}/${ids.length})`);
+      }).catch(() => {
         fail++;
-      }
-    });
-
+        toast.update(`${label}... (${ok + fail}/${ids.length})`);
+      }))
+    );
+    toast.remove();
     showToast(`${ok} kitap ${newValue ? "favorilere eklendi" : "favorilerden çıkarıldı"}${fail ? `, ${fail} başarısız` : ""}.`);
     clearSelection();
     recompute(false);

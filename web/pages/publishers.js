@@ -132,8 +132,11 @@ function renderPublisherDetail(publisherName) {
           <iconify-icon icon="lucide:layers"></iconify-icon>
           ${esc(seriesName)}
           <span class="detail-sub-count">${_countLabel(books.length, uniqueCount)}</span>
+          <button class="series-toggle-btn" data-toggle="series" aria-label="Aç/Kapat">
+            <iconify-icon icon="lucide:chevron-down"></iconify-icon>
+          </button>
         </h3>
-        <div class="books-grid author-books-grid" data-grid-id="series-${escapeAttr(seriesName)}">${cards}</div>
+        <div class="books-grid author-books-grid series-collapsible" data-grid-id="series-${escapeAttr(seriesName)}">${cards}</div>
       </div>
     `;
   }
@@ -232,6 +235,18 @@ export function initPublishers() {
       _savedScrollY = window.scrollY;
       activePublisher = publisherRow.dataset.publisher;
       renderPublisherDetail(activePublisher);
+      return;
+    }
+
+    // Seri toggle butonu → aç/kapat
+    const toggleBtn = e.target.closest(".series-toggle-btn");
+    if (toggleBtn) {
+      const section = toggleBtn.closest(".detail-sub-section");
+      const grid    = section?.querySelector(".series-collapsible");
+      const icon    = toggleBtn.querySelector("iconify-icon");
+      if (!grid) return;
+      const collapsed = grid.classList.toggle("series-collapsed");
+      if (icon) icon.setAttribute("icon", collapsed ? "lucide:chevron-right" : "lucide:chevron-down");
       return;
     }
 

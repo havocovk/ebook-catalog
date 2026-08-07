@@ -285,7 +285,14 @@ function updateFilterBadge() {
 
 function updateResultCount() {
   const el = document.getElementById("result-count");
-  if (el) el.textContent = `${filtered.length} kitap`;
+  if (!el) return;
+  const fileCount = filtered.length;
+  const keys = new Set();
+  for (const b of filtered) keys.add((b.canonical_id || "").trim() || b.$id);
+  const uniqueCount = keys.size;
+  el.textContent = fileCount === uniqueCount
+    ? `${uniqueCount} kitap`
+    : `${uniqueCount} kitap · ${fileCount} dosya`;
 }
 
 function updateViewToggle() {
