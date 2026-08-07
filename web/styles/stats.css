@@ -818,6 +818,7 @@
   padding-bottom: 0.75rem;
   border-bottom: 1px solid #262626;
   margin-bottom: 0.25rem;
+  flex-wrap: wrap;
 }
 
 .au-section-header-left {
